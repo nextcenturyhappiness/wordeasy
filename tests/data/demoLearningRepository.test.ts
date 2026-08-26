@@ -49,7 +49,8 @@ describe("DemoLearningRepository", () => {
   it("hydrates normalized Context Cards through a stable Research 5+2+3 assignment", async () => {
     const { repository } = await harness();
 
-    const queue = await repository.getStudyQueue("research_english", "new");
+    const snapshot = await repository.getStudyQueue("research_english", "new");
+    const queue = snapshot.cards;
     const counts = Object.fromEntries(
       ["general_research", "statistics_methodology", "bioinformatics"].map((category) => [
         category,
@@ -58,6 +59,11 @@ describe("DemoLearningRepository", () => {
     );
 
     expect(queue).toHaveLength(10);
+    expect(snapshot).toMatchObject({
+      module: "research_english",
+      queue: "new",
+      studyDate: "2026-08-26"
+    });
     expect(counts).toEqual({
       general_research: 5,
       statistics_methodology: 2,
@@ -70,7 +76,7 @@ describe("DemoLearningRepository", () => {
 
   it("commits event, card-bound state, distinct completion, summary, and outbox atomically", async () => {
     const { database, repository, userId } = await harness();
-    const card = requireCard((await repository.getStudyQueue("research_english", "new"))[0]);
+    const card = requireCard((await repository.getStudyQueue("research_english", "new")).cards[0]);
 
     const first = await repository.rateCard(ratingInput(card.cardId, "presentation-1"));
     const again = await repository.rateCard({
@@ -98,7 +104,7 @@ describe("DemoLearningRepository", () => {
 
   it("deduplicates simultaneous ratings by presentationActionId", async () => {
     const { database, repository } = await harness();
-    const card = requireCard((await repository.getStudyQueue("research_english", "new"))[0]);
+    const card = requireCard((await repository.getStudyQueue("research_english", "new")).cards[0]);
     const input = ratingInput(card.cardId, "double-click-action");
 
     const [first, second] = await Promise.all([
@@ -114,7 +120,7 @@ describe("DemoLearningRepository", () => {
 
   it("rolls back every rating mutation when the outbox write fails", async () => {
     const { database, repository, syncState, userId } = await harness();
-    const card = requireCard((await repository.getStudyQueue("research_english", "new"))[0]);
+    const card = requireCard((await repository.getStudyQueue("research_english", "new")).cards[0]);
     const collidingEventId = "20000000-0000-4000-8000-000000000001";
     await database.sync_outbox.add({
       userId,
@@ -163,7 +169,8 @@ describe("DemoLearningRepository", () => {
 
   it("counts learned words by distinct wordSenseId rather than cardId", async () => {
     const { database, repository, userId } = await harness();
-    const [firstValue, secondValue] = await repository.getStudyQueue("research_english", "new");
+    const [firstValue, secondValue] = (await repository.getStudyQueue("research_english", "new"))
+      .cards;
     const first = requireCard(firstValue);
     const second = requireCard(secondValue);
     const secondRow = await database.cached_cards.get([userId, second.cardId]);
@@ -182,7 +189,7 @@ describe("DemoLearningRepository", () => {
 
   it("preserves four ratings, states, summaries, and outbox across a database reopen", async () => {
     const firstHarness = await harness();
-    const queue = await firstHarness.repository.getStudyQueue("research_english", "new");
+    const queue = (await firstHarness.repository.getStudyQueue("research_english", "new")).cards;
     for (const [index, card] of queue.slice(0, 4).entries()) {
       await firstHarness.repository.rateCard(
         ratingInput(card.cardId, `refresh-presentation-${String(index)}`)
@@ -209,7 +216,7 @@ describe("DemoLearningRepository", () => {
     expect(await reopenedDatabase.local_review_states.count()).toBe(4);
     expect(await reopenedDatabase.sync_outbox.count()).toBe(4);
     expect(
-      (await reopened.getStudyQueue("research_english", "new")).map((card) => card.cardId)
+      (await reopened.getStudyQueue("research_english", "new")).cards.map((card) => card.cardId)
     ).toEqual(queue.slice(4).map((card) => card.cardId));
     reopenedDatabase.close();
   });
@@ -217,7 +224,7 @@ describe("DemoLearningRepository", () => {
   it("keeps Medical progress isolated and reads Home without review-event history", async () => {
     const { database, repository } = await harness();
     const medicalBefore = await repository.getToday("medical_english");
-    const card = requireCard((await repository.getStudyQueue("research_english", "new"))[0]);
+    const card = requireCard((await repository.getStudyQueue("research_english", "new")).cards[0]);
     await repository.rateCard(ratingInput(card.cardId, "module-isolation"));
 
     const historyRead = vi.spyOn(database.local_review_events, "toArray");
@@ -246,7 +253,7 @@ describe("DemoLearningRepository", () => {
     });
     await accountB.initialize();
     const cardA = requireCard(
-      (await accountA.repository.getStudyQueue("research_english", "new"))[0]
+      (await accountA.repository.getStudyQueue("research_english", "new")).cards[0]
     );
     await accountA.repository.rateCard(ratingInput(cardA.cardId, "account-a-action"));
 
@@ -280,7 +287,7 @@ describe("DemoLearningRepository", () => {
       required: 5,
       available: 0
     });
-    expect(await nextDay.getStudyQueue("research_english", "new")).toEqual([]);
+    expect((await nextDay.getStudyQueue("research_english", "new")).cards).toEqual([]);
     nextDayDatabase.close();
   });
 });

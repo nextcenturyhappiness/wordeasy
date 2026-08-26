@@ -10,7 +10,15 @@ describe("profile-local study dates", () => {
   });
 
   it("counts distinct consecutive profile-local study days", () => {
-    expect(calculateStreak(["2026-08-24", "2026-08-25", "2026-08-25", "2026-08-26"])).toBe(3);
-    expect(calculateStreak(["2026-08-20", "2026-08-25", "2026-08-26"])).toBe(2);
+    expect(
+      calculateStreak(["2026-08-24", "2026-08-25", "2026-08-25", "2026-08-26"], "2026-08-26")
+    ).toBe(3);
+    expect(calculateStreak(["2026-08-20", "2026-08-25", "2026-08-26"], "2026-08-26")).toBe(2);
+  });
+
+  it("keeps yesterday's active streak but expires an older one", () => {
+    expect(calculateStreak(["2026-08-24", "2026-08-25"], "2026-08-26")).toBe(2);
+    expect(calculateStreak(["2026-08-23", "2026-08-24"], "2026-08-26")).toBe(0);
+    expect(calculateStreak(["2026-08-26", "2026-08-27"], "2026-08-26")).toBe(1);
   });
 });

@@ -70,6 +70,13 @@ export interface TodaySnapshot {
   contentShortage: ContentShortage | null;
 }
 
+export interface StudyQueueSnapshot {
+  module: ModuleSlug;
+  queue: QueueKind;
+  studyDate: string;
+  cards: ContextCardView[];
+}
+
 export type SyncState =
   | { status: "synced"; pendingCount: 0 }
   | { status: "syncing"; pendingCount: number }
@@ -80,7 +87,7 @@ export type SyncState =
 export interface LearningQueries {
   getCachedHome(): Promise<HomeSnapshot | null>;
   getToday(module: ModuleSlug): Promise<TodaySnapshot>;
-  getStudyQueue(module: ModuleSlug, queue: QueueKind): Promise<ContextCardView[]>;
+  getStudyQueue(module: ModuleSlug, queue: QueueKind): Promise<StudyQueueSnapshot>;
 }
 
 export interface RateCardInput {

@@ -109,7 +109,12 @@ export function createRepository(overrides: Partial<LearningRepository> = {}): L
       Promise.resolve(buildTodaySnapshot(module))
     ),
     getStudyQueue: vi.fn<LearningRepository["getStudyQueue"]>(() =>
-      Promise.resolve([researchCard, secondResearchCard])
+      Promise.resolve({
+        module: "research_english",
+        queue: "new",
+        studyDate: "2026-08-26",
+        cards: [researchCard, secondResearchCard]
+      })
     ),
     rateCard: vi.fn<LearningRepository["rateCard"]>((input) =>
       Promise.resolve({

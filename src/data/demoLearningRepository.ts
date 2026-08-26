@@ -7,6 +7,7 @@ import type {
   RateCardInput,
   RateCardResult,
   ReviewScheduler,
+  StudyQueueSnapshot,
   TodaySnapshot
 } from "../application/contracts";
 import { calculateStreak, studyDateFor } from "../domain/time";
@@ -227,7 +228,7 @@ export class DemoLearningRepository implements LearningRepository {
         const studiedDates = (
           await this.#database.study_days.where("userId").equals(this.#userId).toArray()
         ).map((day) => day.studyDate);
-        const streak = calculateStreak(studiedDates);
+        const streak = calculateStreak(studiedDates, studyDate);
         for (const module of ["research_english", "medical_english"] as const) {
           const summary = await this.#database.daily_summary.get([this.#userId, module, studyDate]);
           if (summary === undefined) {
@@ -306,7 +307,7 @@ export class DemoLearningRepository implements LearningRepository {
     };
   }
 
-  async getStudyQueue(module: ModuleSlug, queue: "new" | "review"): Promise<ContextCardView[]> {
+  async getStudyQueue(module: ModuleSlug, queue: "new" | "review"): Promise<StudyQueueSnapshot> {
     const profile = await this.#requireProfile();
     const studyDate = studyDateFor(this.#now(), profile.timezone);
     const assignments =
@@ -327,7 +328,7 @@ export class DemoLearningRepository implements LearningRepository {
         this.#database.cached_cards.get([this.#userId, assignment.cardId])
       )
     );
-    return cards.map((card, index) => {
+    const resolvedCards = cards.map((card, index) => {
       if (card === undefined) {
         throw new Error(
           `Assigned card ${incompleteAssignments[index]?.cardId ?? "unknown"} is not cached.`
@@ -335,6 +336,7 @@ export class DemoLearningRepository implements LearningRepository {
       }
       return toContextCardView(card);
     });
+    return { module, queue, studyDate, cards: resolvedCards };
   }
 
   async rateCard(input: RateCardInput): Promise<RateCardResult> {
@@ -487,7 +489,7 @@ export class DemoLearningRepository implements LearningRepository {
         const studiedDates = (
           await this.#database.study_days.where("userId").equals(this.#userId).toArray()
         ).map((day) => day.studyDate);
-        summary.streak = calculateStreak(studiedDates);
+        summary.streak = calculateStreak(studiedDates, input.studyDate);
         summary.pendingSyncCount += 1;
         summary.updatedAt = createdAt;
         await this.#database.daily_summary.put(summary);

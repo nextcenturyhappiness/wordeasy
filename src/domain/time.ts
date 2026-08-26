@@ -37,9 +37,17 @@ function epochDay(studyDate: string): number {
   return Date.parse(`${studyDate}T00:00:00.000Z`) / 86_400_000;
 }
 
-export function calculateStreak(studyDates: string[]): number {
-  const uniqueDates = [...new Set(studyDates)].sort();
+export function calculateStreak(studyDates: string[], asOfStudyDate: string): number {
+  const asOfDay = epochDay(asOfStudyDate);
+  const uniqueDates = [...new Set(studyDates)]
+    .filter((studyDate) => epochDay(studyDate) <= asOfDay)
+    .sort();
   if (uniqueDates.length === 0) {
+    return 0;
+  }
+
+  const latest = uniqueDates.at(-1);
+  if (latest === undefined || asOfDay - epochDay(latest) > 1) {
     return 0;
   }
 

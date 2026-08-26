@@ -45,6 +45,7 @@ export default defineConfig({
         skipWaiting: false,
         navigateFallback: "/index.html",
         globPatterns: ["**/*.{html,css,js,png,svg,webmanifest}"],
+        globIgnores: ["og.png"],
         runtimeCaching: []
       }
     })

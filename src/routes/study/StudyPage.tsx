@@ -13,7 +13,7 @@ type StudyPhase = "prompt" | "revealed" | "committing" | "completed";
 
 type QueueResource =
   | { status: "loading" }
-  | { status: "ready"; routeKey: string; cards: ContextCardView[] }
+  | { status: "ready"; routeKey: string; studyDate: string; cards: ContextCardView[] }
   | { status: "error"; routeKey: string; message: string };
 
 const loadingQueueResource: QueueResource = { status: "loading" };
@@ -60,7 +60,7 @@ export function StudyPage() {
   const module = parseModuleRoute(moduleParam);
   const queue = parseQueueKind(searchParams.get("queue"));
   const routeKey = module === null || queue === null ? null : `${module}:${queue}`;
-  const { repository, ensureInitialized, applyRatingResult, syncState, home } = useLearningApp();
+  const { repository, ensureInitialized, applyRatingResult, syncState } = useLearningApp();
   const [resource, setResource] = useState<QueueResource>({ status: "loading" });
   const [cardIndex, setCardIndex] = useState(0);
   const [phase, setPhase] = useState<StudyPhase>("prompt");
@@ -84,11 +84,16 @@ export function StudyPage() {
     async function loadQueue() {
       try {
         await ensureInitialized();
-        const cards = await repository.getStudyQueue(selectedModule, selectedQueue);
+        const snapshot = await repository.getStudyQueue(selectedModule, selectedQueue);
         if (active) {
-          setResource({ status: "ready", routeKey: selectedRouteKey, cards });
+          setResource({
+            status: "ready",
+            routeKey: selectedRouteKey,
+            studyDate: snapshot.studyDate,
+            cards: snapshot.cards
+          });
           setCardIndex(0);
-          setPhase(cards.length === 0 ? "completed" : "prompt");
+          setPhase(snapshot.cards.length === 0 ? "completed" : "prompt");
           setSaveError(null);
           setAnnouncement("");
         }
@@ -143,12 +148,6 @@ export function StudyPage() {
         return;
       }
 
-      if (home.status !== "ready") {
-        setSaveError("Your learning date is unavailable. Return home before saving this rating.");
-        setAnnouncement("The rating was not saved because the learning date is unavailable.");
-        return;
-      }
-
       commitLockRef.current = true;
       setPhase("committing");
       setSaveError(null);
@@ -160,7 +159,7 @@ export function StudyPage() {
           cardId: card.cardId,
           module,
           queue,
-          studyDate: home.snapshot.studyDate,
+          studyDate: activeResource.studyDate,
           rating,
           reviewedAt: new Date().toISOString()
         });
@@ -198,7 +197,7 @@ export function StudyPage() {
         commitLockRef.current = false;
       }
     },
-    [activeResource, applyRatingResult, cardIndex, home, module, phase, queue, repository]
+    [activeResource, applyRatingResult, cardIndex, module, phase, queue, repository]
   );
 
   useEffect(() => {

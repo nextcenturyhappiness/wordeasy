@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { LearningRepository, RateCardResult } from "../../src/application/contracts";
 import { StudyPage } from "../../src/routes/study/StudyPage";
 import {
+  buildHomeSnapshot,
   createRepository,
   renderWithLearningApp,
   researchCard,
@@ -71,6 +72,7 @@ describe("StudyPage", () => {
 
     renderWithLearningApp(<StudyRoute />, {
       repository,
+      initialHome: buildHomeSnapshot({ studyDate: "2026-08-25" }),
       initialEntries: ["/study/research?queue=new"]
     });
 
@@ -84,7 +86,8 @@ describe("StudyPage", () => {
       expect.objectContaining({
         cardId: researchCard.cardId,
         module: "research_english",
-        queue: "new"
+        queue: "new",
+        studyDate: "2026-08-26"
       })
     );
     expect(good).toBeDisabled();

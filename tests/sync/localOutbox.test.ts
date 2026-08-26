@@ -19,7 +19,7 @@ describe("local immutable event and outbox", () => {
   it("stores complete event evidence and keeps retry state outside the event", async () => {
     activeHarness = await createRepositoryHarness();
     const { database, repository, syncState, userId } = activeHarness;
-    const card = (await repository.getStudyQueue("research_english", "new"))[0];
+    const card = (await repository.getStudyQueue("research_english", "new")).cards[0];
     if (card === undefined) {
       throw new Error("Expected an assigned demo card.");
     }

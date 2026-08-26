@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { ArticleEnglishApp } from "./app/ArticleEnglishApp";
 import { BootstrapShell, ConfigurationFailure } from "./app/StartupScreens";
 import { createLearningRuntime, RuntimeConfigurationError } from "./data";
+import { registerPwaUpdateCoordinator } from "./pwa/updateCoordinator";
 import "./styles/tokens.css";
 import "./styles/global.css";
 
@@ -60,3 +61,4 @@ async function bootstrap(): Promise<void> {
 }
 
 void bootstrap();
+void registerPwaUpdateCoordinator();
