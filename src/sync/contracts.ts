@@ -9,7 +9,9 @@ import type {
 
 export const INITIAL_PULL_CURSOR: PullCursor = {
   receivedAt: "1970-01-01T00:00:00.000Z",
-  eventId: "00000000-0000-0000-0000-000000000000"
+  eventId: "00000000-0000-0000-0000-000000000000",
+  stateSequence: 0,
+  stateEpoch: ""
 };
 
 export interface AccountLocalSyncStore {
@@ -19,6 +21,7 @@ export interface AccountLocalSyncStore {
   markPushFailure(eventIds: string[], message: string, now: Date): Promise<void>;
   releasePushClaims(eventIds: string[], now: Date): Promise<void>;
   getPullCursor(): Promise<PullCursor>;
+  getPendingConflictCardIds(): Promise<string[]>;
   mergePullPage(page: CloudPullPage): Promise<void>;
   applyReconciledState(state: ReconciledReviewState, now: Date): Promise<boolean>;
   getPendingCount(): Promise<number>;
@@ -34,6 +37,7 @@ export interface SyncRunLock {
 
 export interface SyncCoordinatorOptions {
   pushBatchSize?: number;
+  maxPushBatches?: number;
   pullPageSize?: number;
   maxPullPages?: number;
   now?: () => Date;

@@ -10,6 +10,8 @@ export const RESEARCH_CATEGORY_QUOTAS = {
   bioinformatics: 3
 } as const;
 
+export const MEDICAL_DAILY_NEW_QUOTA = 10;
+
 export type ResearchCategory = keyof typeof RESEARCH_CATEGORY_QUOTAS;
 
 export interface WordEntity {

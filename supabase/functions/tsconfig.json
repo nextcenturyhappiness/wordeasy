@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "allowJs": false,
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "paths": {
+      "npm:@supabase/supabase-js@2.112.4": [
+        "../../node_modules/@supabase/supabase-js/dist/index.d.mts"
+      ],
+      "npm:ts-fsrs@5.4.1": ["../../node_modules/ts-fsrs/dist/index.d.ts"]
+    },
+    "skipLibCheck": true,
+    "strict": true
+  },
+  "include": ["**/*.ts"]
+}

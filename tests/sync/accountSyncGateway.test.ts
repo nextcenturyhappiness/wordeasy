@@ -24,6 +24,7 @@ function localStore(pendingCount = 0): AccountLocalSyncStore {
     markPushFailure: vi.fn().mockResolvedValue(undefined),
     releasePushClaims: vi.fn().mockResolvedValue(undefined),
     getPullCursor: vi.fn().mockResolvedValue(INITIAL_PULL_CURSOR),
+    getPendingConflictCardIds: vi.fn().mockResolvedValue([]),
     mergePullPage: vi.fn<(page: CloudPullPage) => Promise<void>>().mockResolvedValue(undefined),
     applyReconciledState: vi
       .fn<(state: ReconciledReviewState, now: Date) => Promise<boolean>>()
@@ -68,7 +69,7 @@ describe("account sync gateway", () => {
     expect(coordinatorSync).not.toHaveBeenCalled();
   });
 
-  it("coalesces triggers and refreshes both stable day caches before push/pull", async () => {
+  it("coalesces triggers and completes push/reconcile before freezing day caches", async () => {
     let releaseSettings: (() => void) | undefined;
     const settingsReady = new Promise<void>((resolve) => {
       releaseSettings = resolve;
@@ -91,8 +92,10 @@ describe("account sync gateway", () => {
       refresh: refreshDay
     };
     const synced: SyncState = { status: "synced", pendingCount: 0 };
+    let syncPhase = 0;
     const coordinatorSync = vi.fn<AccountSyncCoordinatorPort["sync"]>(() => {
-      calls.push("push-pull");
+      syncPhase += 1;
+      calls.push(syncPhase === 1 ? "push-reconcile" : "final-pull-merge");
       return Promise.resolve(synced);
     });
     const coordinator: AccountSyncCoordinatorPort = {
@@ -120,10 +123,39 @@ describe("account sync gateway", () => {
     await expect(startup).resolves.toEqual(synced);
     expect(syncSettings).toHaveBeenCalledTimes(1);
     expect(refreshDay).toHaveBeenCalledTimes(2);
-    expect(calls.slice(0, 2).sort()).toEqual([
+    expect(calls[0]).toBe("push-reconcile");
+    expect(calls.slice(1, 3).sort()).toEqual([
       "medical_english:2026-08-26",
       "research_english:2026-08-26"
     ]);
-    expect(calls.at(-1)).toBe("push-pull");
+    expect(calls.at(-1)).toBe("final-pull-merge");
+    expect(coordinatorSync).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not freeze assignments until the bounded push drain is complete", async () => {
+    const coordinatorSync = vi
+      .fn<AccountSyncCoordinatorPort["sync"]>()
+      .mockResolvedValue({ status: "pending", pendingCount: 1 });
+    const refreshDay = vi.fn().mockResolvedValue(undefined);
+    const syncSettings = vi
+      .fn<AccountSettingsSyncPort["syncRemote"]>()
+      .mockResolvedValue({ timezone: "Asia/Shanghai", theme: "system" });
+    const gateway = new AccountSyncGateway(
+      "account-a",
+      localStore(1),
+      {
+        userId: "account-a",
+        sync: coordinatorSync,
+        dispose: vi.fn().mockResolvedValue(undefined)
+      },
+      { userId: "account-a", refresh: refreshDay },
+      { userId: "account-a", syncRemote: syncSettings },
+      { isOnline: () => true }
+    );
+
+    await expect(gateway.sync()).resolves.toEqual({ status: "pending", pendingCount: 1 });
+    expect(coordinatorSync).toHaveBeenCalledTimes(1);
+    expect(syncSettings).not.toHaveBeenCalled();
+    expect(refreshDay).not.toHaveBeenCalled();
   });
 });

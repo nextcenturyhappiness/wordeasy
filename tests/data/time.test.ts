@@ -9,6 +9,26 @@ describe("profile-local study dates", () => {
     expect(studyDateFor(instant, "America/Los_Angeles")).toBe("2026-08-26");
   });
 
+  it("changes the study date exactly at profile-local midnight", () => {
+    expect(studyDateFor(new Date("2026-08-26T15:59:59.999Z"), "Asia/Shanghai")).toBe("2026-08-26");
+    expect(studyDateFor(new Date("2026-08-26T16:00:00.000Z"), "Asia/Shanghai")).toBe("2026-08-27");
+  });
+
+  it("keeps a stable calendar date through DST spring-forward and fall-back", () => {
+    expect(studyDateFor(new Date("2026-03-08T06:59:59.000Z"), "America/New_York")).toBe(
+      "2026-03-08"
+    );
+    expect(studyDateFor(new Date("2026-03-08T07:00:00.000Z"), "America/New_York")).toBe(
+      "2026-03-08"
+    );
+    expect(studyDateFor(new Date("2026-11-01T05:30:00.000Z"), "America/New_York")).toBe(
+      "2026-11-01"
+    );
+    expect(studyDateFor(new Date("2026-11-01T06:30:00.000Z"), "America/New_York")).toBe(
+      "2026-11-01"
+    );
+  });
+
   it("counts distinct consecutive profile-local study days", () => {
     expect(
       calculateStreak(["2026-08-24", "2026-08-25", "2026-08-25", "2026-08-26"], "2026-08-26")

@@ -6,22 +6,21 @@ import type {
   RateCardInput,
   SettingsGateway,
   StudyQueueSnapshot,
+  SyncGateway,
+  SyncState,
   ThemePreference
 } from "../application/contracts";
 import { themeStorageKey } from "../app/theme";
 import { BrowserSessionCache, type SessionCache } from "../auth/SupabaseAuthGateway";
 import { assertIanaTimezone } from "../domain/time";
 import { LearningDatabase } from "../db/learningDatabase";
-import { FsrsSchedulerAdapter } from "../scheduler/fsrsScheduler";
-import { AccountSyncGateway } from "../sync/accountSyncGateway";
-import { CloudSyncCoordinator } from "../sync/syncCoordinator";
-import { DexieAccountSyncStore } from "../sync/dexieSyncStore";
 import { LocalSyncStateStore } from "../sync/localSyncState";
 import { AccountCloudSettingsGateway } from "./cloud/accountPreferences";
-import { AccountCloudDayCache } from "./cloud/cloudDayCache";
 import type { CloudRpcClient } from "./cloud/rpcClient";
-import { SupabaseCloudRepository } from "./cloud/supabaseCloudRepository";
-import { IndexedDbLearningRepository } from "./indexedDbLearningRepository";
+import {
+  IndexedDbLearningRepository,
+  type PendingSyncCountPort
+} from "./indexedDbLearningRepository";
 import {
   RuntimeConfigurationError,
   type CloudRuntimeManager,
@@ -201,6 +200,99 @@ class LazyCloudRpcClient implements CloudRpcClient {
   }
 }
 
+interface AccountSyncDelegate extends SyncGateway, PendingSyncCountPort {
+  dispose(): Promise<void>;
+}
+
+export class DeferredAccountSyncGateway implements SyncGateway, PendingSyncCountPort {
+  readonly #listeners = new Set<(state: SyncState) => void>();
+  #state: SyncState = { status: "synced", pendingCount: 0 };
+  #delegate: AccountSyncDelegate | null = null;
+  #delegatePromise: Promise<AccountSyncDelegate> | null = null;
+  #unsubscribeDelegate: (() => void) | null = null;
+  #disposed = false;
+
+  constructor(private readonly loadDelegate: () => Promise<AccountSyncDelegate>) {}
+
+  getState(): SyncState {
+    return this.#delegate?.getState() ?? this.#state;
+  }
+
+  setPendingCount(pendingCount: number): void {
+    if (this.#disposed) {
+      return;
+    }
+    if (this.#delegate !== null) {
+      this.#delegate.setPendingCount(pendingCount);
+      return;
+    }
+    this.#setState(
+      pendingCount === 0
+        ? { status: "synced", pendingCount: 0 }
+        : { status: "pending", pendingCount }
+    );
+  }
+
+  async sync(): Promise<SyncState> {
+    if (this.#disposed) {
+      throw new Error("Deferred account sync gateway was disposed.");
+    }
+    try {
+      const delegate = await this.#load();
+      return await delegate.sync();
+    } catch (error: unknown) {
+      return this.#setState({
+        status: "failed",
+        pendingCount: this.#state.pendingCount,
+        message: error instanceof Error ? error.message : "Cloud sync could not be loaded."
+      });
+    }
+  }
+
+  subscribe(listener: (state: SyncState) => void): () => void {
+    if (this.#disposed) {
+      throw new Error("Deferred account sync gateway was disposed.");
+    }
+    this.#listeners.add(listener);
+    return () => {
+      this.#listeners.delete(listener);
+    };
+  }
+
+  async dispose(): Promise<void> {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
+    this.#unsubscribeDelegate?.();
+    this.#listeners.clear();
+    const delegate = await this.#delegatePromise?.catch(() => null);
+    await delegate?.dispose();
+  }
+
+  #load(): Promise<AccountSyncDelegate> {
+    this.#delegatePromise ??= this.loadDelegate().then((delegate) => {
+      if (this.#disposed) {
+        void delegate.dispose();
+        throw new Error("Deferred account sync gateway was disposed while loading.");
+      }
+      this.#delegate = delegate;
+      delegate.setPendingCount(this.#state.pendingCount);
+      this.#unsubscribeDelegate = delegate.subscribe((state) => this.#setState(state));
+      return delegate;
+    });
+    return this.#delegatePromise;
+  }
+
+  #setState(state: SyncState): SyncState {
+    this.#state = state;
+    for (const listener of this.#listeners) {
+      listener(state);
+    }
+    return state;
+  }
+}
+
 function anonymousRuntime(auth: AuthGateway): LearningRuntime {
   return {
     mode: "cloud",
@@ -229,20 +321,21 @@ export function createBrowserCloudRuntimeManager(): CloudRuntimeManager {
 
       const userId = session.userId;
       const database = new LearningDatabase(`article-english:cloud:${userId}`);
-      const scheduler = new FsrsSchedulerAdapter();
-      const cloud = new SupabaseCloudRepository(userId, rpc);
-      const localSync = new DexieAccountSyncStore(database, userId);
-      const dayCache = new AccountCloudDayCache(userId, database, cloud);
       const settings = new AccountCloudSettingsGateway(database, userId, rpc);
-      const coordinator = new CloudSyncCoordinator(userId, localSync, cloud, scheduler);
-      const sync = new AccountSyncGateway(userId, localSync, coordinator, dayCache, settings);
+      const sync = new DeferredAccountSyncGateway(async () => {
+        const { createAccountCloudSyncGateway } = await import("./cloudSyncRuntime");
+        return createAccountCloudSyncGateway({ database, userId, rpc, settings });
+      });
       const learning = new IndexedDbLearningRepository({
         database,
         userId,
         email: session.email ?? "",
         timezone: browserTimezone(),
         deviceId: installationDeviceId(),
-        scheduler,
+        scheduler: async () => {
+          const { FsrsSchedulerAdapter } = await import("../scheduler/fsrsScheduler");
+          return new FsrsSchedulerAdapter();
+        },
         syncState: sync
       });
       await learning.initialize();

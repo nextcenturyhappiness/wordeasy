@@ -19,13 +19,17 @@ describe("IndexedDbLearningRepository", () => {
   it("prepares an account-scoped local store without seeding demo content", async () => {
     const database = new LearningDatabase(`wordeasy-cloud-local-${crypto.randomUUID()}`);
     activeDatabase = database;
+    let schedulerLoads = 0;
     const repository = new IndexedDbLearningRepository({
       database,
       userId: "cloud-account-a",
       email: "account-a@example.invalid",
       timezone: "Asia/Shanghai",
       deviceId: "cloud-device-a",
-      scheduler: new FsrsSchedulerAdapter(),
+      scheduler: () => {
+        schedulerLoads += 1;
+        return Promise.resolve(new FsrsSchedulerAdapter());
+      },
       syncState: new LocalSyncStateStore(),
       now: () => new Date("2026-08-26T08:00:00.000Z")
     });
@@ -40,5 +44,6 @@ describe("IndexedDbLearningRepository", () => {
     expect(await database.cached_daily_assignments.count()).toBe(0);
     expect(await database.sync_outbox.count()).toBe(0);
     expect(await repository.getCachedHome()).toBeNull();
+    expect(schedulerLoads).toBe(0);
   });
 });

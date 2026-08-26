@@ -17,6 +17,9 @@
     "vite.config.ts",
     "playwright.config.ts",
     "playwright.pwa.config.ts",
+    "playwright.pwa-learning.config.ts",
+    "playwright.performance.config.ts",
+    "playwright.cloud-performance.config.ts",
     "eslint.config.js"
   ]
 }

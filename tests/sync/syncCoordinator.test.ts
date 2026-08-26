@@ -7,9 +7,7 @@ import type {
   CloudSyncTransport,
   PullCursor,
   PushEventOutcome,
-  ReconciledReviewState,
-  ReconciliationBundle,
-  ReconciliationCommitResult
+  ReconciledReviewState
 } from "../../src/data/cloud/types";
 import { INITIAL_PULL_CURSOR, type AccountLocalSyncStore } from "../../src/sync/contracts";
 import { CloudSyncCoordinator, SyncDisposedError } from "../../src/sync/syncCoordinator";
@@ -51,7 +49,8 @@ function emptyPage(cursor: PullCursor = INITIAL_PULL_CURSOR): CloudPullPage {
 
 class FakeLocalStore implements AccountLocalSyncStore {
   readonly userId: string;
-  readonly batch: CloudPushEvent[];
+  readonly #events: CloudPushEvent[];
+  readonly pendingConflictCardIds = new Set<string>();
   pendingCount: number;
   claimCalls = 0;
   releaseCalls = 0;
@@ -60,17 +59,25 @@ class FakeLocalStore implements AccountLocalSyncStore {
 
   constructor(userId: string, batch: CloudPushEvent[]) {
     this.userId = userId;
-    this.batch = batch;
+    this.#events = [...batch];
     this.pendingCount = batch.length;
   }
 
-  claimPushBatch(): Promise<CloudPushEvent[]> {
+  claimPushBatch(_now: Date, limit: number): Promise<CloudPushEvent[]> {
     this.claimCalls += 1;
-    return Promise.resolve(this.batch);
+    return Promise.resolve(this.#events.slice(0, limit));
   }
 
   applyPushOutcomes(outcomes: PushEventOutcome[]): Promise<void> {
-    this.pendingCount = outcomes.filter((outcome) => outcome.status === "rejected").length;
+    const completedIds = new Set(outcomes.map((outcome) => outcome.eventId));
+    for (let index = this.#events.length - 1; index >= 0; index -= 1) {
+      const event = this.#events[index];
+      if (event !== undefined && completedIds.has(event.eventId)) {
+        this.#events.splice(index, 1);
+      }
+    }
+    this.pendingCount =
+      this.#events.length + outcomes.filter((outcome) => outcome.status === "rejected").length;
     return Promise.resolve();
   }
 
@@ -87,12 +94,17 @@ class FakeLocalStore implements AccountLocalSyncStore {
     return Promise.resolve(INITIAL_PULL_CURSOR);
   }
 
+  getPendingConflictCardIds(): Promise<string[]> {
+    return Promise.resolve([...this.pendingConflictCardIds]);
+  }
+
   mergePullPage(): Promise<void> {
     this.mergeCalls += 1;
     return Promise.resolve();
   }
 
-  applyReconciledState(): Promise<boolean> {
+  applyReconciledState(state: ReconciledReviewState): Promise<boolean> {
+    this.pendingConflictCardIds.delete(state.cardId);
     return Promise.resolve(true);
   }
 
@@ -107,9 +119,9 @@ class FakeLocalStore implements AccountLocalSyncStore {
 
 class FakeCloudTransport implements CloudSyncTransport {
   pushCalls = 0;
+  readonly pushBatchSizes: number[] = [];
   pullCalls = 0;
-  bundleCalls = 0;
-  commitCalls = 0;
+  reconcileCalls = 0;
   disposed = false;
   pushGate: Promise<void> | null = null;
   outcomes: PushEventOutcome[] = [];
@@ -117,12 +129,15 @@ class FakeCloudTransport implements CloudSyncTransport {
 
   constructor(readonly userId: string) {}
 
-  async pushEvents(): Promise<PushEventOutcome[]> {
+  async pushEvents(events: CloudPushEvent[]): Promise<PushEventOutcome[]> {
     this.pushCalls += 1;
+    this.pushBatchSizes.push(events.length);
     if (this.pushGate !== null) {
       await this.pushGate;
     }
-    return this.outcomes;
+    return this.outcomes.length === 0
+      ? events.map((event) => applied(event.eventId, event.cardId))
+      : this.outcomes;
   }
 
   pullChanges(): Promise<CloudPullPage> {
@@ -130,37 +145,18 @@ class FakeCloudTransport implements CloudSyncTransport {
     return Promise.resolve(this.page);
   }
 
-  getReconciliationBundle(cardId: string): Promise<ReconciliationBundle> {
-    this.bundleCalls += 1;
+  reconcileCard(cardId: string): Promise<ReconciledReviewState> {
+    this.reconcileCalls += 1;
     return Promise.resolve({
       cardId,
       module: "research_english",
-      baseline: { state: {}, dueAt: null, revision: 0 },
-      events: [
-        {
-          eventId: "event-a",
-          cardId,
-          module: "research_english",
-          rating: "good",
-          reviewedAt: "2026-08-26T08:00:00.000Z",
-          orderingAt: "2026-08-26T08:00:00.000Z",
-          clockAnomaly: false,
-          deviceId: "device-a",
-          deviceSequence: 1,
-          baseRevision: 0
-        }
-      ],
+      schedulerState: { trusted: true },
+      dueAt: "2026-08-27T08:00:00.000Z",
+      lastReviewedAt: "2026-08-26T08:00:00.000Z",
+      revision: 1,
+      schedulerImplementationVersion: "scheduler-v1",
       expectedRevision: 0,
       eventSetHash: "event-hash"
-    });
-  }
-
-  commitReconciliation(state: ReconciledReviewState): Promise<ReconciliationCommitResult> {
-    this.commitCalls += 1;
-    return Promise.resolve({
-      status: "committed",
-      revision: state.revision,
-      eventSetHash: state.eventSetHash
     });
   }
 
@@ -275,8 +271,35 @@ describe("account-scoped sync coordinator", () => {
     const coordinator = new CloudSyncCoordinator("user-a", local, cloud, scheduler);
 
     await expect(coordinator.sync()).resolves.toEqual({ status: "synced", pendingCount: 0 });
-    expect(cloud.bundleCalls).toBe(1);
-    expect(cloud.commitCalls).toBe(1);
+    expect(cloud.reconcileCalls).toBe(1);
+  });
+
+  it("drains more than one push batch in a single bounded sync run", async () => {
+    const events = Array.from({ length: 125 }, (_, index) =>
+      pushEvent(`event-${String(index).padStart(3, "0")}`, `card-${String(index)}`)
+    );
+    const local = new FakeLocalStore("user-a", events);
+    const cloud = new FakeCloudTransport("user-a");
+    const coordinator = new CloudSyncCoordinator("user-a", local, cloud, scheduler, {
+      pushBatchSize: 100,
+      maxPushBatches: 3
+    });
+
+    await expect(coordinator.sync()).resolves.toEqual({ status: "synced", pendingCount: 0 });
+    expect(cloud.pushBatchSizes).toEqual([100, 25]);
+    expect(local.claimCalls).toBe(2);
+  });
+
+  it("resumes a persisted unresolved conflict even when the event cursor has no new page", async () => {
+    const local = new FakeLocalStore("user-a", []);
+    local.pendingConflictCardIds.add("card-crash");
+    const cloud = new FakeCloudTransport("user-a");
+    const coordinator = new CloudSyncCoordinator("user-a", local, cloud, scheduler);
+
+    await expect(coordinator.sync()).resolves.toEqual({ status: "synced", pendingCount: 0 });
+    expect(cloud.pullCalls).toBe(1);
+    expect(cloud.reconcileCalls).toBe(1);
+    expect(local.pendingConflictCardIds.size).toBe(0);
   });
 
   it("releases claimed outbox rows and disposes adapters when the account changes", async () => {

@@ -99,6 +99,8 @@ export interface PushEventOutcome {
 export interface PullCursor {
   receivedAt: string;
   eventId: string;
+  stateSequence: number;
+  stateEpoch: string;
 }
 
 export interface RemoteReviewEvent {
@@ -189,8 +191,7 @@ export interface CloudSyncTransport {
   readonly userId: string;
   pushEvents(events: CloudPushEvent[]): Promise<PushEventOutcome[]>;
   pullChanges(cursor: PullCursor, limit: number): Promise<CloudPullPage>;
-  getReconciliationBundle(cardId: string): Promise<ReconciliationBundle>;
-  commitReconciliation(state: ReconciledReviewState): Promise<ReconciliationCommitResult>;
+  reconcileCard(cardId: string): Promise<ReconciledReviewState>;
   dispose(): void;
 }
 

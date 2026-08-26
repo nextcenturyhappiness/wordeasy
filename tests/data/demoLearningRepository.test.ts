@@ -22,11 +22,15 @@ async function harness(
   return value;
 }
 
-function ratingInput(cardId: string, presentationActionId: string): RateCardInput {
+function ratingInput(
+  cardId: string,
+  presentationActionId: string,
+  module: RateCardInput["module"] = "research_english"
+): RateCardInput {
   return {
     presentationActionId,
     cardId,
-    module: "research_english",
+    module,
     queue: "new",
     studyDate: "2026-08-26",
     rating: "good",
@@ -72,6 +76,26 @@ describe("DemoLearningRepository", () => {
     expect(queue.every((card) => card.contextSentence.includes(card.targetText))).toBe(true);
     expect(queue.every((card) => card.collocations.length >= 3)).toBe(true);
     expect(new Set(queue.map((card) => card.wordSenseId)).size).toBe(10);
+  });
+
+  it("hydrates ten canonical Medical cards without sharing Research progress", async () => {
+    const { repository } = await harness();
+
+    const snapshot = await repository.getStudyQueue("medical_english", "new");
+    expect(snapshot.cards).toHaveLength(10);
+    expect(snapshot).toMatchObject({
+      module: "medical_english",
+      queue: "new",
+      studyDate: "2026-08-26"
+    });
+    expect(new Set(snapshot.cards.map((card) => card.category)).size).toBe(10);
+    expect(snapshot.cards.every((card) => card.contextSentence.includes(card.targetText))).toBe(
+      true
+    );
+    expect((await repository.getToday("research_english")).new).toEqual({
+      completed: 0,
+      total: 10
+    });
   });
 
   it("commits event, card-bound state, distinct completion, summary, and outbox atomically", async () => {
@@ -125,6 +149,7 @@ describe("DemoLearningRepository", () => {
     await database.sync_outbox.add({
       userId,
       eventId: collidingEventId,
+      cardId: card.cardId,
       module: "research_english",
       status: "pending",
       attemptCount: 0,
@@ -221,7 +246,7 @@ describe("DemoLearningRepository", () => {
     reopenedDatabase.close();
   });
 
-  it("keeps Medical progress isolated and reads Home without review-event history", async () => {
+  it("keeps module progress isolated and reads Home without review-event history", async () => {
     const { database, repository } = await harness();
     const medicalBefore = await repository.getToday("medical_english");
     const card = requireCard((await repository.getStudyQueue("research_english", "new")).cards[0]);
@@ -234,6 +259,21 @@ describe("DemoLearningRepository", () => {
     expect(historyQuery).not.toHaveBeenCalled();
     expect(home?.modules.research_english.new.completed).toBe(1);
     expect(await repository.getToday("medical_english")).toEqual(medicalBefore);
+
+    const medicalCard = requireCard(
+      (await repository.getStudyQueue("medical_english", "new")).cards[0]
+    );
+    await repository.rateCard(
+      ratingInput(medicalCard.cardId, "medical-module-isolation", "medical_english")
+    );
+    expect((await repository.getToday("medical_english")).new).toEqual({
+      completed: 1,
+      total: 10
+    });
+    expect((await repository.getToday("research_english")).new).toEqual({
+      completed: 1,
+      total: 10
+    });
   });
 
   it("partitions cached cards, progress, state, and outbox by userId", async () => {

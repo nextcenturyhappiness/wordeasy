@@ -44,7 +44,7 @@ export interface IndexedDbLearningRepositoryOptions {
   email: string;
   timezone: string;
   deviceId: string;
-  scheduler: ReviewScheduler;
+  scheduler: ReviewScheduler | (() => Promise<ReviewScheduler>);
   syncState: PendingSyncCountPort;
   bootstrap?: (context: IndexedDbBootstrapContext) => Promise<void>;
   now?: () => Date;
@@ -133,12 +133,13 @@ export class IndexedDbLearningRepository implements LearningRepository {
   readonly #email: string;
   readonly #timezone: string;
   readonly #deviceId: string;
-  readonly #scheduler: ReviewScheduler;
+  readonly #schedulerLoader: () => Promise<ReviewScheduler>;
   readonly #syncState: PendingSyncCountPort;
   readonly #bootstrap: ((context: IndexedDbBootstrapContext) => Promise<void>) | undefined;
   readonly #now: () => Date;
   readonly #eventIdFactory: () => string;
   #initialization: Promise<void> | null = null;
+  #scheduler: Promise<ReviewScheduler> | null = null;
 
   constructor(options: IndexedDbLearningRepositoryOptions) {
     this.#database = options.database;
@@ -146,7 +147,10 @@ export class IndexedDbLearningRepository implements LearningRepository {
     this.#email = options.email;
     this.#timezone = options.timezone;
     this.#deviceId = options.deviceId;
-    this.#scheduler = options.scheduler;
+    this.#schedulerLoader =
+      typeof options.scheduler === "function"
+        ? options.scheduler
+        : () => Promise.resolve(options.scheduler as ReviewScheduler);
     this.#syncState = options.syncState;
     this.#bootstrap = options.bootstrap;
     this.#now = options.now ?? (() => new Date());
@@ -248,11 +252,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
             .where("[userId+module]")
             .equals([this.#userId, module])
             .count();
-          const pendingSyncCount = await this.#database.sync_outbox
-            .where("[userId+module]")
-            .equals([this.#userId, module])
-            .filter((item) => item.status !== "synced")
-            .count();
+          const pendingSyncCount = await this.#pendingOutboxCount(module);
           await this.#database.daily_summary.put({
             ...summary,
             totalLearned,
@@ -359,6 +359,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
     }
     const profile = await this.#requireProfile();
     const createdAt = this.#now().toISOString();
+    const scheduler = await this.#loadScheduler();
 
     const result = await this.#database.transaction(
       "rw",
@@ -400,7 +401,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
           input.cardId
         ]);
         const baseRevision = priorState?.revision ?? 0;
-        const scheduled = this.#scheduler.rate(
+        const scheduled = scheduler.rate(
           {
             state: priorState?.schedulerState ?? {},
             dueAt: priorState?.dueAt ?? null,
@@ -431,7 +432,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
           baseRevision,
           schedulerBefore: scheduled.stateBefore,
           schedulerAfter: scheduled.stateAfter,
-          schedulerImplementationVersion: this.#scheduler.implementationVersion,
+          schedulerImplementationVersion: scheduler.implementationVersion,
           syncStatus: "pending",
           createdAt
         };
@@ -444,7 +445,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
           dueAt: scheduled.dueAt,
           lastReviewedAt: reviewedAt.toISOString(),
           revision: baseRevision + 1,
-          schedulerImplementationVersion: this.#scheduler.implementationVersion,
+          schedulerImplementationVersion: scheduler.implementationVersion,
           updatedAt: createdAt
         });
 
@@ -506,6 +507,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
         await this.#database.sync_outbox.add({
           userId: this.#userId,
           eventId,
+          cardId: input.cardId,
           module: input.module,
           status: "pending",
           attemptCount: 0,
@@ -531,6 +533,11 @@ export class IndexedDbLearningRepository implements LearningRepository {
     );
     this.#syncState.setPendingCount(await this.#pendingOutboxCount());
     return result;
+  }
+
+  #loadScheduler(): Promise<ReviewScheduler> {
+    this.#scheduler ??= this.#schedulerLoader();
+    return this.#scheduler;
   }
 
   async #requireSummary(module: ModuleSlug, studyDate: string): Promise<DailySummaryRow> {
@@ -574,11 +581,19 @@ export class IndexedDbLearningRepository implements LearningRepository {
     return assignments.find((assignment) => assignment.completedAt === null)?.cardId ?? null;
   }
 
-  async #pendingOutboxCount(): Promise<number> {
+  async #pendingOutboxCount(module?: ModuleSlug): Promise<number> {
     const statuses = ["pending", "syncing", "failed"] as const;
     const counts = await Promise.all(
       statuses.map((status) =>
-        this.#database.sync_outbox.where("[userId+status]").equals([this.#userId, status]).count()
+        module === undefined
+          ? this.#database.sync_outbox
+              .where("[userId+status]")
+              .equals([this.#userId, status])
+              .count()
+          : this.#database.sync_outbox
+              .where("[userId+module+status]")
+              .equals([this.#userId, module, status])
+              .count()
       )
     );
     return counts.reduce((total, count) => total + count, 0);

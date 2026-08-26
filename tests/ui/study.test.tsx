@@ -36,6 +36,41 @@ function savedResult(nextCardId: string | null): RateCardResult {
 }
 
 describe("StudyPage", () => {
+  it("shows the offline uncached queue prompt without presenting replacement cards", async () => {
+    const getStudyQueue = vi.fn<LearningRepository["getStudyQueue"]>(() =>
+      Promise.reject(new Error("No cached queue."))
+    );
+    const rateCard = vi.fn<LearningRepository["rateCard"]>();
+    const repository = createRepository({ getStudyQueue, rateCard });
+
+    renderWithLearningApp(<StudyRoute />, {
+      repository,
+      initialEntries: ["/study/research?queue=new"],
+      syncState: { status: "offline", pendingCount: 0 }
+    });
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "These cards are not cached for offline study."
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Reconnect once to cache the stable assignment. No replacement cards were generated."
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Return to Today" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /reveal answer/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", { name: /how well did you remember/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(researchCard.targetText, { selector: "mark" })
+    ).not.toBeInTheDocument();
+    expect(getStudyQueue).toHaveBeenCalledWith("research_english", "new");
+    expect(rateCard).not.toHaveBeenCalled();
+  });
+
   it("reveals the answer with Space but ignores shortcuts from an input", async () => {
     const repository = createRepository();
     renderWithLearningApp(<StudyRoute />, {

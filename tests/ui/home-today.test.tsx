@@ -48,6 +48,40 @@ function TodayRoute() {
 }
 
 describe("Home and Today", () => {
+  it("shows an honest offline empty state without inventing a Home assignment", async () => {
+    const getCachedHome = vi.fn<LearningRepository["getCachedHome"]>(() => Promise.resolve(null));
+    const getToday = vi.fn<LearningRepository["getToday"]>();
+    const getStudyQueue = vi.fn<LearningRepository["getStudyQueue"]>();
+    const repository = createRepository({
+      getCachedHome,
+      getToday,
+      getStudyQueue
+    });
+
+    renderWithLearningApp(<HomePage />, {
+      repository,
+      initialHome: null,
+      syncState: { status: "offline", pendingCount: 0 }
+    });
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "No learning day is cached on this device."
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Connect once to receive an assignment. No replacement cards were generated."
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Offline");
+    expect(screen.queryByRole("article", { name: "Research English" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("article", { name: "Medical English" })).not.toBeInTheDocument();
+    expect(getCachedHome).toHaveBeenCalledTimes(1);
+    expect(getToday).not.toHaveBeenCalled();
+    expect(getStudyQueue).not.toHaveBeenCalled();
+  });
+
   it("shows the passed local Home snapshot with two isolated module summaries", () => {
     const getCachedHome = vi.fn<LearningRepository["getCachedHome"]>(() =>
       Promise.resolve(buildHomeSnapshot())
@@ -175,5 +209,33 @@ describe("Home and Today", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Today" })).toBeInTheDocument();
     });
+  });
+
+  it("shows the offline uncached Today prompt without generating replacement queues", async () => {
+    const getToday = vi.fn<LearningRepository["getToday"]>(() =>
+      Promise.reject(new Error("No cached assignment."))
+    );
+    const getStudyQueue = vi.fn<LearningRepository["getStudyQueue"]>();
+    const repository = createRepository({ getToday, getStudyQueue });
+
+    renderWithLearningApp(<TodayRoute />, {
+      repository,
+      initialEntries: ["/today/research"],
+      syncState: { status: "offline", pendingCount: 0 }
+    });
+
+    expect(
+      await screen.findByRole("heading", { name: "Today is not cached on this device." })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Reconnect once to download the stable assignment. No replacement cards were generated."
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Offline");
+    expect(screen.queryByRole("link", { name: /continue new/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /continue review/i })).not.toBeInTheDocument();
+    expect(getToday).toHaveBeenCalledWith("research_english");
+    expect(getStudyQueue).not.toHaveBeenCalled();
   });
 });

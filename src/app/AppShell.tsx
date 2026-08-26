@@ -1,7 +1,8 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { Link, Outlet } from "react-router-dom";
 
 import { PwaUpdateNotice } from "../components/PwaUpdateNotice";
+import { markPerformanceAfterPaint } from "../application/performance";
 import { useOptionalAuthSession } from "./AuthSessionContext";
 
 function RouteLoading() {
@@ -16,6 +17,8 @@ export function AppShell({ authenticationEnabled }: { authenticationEnabled: boo
   const auth = useOptionalAuthSession();
   const remoteNotice =
     auth?.remoteSession.status === "unavailable" ? auth.remoteSession.message : null;
+
+  useEffect(() => markPerformanceAfterPaint("app-shell-visible"), []);
 
   return (
     <div className="app-shell">

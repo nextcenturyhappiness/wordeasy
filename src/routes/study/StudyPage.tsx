@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import type { ContextCardView, QueueKind, ReviewRating } from "../../application/contracts";
-import { markPerformanceOnce, measurePerformance } from "../../application/performance";
+import { markPerformanceAfterPaint, measurePerformance } from "../../application/performance";
 import { useLearningApp } from "../../app/LearningAppContext";
 import { getModuleName, getModuleRoute, parseModuleRoute } from "../../app/moduleRoutes";
 import { ContextCard } from "../../components/ContextCard";
@@ -95,14 +95,6 @@ export function StudyPage() {
         await ensureInitialized();
         const snapshot = await repository.getStudyQueue(selectedModule, selectedQueue);
         if (active) {
-          if (snapshot.cards.length > 0) {
-            markPerformanceOnce("first-study-card-ready");
-            measurePerformance(
-              "cached-home-to-first-study-card",
-              "cached-home-ready",
-              "first-study-card-ready"
-            );
-          }
           setResource({
             status: "ready",
             routeKey: selectedRouteKey,
@@ -137,6 +129,20 @@ export function StudyPage() {
     resource.status !== "loading" && resource.routeKey === routeKey
       ? resource
       : loadingQueueResource;
+
+  useEffect(() => {
+    if (activeResource.status !== "ready" || activeResource.cards.length === 0) {
+      return;
+    }
+
+    return markPerformanceAfterPaint("first-study-card-ready", () => {
+      measurePerformance(
+        "cached-home-to-first-study-card",
+        "cached-home-ready",
+        "first-study-card-ready"
+      );
+    });
+  }, [activeResource]);
 
   const reveal = useCallback(() => {
     if (phase !== "prompt") {

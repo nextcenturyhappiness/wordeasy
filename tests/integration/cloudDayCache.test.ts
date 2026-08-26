@@ -10,8 +10,7 @@ import type {
   CloudPullPage,
   CloudReviewAssignmentSet,
   PushEventOutcome,
-  ReconciliationBundle,
-  ReconciliationCommitResult
+  ReconciledReviewState
 } from "../../src/data/cloud/types";
 import { LearningDatabase, openLearningDatabase } from "../../src/db/learningDatabase";
 
@@ -119,11 +118,7 @@ class FakeCloudLearningRepository implements CloudLearningRepository {
     throw new Error("Not used by the day cache test.");
   }
 
-  getReconciliationBundle(): Promise<ReconciliationBundle> {
-    throw new Error("Not used by the day cache test.");
-  }
-
-  commitReconciliation(): Promise<ReconciliationCommitResult> {
+  reconcileCard(): Promise<ReconciledReviewState> {
     throw new Error("Not used by the day cache test.");
   }
 

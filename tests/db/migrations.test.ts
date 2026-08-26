@@ -1,14 +1,20 @@
 import { describe, expect, it } from "vitest";
 
 import assignmentSql from "../../supabase/migrations/20260826000200_assignment_rpcs.sql?raw";
+import hardeningSql from "../../supabase/migrations/20260826000600_sync_hardening.sql?raw";
 import preferencesSql from "../../supabase/migrations/20260826000400_account_preferences_rpcs.sql?raw";
 import schemaSql from "../../supabase/migrations/20260826000100_learning_schema.sql?raw";
 import seedSql from "../../supabase/migrations/20260826000500_seed_content.sql?raw";
 import syncSql from "../../supabase/migrations/20260826000300_review_sync_rpcs.sql?raw";
+import edgeFsrs from "../../supabase/functions/_shared/fsrs.ts?raw";
+import edgeHandler from "../../supabase/functions/review-sync/index.ts?raw";
 
 const SCHEMA = schemaSql.toLowerCase();
 const ASSIGNMENTS = assignmentSql.toLowerCase();
+const HARDENING = hardeningSql.toLowerCase();
 const SYNC = syncSql.toLowerCase();
+const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}`;
+const EFFECTIVE_SYNC = `${SYNC}\n${HARDENING}`;
 const PREFERENCES = preferencesSql.toLowerCase();
 const SEED = seedSql.toLowerCase();
 
@@ -35,7 +41,9 @@ const PRIVATE_TABLES = [
 ];
 
 function functionBody(sql: string, name: string): string {
-  const start = sql.indexOf(`create function public.${name}`);
+  const plainStart = sql.lastIndexOf(`create function public.${name}`);
+  const replacementStart = sql.lastIndexOf(`create or replace function public.${name}`);
+  const start = Math.max(plainStart, replacementStart);
   if (start < 0) {
     throw new Error(`Missing SQL function ${name}.`);
   }
@@ -110,7 +118,7 @@ describe("Supabase migration contracts", () => {
   });
 
   it("freezes even an empty Review queue at the next profile-local midnight", () => {
-    const body = functionBody(ASSIGNMENTS, "ensure_daily_review_assignment");
+    const body = functionBody(EFFECTIVE_ASSIGNMENTS, "ensure_daily_review_assignment");
     expect(body).toContain("pg_catalog.pg_advisory_xact_lock");
     expect(body).toContain("p_requested_study_date + 1");
     expect(body).toContain("at time zone v_timezone");
@@ -118,17 +126,20 @@ describe("Supabase migration contracts", () => {
     expect(body.indexOf("insert into public.daily_review_assignment_sets")).toBeLessThan(
       body.indexOf("insert into public.daily_review_assignments")
     );
+    expect(body).toContain("get diagnostics v_count = row_count");
+    expect(body).toContain("set assigned_count = v_count");
+    expect(body).not.toContain("select count(*)::integer");
+    expect(body).toContain("application.status = 'pending_reconciliation'");
+    expect(body).toContain("trusted review-state replay required before assignment freeze");
   });
 
   it("hardens every client RPC with auth binding and an empty search path", () => {
     const functions: Array<[string, string]> = [
-      [ASSIGNMENTS, "ensure_daily_assignment"],
-      [ASSIGNMENTS, "ensure_daily_review_assignment"],
+      [EFFECTIVE_ASSIGNMENTS, "ensure_daily_assignment"],
+      [EFFECTIVE_ASSIGNMENTS, "ensure_daily_review_assignment"],
       [ASSIGNMENTS, "get_daily_learning_snapshot"],
-      [SYNC, "ingest_review_events"],
-      [SYNC, "pull_learning_changes"],
-      [SYNC, "get_reconciliation_bundle"],
-      [SYNC, "commit_reconciled_review_state"]
+      [EFFECTIVE_SYNC, "ingest_review_events"],
+      [EFFECTIVE_SYNC, "pull_learning_changes"]
     ];
     for (const [sql, name] of functions) {
       const body = functionBody(sql, name);
@@ -136,24 +147,27 @@ describe("Supabase migration contracts", () => {
       expect(body).toContain("set search_path = ''");
       expect(body).toContain("auth.uid()");
     }
-    expect(`${ASSIGNMENTS}\n${SYNC}`).not.toContain("service_role");
+    expect(HARDENING).toContain("to service_role");
   });
 
   it("ingests immutable events idempotently and separates application state", () => {
-    const body = functionBody(SYNC, "ingest_review_events");
+    const body = functionBody(EFFECTIVE_SYNC, "ingest_review_events");
     expect(body).toContain("event_fingerprint");
     expect(body).toContain("review-event:");
     expect(body).toContain("event_id_collision");
-    expect(body).toContain("status', 'duplicate'");
+    expect(body).toContain("else 'duplicate'");
+    expect(body).toContain("when v_application_status = 'rejected' then 'rejected'");
     expect(body).toContain("insert into public.review_event_applications");
-    expect(body).toContain("base_revision_mismatch");
     expect(body).toContain("pending_reconciliation");
+    expect(body).toContain("trusted_replay_required");
     expect(body).not.toMatch(/update public\.review_events/);
+    expect(body).not.toContain("insert into public.review_states");
+    expect(body).not.toContain("update public.review_states");
   });
 
   it("uses stable per-card ordering and event-set CAS for reconciliation", () => {
-    const bundle = functionBody(SYNC, "get_reconciliation_bundle");
-    const commit = functionBody(SYNC, "commit_reconciled_review_state");
+    const bundle = functionBody(HARDENING, "get_reconciliation_bundle_trusted");
+    const commit = functionBody(HARDENING, "commit_reconciled_review_state_trusted");
     const order = "event.ordering_at, event.device_id, event.device_sequence, event.event_id";
     expect(bundle).toContain(order);
     expect(bundle).toContain("event_set_hash");
@@ -162,10 +176,40 @@ describe("Supabase migration contracts", () => {
     expect(commit).toContain("v_actual_hash is distinct from p_event_set_hash");
     expect(commit).toContain("status', 'stale'");
     expect(commit).toContain("status = 'reconciled'");
+    for (const body of [bundle, commit]) {
+      expect(body).toContain(
+        "application.status in ('applied', 'pending_reconciliation', 'reconciled')"
+      );
+      expect(body).not.toContain("application.status <> 'rejected'");
+    }
+  });
+
+  it("quarantines invalid legacy events before rebuilding trusted materializations", () => {
+    const pull = functionBody(EFFECTIVE_SYNC, "pull_learning_changes");
+    expect(HARDENING).toContain("application.status as previous_status");
+    expect(HARDENING).toContain("classified_event.previous_status <> 'rejected'");
+    expect(HARDENING).toContain("legacy_queue_membership_invalid");
+    expect(HARDENING).toContain("assignment_set.created_at <= event.received_at");
+    expect(HARDENING).toContain("delete from public.review_states;");
+    expect(HARDENING).toContain("delete from public.learned_word_senses;");
+    expect(HARDENING).toContain("delete from public.study_days;");
+    expect(HARDENING).toContain("create sequence public.review_state_change_sequence");
+    expect(HARDENING).toContain("review_states_user_change_idx");
+    expect(HARDENING).toContain("change_sequence = excluded.change_sequence");
+    expect(pull).toContain("p_after_state_sequence bigint");
+    expect(pull).toContain("p_state_epoch text");
+    expect(pull).toContain("else 0");
+    expect(pull).toContain("state.change_sequence > v_effective_after_state_sequence");
+    expect(pull).toContain("'state_epoch', 'trusted-review-state-v1'");
+    expect(pull).toContain("v_event_has_more or v_state_has_more");
+    expect(pull).toContain(
+      "application.status in ('applied', 'pending_reconciliation', 'reconciled')"
+    );
+    expect(pull).not.toContain("application.status <> 'rejected'");
   });
 
   it("records clock anomalies without mutating their reviewed_at evidence", () => {
-    const body = functionBody(SYNC, "ingest_review_events");
+    const body = functionBody(EFFECTIVE_SYNC, "ingest_review_events");
     expect(body).toContain("v_reviewed_at > v_received_at + interval '1 day'");
     expect(body).toContain("v_reviewed_at < v_received_at - interval '365 days'");
     expect(body).toContain(
@@ -173,6 +217,46 @@ describe("Supabase migration contracts", () => {
     );
     expect(SCHEMA).toContain("reviewed_at timestamptz not null");
     expect(SCHEMA).toContain("ordering_at timestamptz not null");
+  });
+
+  it("shares a user-module lock across assignment, ingest, and trusted commit", () => {
+    const lockPrefix = "'learning-module:' || v_user_id::text || ':' || v_module_id::text";
+    expect(functionBody(EFFECTIVE_ASSIGNMENTS, "ensure_daily_assignment")).toContain(lockPrefix);
+    expect(functionBody(EFFECTIVE_ASSIGNMENTS, "ensure_daily_review_assignment")).toContain(
+      lockPrefix
+    );
+    expect(functionBody(EFFECTIVE_SYNC, "ingest_review_events")).toContain(
+      "'learning-module:' || v_user_id::text || ':' || v_lock_module_id::text"
+    );
+    expect(functionBody(HARDENING, "commit_reconciled_review_state_trusted")).toContain(
+      "'learning-module:' || p_user_id::text || ':' || v_module_id::text"
+    );
+  });
+
+  it("rejects events outside their exact stable New or Review assignment", () => {
+    const body = functionBody(EFFECTIVE_SYNC, "ingest_review_events");
+    expect(body).toContain("from public.daily_assignments as assignment");
+    expect(body).toContain("from public.daily_review_assignments as assignment");
+    expect(body).toContain("assignment_set.timezone");
+    expect(body).toContain("queue_membership_mismatch");
+  });
+
+  it("revokes browser canonical-state RPCs and grants only trusted worker commits", () => {
+    expect(HARDENING).toMatch(
+      /revoke all on function public\.commit_reconciled_review_state\([\s\S]*?from public, anon, authenticated, service_role;/u
+    );
+    expect(HARDENING).not.toMatch(
+      /grant execute on function public\.commit_reconciled_review_state\([\s\S]*?to authenticated;/u
+    );
+    expect(HARDENING).toContain(
+      "grant execute on function public.commit_reconciled_review_state_trusted("
+    );
+    expect(HARDENING).toContain("to service_role;");
+    expect(edgeHandler).toContain("service.auth.getUser(token)");
+    expect(edgeHandler).toContain("commit_reconciled_review_state_trusted");
+    expect(edgeHandler).not.toContain("p_scheduler_state: payload");
+    expect(edgeFsrs).toContain('from "npm:ts-fsrs@5.4.1"');
+    expect(edgeFsrs).toContain('"ts-fsrs@5.4.1/default-v1"');
   });
 
   it("creates account preferences only for auth.uid and returns scope evidence", () => {

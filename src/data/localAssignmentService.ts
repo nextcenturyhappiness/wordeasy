@@ -1,5 +1,10 @@
 import type { ContentShortage } from "../application/contracts";
-import { selectResearchAssignment } from "../domain/assignment";
+import {
+  selectMedicalAssignment,
+  selectResearchAssignment,
+  type AssignmentCandidate,
+  type ResearchSelectionResult
+} from "../domain/assignment";
 import type { DomainModuleSlug } from "../domain/learning";
 import type { LearningDatabase } from "../db/learningDatabase";
 import type {
@@ -40,6 +45,23 @@ export class LocalAssignmentService {
   ) {}
 
   async ensureResearchNew(studyDate: string, createdAt: string): Promise<EnsureAssignmentResult> {
+    return this.ensureNew("research_english", studyDate, createdAt, selectResearchAssignment);
+  }
+
+  async ensureMedicalNew(studyDate: string, createdAt: string): Promise<EnsureAssignmentResult> {
+    return this.ensureNew("medical_english", studyDate, createdAt, selectMedicalAssignment);
+  }
+
+  private async ensureNew(
+    module: DomainModuleSlug,
+    studyDate: string,
+    createdAt: string,
+    select: (
+      candidates: AssignmentCandidate[],
+      userId: string,
+      studyDate: string
+    ) => ResearchSelectionResult
+  ): Promise<EnsureAssignmentResult> {
     return this.database.transaction(
       "rw",
       this.database.cached_cards,
@@ -49,7 +71,7 @@ export class LocalAssignmentService {
       async () => {
         const setKey: [string, DomainModuleSlug, string, "new"] = [
           this.userId,
-          "research_english",
+          module,
           studyDate,
           "new"
         ];
@@ -60,43 +82,39 @@ export class LocalAssignmentService {
           }
           const assignments = await this.database.cached_daily_assignments
             .where("[userId+module+studyDate]")
-            .equals([this.userId, "research_english", studyDate])
+            .equals([this.userId, module, studyDate])
             .sortBy("position");
           return { status: "ready", assignments };
         }
 
         const allCards = await this.database.cached_cards
           .where("[userId+module]")
-          .equals([this.userId, "research_english"])
+          .equals([this.userId, module])
           .toArray();
         const previouslyAssigned = new Set(
           (
             await this.database.cached_daily_assignments
               .where("[userId+module]")
-              .equals([this.userId, "research_english"])
+              .equals([this.userId, module])
               .toArray()
           ).map((assignment) => assignment.cardId)
         );
-        const selection = selectResearchAssignment(
+        const selection = select(
           allCards
             .filter((card) => !previouslyAssigned.has(card.cardId))
             .map((card) => ({ cardId: card.cardId, category: card.category })),
           this.userId,
           studyDate
         );
-        const summaryKey: [string, DomainModuleSlug, string] = [
-          this.userId,
-          "research_english",
-          studyDate
-        ];
+        const summaryKey: [string, DomainModuleSlug, string] = [this.userId, module, studyDate];
         const summary =
           (await this.database.daily_summary.get(summaryKey)) ??
-          emptySummary(this.userId, "research_english", studyDate, createdAt);
+          emptySummary(this.userId, module, studyDate, createdAt);
 
         if (selection.status === "shortage") {
           const frozenSet: CachedAssignmentSetRow = {
             userId: this.userId,
-            module: "research_english",
+            module,
             studyDate,
             queue: "new",
             status: "shortage",
@@ -116,7 +134,7 @@ export class LocalAssignmentService {
           }
           return {
             userId: this.userId,
-            module: "research_english" as const,
+            module,
             studyDate,
             cardId: card.cardId,
             wordSenseId: card.wordSenseId,
@@ -129,7 +147,7 @@ export class LocalAssignmentService {
         await this.database.cached_daily_assignments.bulkAdd(assignments);
         await this.database.cached_assignment_sets.add({
           userId: this.userId,
-          module: "research_english",
+          module,
           studyDate,
           queue: "new",
           status: "ready",

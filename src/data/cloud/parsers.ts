@@ -9,6 +9,7 @@ import type {
   CloudReviewAssignmentSet,
   PullCursor,
   PushEventOutcome,
+  ReconciledReviewState,
   ReconciliationBundle,
   ReconciliationCommitResult,
   ReconciliationEvent,
@@ -328,7 +329,9 @@ function pullCursor(value: unknown, path: string): PullCursor {
   const item = record(value, path);
   return {
     receivedAt: isoString(item.received_at, `${path}.received_at`),
-    eventId: string(item.event_id, `${path}.event_id`)
+    eventId: string(item.event_id, `${path}.event_id`),
+    stateSequence: integer(item.state_sequence, `${path}.state_sequence`),
+    stateEpoch: string(item.state_epoch, `${path}.state_epoch`)
   };
 }
 
@@ -405,4 +408,25 @@ export function parseReconciliationCommit(value: unknown): ReconciliationCommitR
     };
   }
   throw new CloudPayloadError("reconciliation_commit.status", "committed or stale");
+}
+
+export function parseTrustedReconciledState(value: unknown): ReconciledReviewState {
+  const item = record(value, "trusted_reconciliation");
+  if (item.status !== "committed") {
+    throw new CloudPayloadError("trusted_reconciliation.status", "committed");
+  }
+  return {
+    cardId: string(item.card_id, "trusted_reconciliation.card_id"),
+    module: moduleSlug(item.module, "trusted_reconciliation.module"),
+    schedulerState: schedulerState(item.scheduler_state, "trusted_reconciliation.scheduler_state"),
+    dueAt: isoString(item.due_at, "trusted_reconciliation.due_at"),
+    lastReviewedAt: isoString(item.last_reviewed_at, "trusted_reconciliation.last_reviewed_at"),
+    revision: integer(item.revision, "trusted_reconciliation.revision"),
+    schedulerImplementationVersion: string(
+      item.scheduler_implementation_version,
+      "trusted_reconciliation.scheduler_implementation_version"
+    ),
+    expectedRevision: integer(item.expected_revision, "trusted_reconciliation.expected_revision"),
+    eventSetHash: string(item.event_set_hash, "trusted_reconciliation.event_set_hash")
+  };
 }

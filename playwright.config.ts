@@ -6,7 +6,12 @@ const baseURL = "http://127.0.0.1:4173";
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testIgnore: "**/pwaOffline.spec.ts",
+  testIgnore: [
+    "**/pwaOffline.spec.ts",
+    "**/pwaOfflineLearning.spec.ts",
+    "**/cloudStartupPerformance.spec.ts",
+    "**/performance.spec.ts"
+  ],
   fullyParallel: false,
   workers: 1,
   retries: 0,

@@ -4,7 +4,6 @@ import { ArticleEnglishApp } from "./app/ArticleEnglishApp";
 import { loadLocalAppState } from "./app/loadLocalAppState";
 import { BootstrapShell, ConfigurationFailure } from "./app/StartupScreens";
 import type { SessionView } from "./application/contracts";
-import { markPerformanceOnce, measurePerformance } from "./application/performance";
 import {
   createCloudRuntimeManager,
   createLearningRuntime,
@@ -24,7 +23,6 @@ if (container === null) {
 
 const root = createRoot(container);
 root.render(<BootstrapShell />);
-markPerformanceOnce("app-shell-visible");
 
 let activeRuntime: LearningRuntime | null = null;
 let cloudManager: CloudRuntimeManager | null = null;
@@ -59,11 +57,6 @@ async function renderRuntime(
   if (generation !== runtimeGeneration) {
     await runtime.dispose();
     return;
-  }
-
-  if (localState.initialHome !== null) {
-    markPerformanceOnce("cached-home-ready");
-    measurePerformance("app-shell-to-cached-home", "app-shell-visible", "cached-home-ready");
   }
 
   const previousRuntime = activeRuntime;

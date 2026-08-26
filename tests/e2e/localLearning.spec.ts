@@ -30,7 +30,27 @@ test("persists a Context Card rating locally across reload", async ({ page }) =>
   await page.goto("/");
   await expect(page.getByText("1 change pending")).toBeVisible();
   await expect(page.getByText("1 / 10")).toBeVisible();
-  await expect(page.getByText("0 / 0")).toBeVisible();
+  await expect(page.getByText("0 / 10")).toBeVisible();
+});
+
+test("persists Medical progress without changing Research progress", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: /Continue Medical English/u }).click();
+  await expect(page.getByText("0 of 10 completed")).toBeVisible();
+  await page.getByRole("link", { name: /Continue New/u }).click();
+
+  await expect(page.getByText(/Card 1 of 10/u)).toBeVisible();
+  await page.getByRole("button", { name: /Reveal answer/u }).click();
+  await page.getByRole("button", { name: /Good/u }).click();
+  await expect(page.getByText(/Card 2 of 10/u)).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByText(/Card 1 of 9/u)).toBeVisible();
+  await page.goto("/");
+  const medicalCard = page.getByRole("article", { name: "Medical English" });
+  const researchCard = page.getByRole("article", { name: "Research English" });
+  await expect(medicalCard.getByText("1 / 10")).toBeVisible();
+  await expect(researchCard.getByText("0 / 10")).toBeVisible();
 });
 
 test("keeps primary study actions usable at 320 CSS pixels", async ({ page }) => {

@@ -3,7 +3,15 @@ import { readFile, readdir } from "node:fs/promises";
 import { extname, isAbsolute, join, relative, resolve } from "node:path";
 
 const root = process.cwd();
-const productionTargets = ["src", "public", "dist", "index.html", "vite.config.ts", ".env.example"];
+const frontendProductionTargets = [
+  "src",
+  "public",
+  "dist",
+  "index.html",
+  "vite.config.ts",
+  ".env.example"
+];
+const additionalSourceTargets = ["supabase/functions"];
 const textExtensions = new Set([
   "",
   ".css",
@@ -53,7 +61,10 @@ async function collect(path) {
 }
 
 const productionFiles = (
-  await Promise.all(productionTargets.map((target) => collect(join(root, target))))
+  await Promise.all(frontendProductionTargets.map((target) => collect(join(root, target))))
+).flat();
+const additionalSourceFiles = (
+  await Promise.all(additionalSourceTargets.map((target) => collect(join(root, target))))
 ).flat();
 const trackedFiles = execFileSync("git", ["ls-files", "-z"], {
   cwd: root,
@@ -67,7 +78,9 @@ const extraFiles = (
     process.argv.slice(2).map((path) => collect(isAbsolute(path) ? path : resolve(root, path)))
   )
 ).flat();
-const files = [...new Set([...trackedFiles, ...productionFiles, ...extraFiles])];
+const files = [
+  ...new Set([...trackedFiles, ...productionFiles, ...additionalSourceFiles, ...extraFiles])
+];
 const productionFileSet = new Set([...productionFiles, ...extraFiles]);
 const findings = [];
 
@@ -95,5 +108,5 @@ if (findings.length > 0) {
 }
 
 console.log(
-  `Secret scan passed across ${trackedFiles.length} Git-tracked and ${productionFiles.length} production-relevant files.`
+  `Secret scan passed across ${trackedFiles.length} Git-tracked, ${productionFiles.length} frontend production, and ${additionalSourceFiles.length} additional server-source files.`
 );

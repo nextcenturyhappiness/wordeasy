@@ -17,7 +17,7 @@ import type {
   SyncOutboxRow
 } from "./records";
 
-export const LEARNING_DATABASE_VERSION = 2;
+export const LEARNING_DATABASE_VERSION = 3;
 
 export const LEARNING_SCHEMA_V1 = {
   cached_cards: "[userId+cardId], userId, [userId+module], [userId+module+category]",
@@ -43,6 +43,12 @@ export const LEARNING_SCHEMA_V2 = {
   study_days: "[userId+studyDate], userId"
 } as const;
 
+export const LEARNING_SCHEMA_V3 = {
+  ...LEARNING_SCHEMA_V2,
+  sync_outbox:
+    "[userId+eventId], userId, [userId+status+nextAttemptAt], [userId+status+nextAttemptAt+createdAt+eventId], [userId+status+updatedAt], [userId+module], [userId+module+status], [userId+cardId+status], [userId+status]"
+} as const;
+
 const VERSION_ONE_SCOPED_TABLES = Object.keys(LEARNING_SCHEMA_V1);
 
 async function validateAccountScopes(transaction: Transaction): Promise<void> {
@@ -60,6 +66,39 @@ async function validateAccountScopes(transaction: Transaction): Promise<void> {
       }
     }
   }
+}
+
+interface LegacySyncOutboxRow extends Omit<SyncOutboxRow, "cardId"> {
+  cardId?: string;
+}
+
+async function backfillOutboxCardIds(transaction: Transaction): Promise<void> {
+  const outboxTable = transaction.table<LegacySyncOutboxRow, [string, string]>("sync_outbox");
+  const eventTable = transaction.table<LocalReviewEventRow, [string, string]>(
+    "local_review_events"
+  );
+  const rows = await outboxTable.toArray();
+  if (rows.length === 0) {
+    return;
+  }
+  const events = await eventTable.bulkGet(rows.map((row) => [row.userId, row.eventId]));
+  const migrated = rows.map((row, index): SyncOutboxRow => {
+    const event = events[index];
+    if (event === undefined || event.userId !== row.userId || event.eventId !== row.eventId) {
+      throw new Error(
+        `Legacy outbox ${row.userId}/${row.eventId} cannot be linked to its immutable event.`
+      );
+    }
+    if (
+      typeof row.cardId === "string" &&
+      row.cardId.trim().length > 0 &&
+      row.cardId !== event.cardId
+    ) {
+      throw new Error(`Legacy outbox ${row.userId}/${row.eventId} has a mismatched card ID.`);
+    }
+    return { ...row, cardId: event.cardId };
+  });
+  await transaction.table<SyncOutboxRow, [string, string]>("sync_outbox").bulkPut(migrated);
 }
 
 export class LearningDatabase extends Dexie {
@@ -83,9 +122,10 @@ export class LearningDatabase extends Dexie {
   constructor(databaseName: string) {
     super(databaseName);
     this.version(1).stores(LEARNING_SCHEMA_V1);
+    this.version(2).stores(LEARNING_SCHEMA_V2).upgrade(validateAccountScopes);
     this.version(LEARNING_DATABASE_VERSION)
-      .stores(LEARNING_SCHEMA_V2)
-      .upgrade(validateAccountScopes);
+      .stores(LEARNING_SCHEMA_V3)
+      .upgrade(backfillOutboxCardIds);
   }
 }
 

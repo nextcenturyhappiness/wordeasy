@@ -106,7 +106,13 @@ const productionTextExtensions = new Set([".html", ".js", ".json", ".webmanifest
 const productionTextFiles = (await collectFiles(distDirectory)).filter((path) =>
   productionTextExtensions.has(extname(path))
 );
-const demoSentinels = ["demo-card-", "wordeasy:demo:", "demo@wordeasy.invalid"];
+const demoSentinels = [
+  "demo-card-",
+  "wordeasy:demo:",
+  "demo@wordeasy.invalid",
+  "wordeasy-seed-v1",
+  "res-general-attenuate-001"
+];
 for (const path of productionTextFiles) {
   const contents = await readFile(path, "utf8");
   const leakedSentinel = demoSentinels.find((sentinel) => contents.includes(sentinel));

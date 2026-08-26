@@ -2,6 +2,8 @@
 
 Updated: 2026-08-26 (Asia/Shanghai)
 
+Current state: M0–M4 implementation and the local release-candidate gate are complete. All accepted v1 findings were remediated, both original reviewers completed v2 with `PASS WITH EXTERNAL GAPS`, and no local BLOCKER/HIGH/MEDIUM remains. Real Supabase/RLS/OTP/two-client execution, device installation/accessibility, and Cloudflare publication remain external verification work rather than local passes.
+
 ## 1. Goal and execution order
 
 Build the complete Article English MVP in the repository-defined order:
@@ -121,7 +123,8 @@ Core RPCs:
 - `ensure_daily_assignment(module, requested_study_date)` validates the profile-timezone date, takes a transaction advisory lock, chooses deterministically, and inserts an all-or-nothing stable set.
 - `ensure_daily_review_assignment(module, requested_study_date)` freezes the cards due before the next profile-local midnight, including an explicit empty set.
 - `ingest_review_events(events)` is idempotent by global event UUID, records application/conflict metadata separately, and performs revision compare-and-set.
-- `commit_reconciled_review_state(...)` uses event-set hash and revision compare-and-set.
+- Browser ingest preserves scheduler snapshots as evidence but never materializes them as trusted canonical state.
+- `review-sync` obtains a server-only reconciliation bundle, replays pinned `ts-fsrs`, and calls a server-only event-set-hash + revision compare-and-set RPC.
 
 ### 3.5 IndexedDB
 
@@ -169,12 +172,12 @@ The UI advances only after this local transaction commits; remote sync is never 
 
 - Use a precisely pinned maintained `ts-fsrs` release behind the project adapter.
 - Persist scheduler implementation/config version in state and event snapshots; upgrades require an explicit migration and do not silently rewrite history.
-- Outbox states: pending, syncing, synced, failed. Partial success acknowledges only successful event IDs; bounded exponential backoff retains failures.
+- Outbox states: pending, syncing, failed, with acknowledged rows removed. Partial success acknowledges only successful event IDs; bounded exponential backoff retains failures.
 - Sync triggers: login, startup, online, focus, manual request, and completed batch.
-- Use Web Locks where available with an IndexedDB lease fallback so only one loop runs per account/device.
-- Flow: push pending → pull assignments/events/states by cursor → merge in one local transaction → advance cursor → rebuild summaries → prefetch assigned cards.
-- Conflicts retain every event. Reconcile only the affected card by stable order `reviewed_at → device_id → device_sequence → event_id`, replay through the same adapter, then CAS-commit the canonical state.
-- `docs/SYNC_PROTOCOL.md` will document cursor, clock anomaly, collision, retry, and reconciliation rules.
+- Use Web Locks where available with an account-scoped in-process fallback; outbox claims also use reclaimable IndexedDB leases.
+- Flow: push pending → pull immutable events by `(received_at,event_id)` and canonical states by `(state_epoch,change_sequence)` → atomically persist both cursors plus pending-conflict work → trusted reconcile → ensure/fetch assignments → final bounded sync → refresh affected summaries.
+- Conflicts retain every event. Reconcile only the affected card by stable order `ordering_at → device_id → device_sequence → event_id`, replay inside the trusted Edge Function with the same pinned FSRS implementation, then CAS-commit canonical state.
+- `docs/SYNC_PROTOCOL.md` documents cursor, crash recovery, clock anomaly, membership, retry, collision, and trusted reconciliation rules.
 
 ### 3.8 Authentication and demo mode
 
@@ -236,6 +239,8 @@ Writing agents use separate Git worktrees after the M0 checkpoint. Root integrat
 - Tests: TEST-001 and TEST-034–040 plus the entire previous suite and production build.
 - Exit: no unresolved BLOCKER or unexplained HIGH; every P0 has implementation plus automated/manual evidence; Reviewer v2 complete; deployment attempted only after the release gate.
 
+Local exit result: achieved on 2026-08-26. Production deployment was not attempted because no Supabase/Cloudflare account credentials or live project identifiers were available in this workspace; the exact external steps and gaps are recorded in `README.md` and `RELEASE_VERIFICATION.md`.
+
 ### Required command families
 
 Final package scripts will expose:
@@ -277,4 +282,5 @@ Every milestone records exact commands, outcomes, and environment-dependent omis
 - Android Chrome and macOS Chrome installation require real-device/manual checks.
 - Cloudflare Pages publication requires account/project access and final environment variables.
 - Absolute timing budgets vary by hardware; bundle budgets and non-blocking architecture remain mandatory, while timing reports must include the actual test environment and medians.
-- Client-side FSRS state is accepted for this personal-data MVP; server RPCs enforce identity, event idempotency, revision CAS, and deterministic conflict bookkeeping rather than independently reimplementing FSRS math.
+- Canonical FSRS conflict state requires trusted Edge Function replay. Browser state remains local-first tentative state and immutable audit evidence only; the service-role credential is never exposed to the frontend.
+- Migration `20260826000600_sync_hardening.sql`, `review-sync`, and the matching frontend require a coordinated deployment. Legacy clients fail closed on the changed cursor/revoked commit contract and preserve their local outbox until upgraded.

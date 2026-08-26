@@ -8,12 +8,16 @@ import type { DomainModuleSlug } from "../domain/learning";
 import type { LocalReviewEvent, LocalReviewState } from "../domain/review";
 import { calculateStreak } from "../domain/time";
 import type { LearningDatabase } from "../db/learningDatabase";
-import type { DailySummaryRow, SyncOutboxRow } from "../db/records";
+import type { DailySummaryRow } from "../db/records";
 import { INITIAL_PULL_CURSOR, type AccountLocalSyncStore } from "./contracts";
 
 const PULL_CURSOR_KEY = "cloud-pull-cursor-v1";
+const PENDING_CONFLICTS_KEY = "pending-reconciliation-cards-v1";
 const SYNCING_LEASE_MS = 120_000;
 const MAX_RETRY_DELAY_MS = 300_000;
+const SYNCED_PRUNE_BATCH_SIZE = 50;
+const STRING_INDEX_MAX = "\uffff";
+const ACTIVE_OUTBOX_STATUSES = ["pending", "syncing", "failed"] as const;
 
 function assertDate(value: string, label: string): void {
   if (Number.isNaN(Date.parse(value))) {
@@ -35,8 +39,8 @@ function retryAt(now: Date, attemptCount: number): string {
   return new Date(now.getTime() + delay).toISOString();
 }
 
-function isActiveOutbox(row: SyncOutboxRow): boolean {
-  return row.status === "pending" || row.status === "syncing" || row.status === "failed";
+function eligibleAt(row: { status: string; nextAttemptAt: string; updatedAt: string }): string {
+  return row.status === "syncing" ? row.updatedAt : row.nextAttemptAt;
 }
 
 function cursorFromUnknown(value: unknown): typeof INITIAL_PULL_CURSOR {
@@ -49,7 +53,26 @@ function cursorFromUnknown(value: unknown): typeof INITIAL_PULL_CURSOR {
     return INITIAL_PULL_CURSOR;
   }
   assertDate(receivedAt, "Pull cursor");
-  return { receivedAt, eventId };
+  const stateSequence = "stateSequence" in value ? value.stateSequence : undefined;
+  const stateEpoch = "stateEpoch" in value ? value.stateEpoch : undefined;
+  return {
+    receivedAt,
+    eventId,
+    stateSequence:
+      typeof stateSequence === "number" && Number.isSafeInteger(stateSequence) && stateSequence >= 0
+        ? stateSequence
+        : 0,
+    stateEpoch: typeof stateEpoch === "string" ? stateEpoch : ""
+  };
+}
+
+function conflictCardIdsFromUnknown(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return [...new Set(value.filter((cardId): cardId is string => typeof cardId === "string"))]
+    .filter((cardId) => cardId.trim().length > 0)
+    .sort();
 }
 
 export class DexieAccountSyncStore implements AccountLocalSyncStore {
@@ -75,28 +98,54 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
       "rw",
       this.database.sync_outbox,
       this.database.local_review_events,
-      this.database.daily_summary,
       async () => {
-        const eligible = (
-          await this.database.sync_outbox.where("userId").equals(this.userId).toArray()
-        )
-          .filter(
-            (row) =>
-              ((row.status === "pending" || row.status === "failed") &&
-                row.nextAttemptAt <= nowIso) ||
-              (row.status === "syncing" && row.updatedAt <= expiredLease)
-          )
+        const acknowledgedKeys = await this.database.sync_outbox
+          .where("[userId+status]")
+          .equals([this.userId, "synced"])
+          .limit(SYNCED_PRUNE_BATCH_SIZE)
+          .primaryKeys();
+        await this.database.sync_outbox.bulkDelete(acknowledgedKeys);
+
+        const [pending, failed, syncing] = await Promise.all([
+          this.database.sync_outbox
+            .where("[userId+status+nextAttemptAt+createdAt+eventId]")
+            .between(
+              [this.userId, "pending", "", "", ""],
+              [this.userId, "pending", nowIso, STRING_INDEX_MAX, STRING_INDEX_MAX]
+            )
+            .limit(limit)
+            .toArray(),
+          this.database.sync_outbox
+            .where("[userId+status+nextAttemptAt+createdAt+eventId]")
+            .between(
+              [this.userId, "failed", "", "", ""],
+              [this.userId, "failed", nowIso, STRING_INDEX_MAX, STRING_INDEX_MAX]
+            )
+            .limit(limit)
+            .toArray(),
+          this.database.sync_outbox
+            .where("[userId+status+updatedAt]")
+            .between(
+              [this.userId, "syncing", ""],
+              [this.userId, "syncing", expiredLease],
+              true,
+              true
+            )
+            .limit(limit)
+            .toArray()
+        ]);
+        const eligible = [...pending, ...failed, ...syncing]
           .sort(
             (left, right) =>
-              left.nextAttemptAt.localeCompare(right.nextAttemptAt) ||
+              eligibleAt(left).localeCompare(eligibleAt(right)) ||
               left.createdAt.localeCompare(right.createdAt) ||
               left.eventId.localeCompare(right.eventId)
           )
           .slice(0, limit);
 
-        for (const row of eligible) {
-          await this.database.sync_outbox.put({ ...row, status: "syncing", updatedAt: nowIso });
-        }
+        await this.database.sync_outbox.bulkPut(
+          eligible.map((row) => ({ ...row, status: "syncing" as const, updatedAt: nowIso }))
+        );
 
         const events = await this.database.local_review_events.bulkGet(
           eligible.map((row): [string, string] => [this.userId, row.eventId])
@@ -112,7 +161,6 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
           }
           return { ...event, dueAt: eventDueAt(event) };
         });
-        await this.#refreshPendingCounts();
         return result;
       }
     );
@@ -128,8 +176,10 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
     await this.database.transaction(
       "rw",
       this.database.sync_outbox,
+      this.database.local_review_events,
       this.database.daily_summary,
       async () => {
+        const changedModules = new Set<DomainModuleSlug>();
         for (const outcome of outcomes) {
           const key: [string, string] = [this.userId, outcome.eventId];
           const row = await this.database.sync_outbox.get(key);
@@ -146,16 +196,20 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
               lastError: outcome.reason ?? "cloud rejected event",
               updatedAt: nowIso
             });
+            const event = await this.database.local_review_events.get(key);
+            if (event !== undefined) {
+              await this.database.local_review_events.put({ ...event, syncStatus: "failed" });
+            }
           } else {
-            await this.database.sync_outbox.put({
-              ...row,
-              status: "synced",
-              lastError: null,
-              updatedAt: nowIso
-            });
+            await this.database.sync_outbox.delete(key);
+            const event = await this.database.local_review_events.get(key);
+            if (event !== undefined) {
+              await this.database.local_review_events.put({ ...event, syncStatus: "synced" });
+            }
+            changedModules.add(row.module);
           }
         }
-        await this.#refreshPendingCounts();
+        await this.#refreshPendingCounts(changedModules);
       }
     );
   }
@@ -184,7 +238,6 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
             updatedAt: nowIso
           });
         }
-        await this.#refreshPendingCounts();
       }
     );
   }
@@ -209,7 +262,6 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
             });
           }
         }
-        await this.#refreshPendingCounts();
       }
     );
   }
@@ -218,6 +270,12 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
     this.#assertActive();
     const row = await this.database.sync_metadata.get([this.userId, PULL_CURSOR_KEY]);
     return row === undefined ? INITIAL_PULL_CURSOR : cursorFromUnknown(row.value);
+  }
+
+  async getPendingConflictCardIds(): Promise<string[]> {
+    this.#assertActive();
+    const row = await this.database.sync_metadata.get([this.userId, PENDING_CONFLICTS_KEY]);
+    return row === undefined ? [] : conflictCardIdsFromUnknown(row.value);
   }
 
   async mergePullPage(page: CloudPullPage): Promise<void> {
@@ -237,7 +295,32 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
       ],
       async () => {
         const affectedSummaries = new Set<string>();
-
+        const currentCursorRow = await this.database.sync_metadata.get([
+          this.userId,
+          PULL_CURSOR_KEY
+        ]);
+        const currentCursor = cursorFromUnknown(currentCursorRow?.value);
+        const epochChanged = currentCursor.stateEpoch !== page.nextCursor.stateEpoch;
+        const locallyPendingCards = epochChanged
+          ? await this.#activeOutboxCardIds()
+          : await this.#activeOutboxCardIdsFor(page.states.map((state) => state.cardId));
+        if (epochChanged) {
+          await this.database.local_review_states
+            .where("userId")
+            .equals(this.userId)
+            .filter((state) => !locallyPendingCards.has(state.cardId))
+            .delete();
+        }
+        const pendingConflictRow = await this.database.sync_metadata.get([
+          this.userId,
+          PENDING_CONFLICTS_KEY
+        ]);
+        const pendingConflictCardIds = new Set(
+          conflictCardIdsFromUnknown(pendingConflictRow?.value)
+        );
+        for (const cardId of page.conflictedCardIds) {
+          pendingConflictCardIds.add(cardId);
+        }
         for (const remote of page.events) {
           const key: [string, string] = [this.userId, remote.eventId];
           const existing = await this.database.local_review_events.get(key);
@@ -330,18 +413,9 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
           affectedSummaries.add(`${remote.module}|${remote.studyDate}`);
         }
 
-        const activeOutbox = (
-          await this.database.sync_outbox.where("userId").equals(this.userId).toArray()
-        ).filter(isActiveOutbox);
-        const activeEvents = await this.database.local_review_events.bulkGet(
-          activeOutbox.map((row): [string, string] => [this.userId, row.eventId])
-        );
-        const locallyPendingCards = new Set(
-          activeEvents.flatMap((event) => (event === undefined ? [] : [event.cardId]))
-        );
-
         for (const state of page.states) {
           if (locallyPendingCards.has(state.cardId)) {
+            pendingConflictCardIds.add(state.cardId);
             continue;
           }
           const localState: LocalReviewState = {
@@ -364,6 +438,12 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
           value: page.nextCursor,
           updatedAt: new Date().toISOString()
         });
+        await this.database.sync_metadata.put({
+          userId: this.userId,
+          key: PENDING_CONFLICTS_KEY,
+          value: [...pendingConflictCardIds].sort(),
+          updatedAt: new Date().toISOString()
+        });
 
         for (const summaryKey of affectedSummaries) {
           const separator = summaryKey.indexOf("|");
@@ -371,7 +451,6 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
           const studyDate = summaryKey.slice(separator + 1);
           await this.#rebuildSummary(module, studyDate);
         }
-        await this.#refreshPendingCounts();
       }
     );
   }
@@ -383,14 +462,9 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
       this.database.local_review_states,
       this.database.local_review_events,
       this.database.sync_outbox,
+      this.database.sync_metadata,
       async () => {
-        const activeOutbox = (
-          await this.database.sync_outbox.where("userId").equals(this.userId).toArray()
-        ).filter(isActiveOutbox);
-        const activeEvents = await this.database.local_review_events.bulkGet(
-          activeOutbox.map((row): [string, string] => [this.userId, row.eventId])
-        );
-        if (activeEvents.some((event) => event?.cardId === state.cardId)) {
+        if (await this.#hasActiveOutboxForCard(state.cardId)) {
           return false;
         }
         await this.database.local_review_states.put({
@@ -404,6 +478,19 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
           schedulerImplementationVersion: state.schedulerImplementationVersion,
           updatedAt: now.toISOString()
         });
+        const pendingConflictRow = await this.database.sync_metadata.get([
+          this.userId,
+          PENDING_CONFLICTS_KEY
+        ]);
+        const pendingConflictCardIds = conflictCardIdsFromUnknown(pendingConflictRow?.value).filter(
+          (cardId) => cardId !== state.cardId
+        );
+        await this.database.sync_metadata.put({
+          userId: this.userId,
+          key: PENDING_CONFLICTS_KEY,
+          value: pendingConflictCardIds,
+          updatedAt: now.toISOString()
+        });
         return true;
       }
     );
@@ -411,9 +498,7 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
 
   async getPendingCount(): Promise<number> {
     this.#assertActive();
-    return (await this.database.sync_outbox.where("userId").equals(this.userId).toArray()).filter(
-      isActiveOutbox
-    ).length;
+    return this.#activeOutboxCount();
   }
 
   dispose(): void {
@@ -439,9 +524,7 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
           .count(),
         this.database.study_days.where("userId").equals(this.userId).toArray()
       ]);
-    const pendingSyncCount = (
-      await this.database.sync_outbox.where("userId").equals(this.userId).toArray()
-    ).filter(isActiveOutbox).length;
+    const pendingSyncCount = await this.#activeOutboxCount(module);
     const updatedAt = new Date().toISOString();
     const summary: DailySummaryRow = {
       userId: this.userId,
@@ -463,18 +546,73 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
     await this.database.daily_summary.put({ ...summary, updatedAt });
   }
 
-  async #refreshPendingCounts(): Promise<void> {
-    const pendingSyncCount = (
-      await this.database.sync_outbox.where("userId").equals(this.userId).toArray()
-    ).filter(isActiveOutbox).length;
+  async #refreshPendingCounts(modules: ReadonlySet<DomainModuleSlug>): Promise<void> {
+    if (modules.size === 0) {
+      return;
+    }
     const summaries = await this.database.daily_summary
       .where("userId")
       .equals(this.userId)
       .toArray();
     const updatedAt = new Date().toISOString();
-    await this.database.daily_summary.bulkPut(
-      summaries.map((summary) => ({ ...summary, pendingSyncCount, updatedAt }))
+    for (const module of modules) {
+      const pendingSyncCount = await this.#activeOutboxCount(module);
+      await this.database.daily_summary.bulkPut(
+        summaries
+          .filter((summary) => summary.module === module)
+          .map((summary) => ({ ...summary, pendingSyncCount, updatedAt }))
+      );
+    }
+  }
+
+  async #activeOutboxCardIds(): Promise<Set<string>> {
+    const cardIds = new Set<string>();
+    await Promise.all(
+      ACTIVE_OUTBOX_STATUSES.map((status) =>
+        this.database.sync_outbox
+          .where("[userId+status]")
+          .equals([this.userId, status])
+          .each((row) => cardIds.add(row.cardId))
+      )
     );
+    return cardIds;
+  }
+
+  async #activeOutboxCardIdsFor(cardIds: string[]): Promise<Set<string>> {
+    const active = new Set<string>();
+    for (const cardId of new Set(cardIds)) {
+      if (await this.#hasActiveOutboxForCard(cardId)) {
+        active.add(cardId);
+      }
+    }
+    return active;
+  }
+
+  async #hasActiveOutboxForCard(cardId: string): Promise<boolean> {
+    for (const status of ACTIVE_OUTBOX_STATUSES) {
+      const key = await this.database.sync_outbox
+        .where("[userId+cardId+status]")
+        .equals([this.userId, cardId, status])
+        .firstKey();
+      if (key !== undefined) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async #activeOutboxCount(module?: DomainModuleSlug): Promise<number> {
+    const rows = await Promise.all(
+      ACTIVE_OUTBOX_STATUSES.map((status) =>
+        module === undefined
+          ? this.database.sync_outbox.where("[userId+status]").equals([this.userId, status]).count()
+          : this.database.sync_outbox
+              .where("[userId+module+status]")
+              .equals([this.userId, module, status])
+              .count()
+      )
+    );
+    return rows.reduce((total, count) => total + count, 0);
   }
 
   #assertActive(): void {

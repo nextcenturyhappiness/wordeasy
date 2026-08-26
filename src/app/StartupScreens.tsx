@@ -1,4 +1,12 @@
+import { useEffect } from "react";
+
+import { markPerformanceAfterPaint } from "../application/performance";
+
 export function BootstrapShell() {
+  useEffect(() => {
+    markPerformanceAfterPaint("app-shell-visible");
+  }, []);
+
   return (
     <div className="app-shell" aria-busy="true">
       <header className="app-header">

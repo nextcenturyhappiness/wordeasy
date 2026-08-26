@@ -155,6 +155,46 @@ describe("Supabase cloud repository boundary", () => {
     expect(rpc.calls).toHaveLength(1);
   });
 
+  it("pulls canonical states with an independent monotonic state cursor", async () => {
+    const rpc = rpcWithResponse({
+      events: [],
+      states: [],
+      conflicted_card_ids: [],
+      next_cursor: {
+        received_at: "2026-08-26T08:00:00.000Z",
+        event_id: "10000000-0000-4000-8000-000000000001",
+        state_sequence: 12,
+        state_epoch: "trusted-review-state-v1"
+      },
+      has_more: false
+    });
+    const repository = new SupabaseCloudRepository("user-a", rpc);
+
+    await expect(
+      repository.pullChanges(
+        {
+          receivedAt: "2026-08-26T08:00:00.000Z",
+          eventId: "10000000-0000-4000-8000-000000000001",
+          stateSequence: 11,
+          stateEpoch: "trusted-review-state-v1"
+        },
+        200
+      )
+    ).resolves.toMatchObject({ nextCursor: { stateSequence: 12 } });
+    expect(rpc.calls).toEqual([
+      {
+        functionName: "pull_learning_changes",
+        parameters: {
+          p_after_received_at: "2026-08-26T08:00:00.000Z",
+          p_after_event_id: "10000000-0000-4000-8000-000000000001",
+          p_after_state_sequence: 11,
+          p_state_epoch: "trusted-review-state-v1",
+          p_limit: 200
+        }
+      }
+    ]);
+  });
+
   it("cannot be reused after its account runtime is disposed", async () => {
     const rpc = rpcWithResponse(readyResearchPayload());
     const repository = new SupabaseCloudRepository("user-a", rpc);
@@ -163,5 +203,35 @@ describe("Supabase cloud repository boundary", () => {
     await expect(
       repository.ensureNewAssignment("research_english", "2026-08-26")
     ).rejects.toBeInstanceOf(DisposedCloudRepositoryError);
+  });
+
+  it("routes canonical reconciliation through the trusted Edge boundary", async () => {
+    const response = {
+      status: "committed",
+      card_id: "card-a",
+      module: "research_english",
+      scheduler_state: { trusted: true },
+      due_at: "2026-08-27T08:00:00.000Z",
+      last_reviewed_at: "2026-08-26T08:00:00.000Z",
+      revision: 2,
+      scheduler_implementation_version: "ts-fsrs@5.4.1/default-v1",
+      expected_revision: 1,
+      event_set_hash: "trusted-hash"
+    };
+    const rpc = rpcWithResponse(response);
+    const repository = new SupabaseCloudRepository("user-a", rpc);
+
+    await expect(repository.reconcileCard("card-a")).resolves.toMatchObject({
+      cardId: "card-a",
+      revision: 2,
+      schedulerState: { trusted: true }
+    });
+    expect(rpc.calls).toEqual([
+      {
+        functionName: "edge:review-sync",
+        parameters: { action: "reconcile_card", card_id: "card-a" }
+      }
+    ]);
+    expect(rpc.calls[0]?.parameters).not.toHaveProperty("scheduler_state");
   });
 });

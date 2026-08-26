@@ -72,6 +72,7 @@ export type LocalReviewStateRow = LocalReviewState;
 export interface SyncOutboxRow {
   userId: string;
   eventId: string;
+  cardId: string;
   module: DomainModuleSlug;
   status: LocalSyncStatus;
   attemptCount: number;

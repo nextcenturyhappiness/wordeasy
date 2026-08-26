@@ -1,7 +1,7 @@
 import type { ReviewScheduler } from "../application/contracts";
 import type { LearningDatabase } from "../db/learningDatabase";
 import { DemoContentCatalog } from "./demo/demoContentCatalog";
-import { DEMO_RESEARCH_CARDS } from "./demo/demoCards";
+import { DEMO_CARDS } from "./demo/demoCards";
 import {
   IndexedDbLearningRepository,
   type PendingSyncCountPort
@@ -25,10 +25,11 @@ export class DemoLearningRepository extends IndexedDbLearningRepository {
     super({
       ...options,
       bootstrap: async ({ database, userId, studyDate, initializedAt }) => {
-        const catalog = new DemoContentCatalog(database, userId, DEMO_RESEARCH_CARDS);
+        const catalog = new DemoContentCatalog(database, userId, DEMO_CARDS);
         await catalog.seed(initializedAt);
         const assignments = new LocalAssignmentService(database, userId);
         await assignments.ensureResearchNew(studyDate, initializedAt);
+        await assignments.ensureMedicalNew(studyDate, initializedAt);
         await assignments.ensureEmptyReviewSet("research_english", studyDate, initializedAt);
         await assignments.ensureEmptyReviewSet("medical_english", studyDate, initializedAt);
       }

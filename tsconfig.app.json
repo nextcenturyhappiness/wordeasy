@@ -18,6 +18,9 @@
     "noEmit": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "paths": {
+      "npm:ts-fsrs@5.4.1": ["./node_modules/ts-fsrs/dist/index.d.ts"]
+    },
     "resolveJsonModule": true,
     "isolatedModules": true,
     "moduleDetection": "force",

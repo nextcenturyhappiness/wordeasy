@@ -1,6 +1,9 @@
+import { useEffect } from "react";
+
 import { ModuleSummaryCard } from "../../components/ModuleSummaryCard";
 import { SyncStatus } from "../../components/SyncStatus";
 import { useLearningApp } from "../../app/LearningAppContext";
+import { markPerformanceAfterPaint, measurePerformance } from "../../application/performance";
 
 function greetingFor(timeZone: string): string {
   try {
@@ -29,6 +32,17 @@ function greetingFor(timeZone: string): string {
 
 export function HomePage() {
   const { home, syncState, syncNow } = useLearningApp();
+
+  useEffect(() => {
+    if (home.status !== "ready") {
+      return;
+    }
+
+    return markPerformanceAfterPaint("cached-home-ready", () => {
+      measurePerformance("app-shell-to-cached-home", "app-shell-visible", "cached-home-ready");
+    });
+  }, [home.status]);
+
   const triggerSync = () => {
     void syncNow().catch(() => undefined);
   };

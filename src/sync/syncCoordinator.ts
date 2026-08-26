@@ -1,7 +1,6 @@
 import type { ReviewScheduler, SyncGateway, SyncState } from "../application/contracts";
 import type { CloudSyncTransport } from "../data/cloud/types";
 import type { AccountLocalSyncStore, SyncCoordinatorOptions, SyncRunEvidence } from "./contracts";
-import { reconcileReviewEvents } from "./reconciler";
 import { BrowserAccountSyncRunLock } from "./syncRunLock";
 
 class SyncDisposedError extends Error {
@@ -19,6 +18,7 @@ export class CloudSyncCoordinator implements SyncGateway {
   readonly userId: string;
   readonly #listeners = new Set<(state: SyncState) => void>();
   readonly #pushBatchSize: number;
+  readonly #maxPushBatches: number;
   readonly #pullPageSize: number;
   readonly #maxPullPages: number;
   readonly #now: () => Date;
@@ -39,10 +39,27 @@ export class CloudSyncCoordinator implements SyncGateway {
     if (userId.trim().length === 0 || local.userId !== userId || cloud.userId !== userId) {
       throw new Error("Sync coordinator dependencies must share one explicit account scope.");
     }
+    const pushBatchSize = options.pushBatchSize ?? 100;
+    const maxPushBatches = options.maxPushBatches ?? 20;
+    const pullPageSize = options.pullPageSize ?? 200;
+    const maxPullPages = options.maxPullPages ?? 20;
+    if (!Number.isSafeInteger(pushBatchSize) || pushBatchSize < 1 || pushBatchSize > 200) {
+      throw new Error("Push batch size must be between 1 and 200.");
+    }
+    if (!Number.isSafeInteger(maxPushBatches) || maxPushBatches < 1) {
+      throw new Error("Maximum push batches must be a positive integer.");
+    }
+    if (!Number.isSafeInteger(pullPageSize) || pullPageSize < 1 || pullPageSize > 500) {
+      throw new Error("Pull page size must be between 1 and 500.");
+    }
+    if (!Number.isSafeInteger(maxPullPages) || maxPullPages < 1) {
+      throw new Error("Maximum pull pages must be a positive integer.");
+    }
     this.userId = userId;
-    this.#pushBatchSize = options.pushBatchSize ?? 100;
-    this.#pullPageSize = options.pullPageSize ?? 200;
-    this.#maxPullPages = options.maxPullPages ?? 20;
+    this.#pushBatchSize = pushBatchSize;
+    this.#maxPushBatches = maxPushBatches;
+    this.#pullPageSize = pullPageSize;
+    this.#maxPullPages = maxPullPages;
     this.#now = options.now ?? (() => new Date());
     this.#lock = options.lock ?? new BrowserAccountSyncRunLock();
     this.#onLocalDataChanged = options.onLocalDataChanged ?? (() => undefined);
@@ -112,16 +129,22 @@ export class CloudSyncCoordinator implements SyncGateway {
 
     try {
       this.#assertActive();
+      for (const cardId of await this.local.getPendingConflictCardIds()) {
+        conflictedCardIds.add(cardId);
+      }
       const pendingBefore = await this.local.getPendingCount();
       this.#setState({ status: "syncing", pendingCount: pendingBefore });
 
-      const pushBatch = await this.local.claimPushBatch(this.#now(), this.#pushBatchSize);
-      for (const event of pushBatch) {
-        claimedEventIds.add(event.eventId);
-      }
-      this.#assertActive();
+      for (let batchNumber = 0; batchNumber < this.#maxPushBatches; batchNumber += 1) {
+        const pushBatch = await this.local.claimPushBatch(this.#now(), this.#pushBatchSize);
+        for (const event of pushBatch) {
+          claimedEventIds.add(event.eventId);
+        }
+        this.#assertActive();
+        if (pushBatch.length === 0) {
+          break;
+        }
 
-      if (pushBatch.length > 0) {
         const outcomes = await this.cloud.pushEvents(pushBatch);
         this.#assertActive();
         const pushedIds = new Set(pushBatch.map((event) => event.eventId));
@@ -142,6 +165,9 @@ export class CloudSyncCoordinator implements SyncGateway {
           if (outcome.status === "conflict" && outcome.cardId !== null) {
             conflictedCardIds.add(outcome.cardId);
           }
+        }
+        if (pushBatch.length < this.#pushBatchSize) {
+          break;
         }
       }
 
@@ -199,20 +225,14 @@ export class CloudSyncCoordinator implements SyncGateway {
   }
 
   async #reconcileCard(cardId: string): Promise<void> {
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      this.#assertActive();
-      const bundle = await this.cloud.getReconciliationBundle(cardId);
-      const reconciled = reconcileReviewEvents(bundle, this.scheduler);
-      const commit = await this.cloud.commitReconciliation(reconciled);
-      if (commit.status === "committed") {
-        await this.local.applyReconciledState(
-          { ...reconciled, revision: commit.revision, eventSetHash: commit.eventSetHash },
-          this.#now()
-        );
-        return;
-      }
+    this.#assertActive();
+    const reconciled = await this.cloud.reconcileCard(cardId);
+    if (reconciled.schedulerImplementationVersion !== this.scheduler.implementationVersion) {
+      throw new Error(
+        `Trusted reconciliation used ${reconciled.schedulerImplementationVersion}; expected ${this.scheduler.implementationVersion}.`
+      );
     }
-    throw new Error(`Reconciliation for card ${cardId} remained stale after retry.`);
+    await this.local.applyReconciledState(reconciled, this.#now());
   }
 
   #setState(state: SyncState): SyncState {

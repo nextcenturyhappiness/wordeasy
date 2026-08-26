@@ -4,8 +4,7 @@ import {
   parseNewAssignmentSet,
   parsePullPage,
   parsePushOutcomes,
-  parseReconciliationBundle,
-  parseReconciliationCommit,
+  parseTrustedReconciledState,
   parseReviewAssignmentSet
 } from "./parsers";
 import type { CloudRpcClient } from "./rpcClient";
@@ -18,9 +17,7 @@ import type {
   CloudReviewAssignmentSet,
   PullCursor,
   PushEventOutcome,
-  ReconciledReviewState,
-  ReconciliationBundle,
-  ReconciliationCommitResult
+  ReconciledReviewState
 } from "./types";
 
 export class DisposedCloudRepositoryError extends Error {
@@ -149,38 +146,26 @@ export class SupabaseCloudRepository implements CloudLearningRepository {
     const payload = await this.rpc.call("pull_learning_changes", {
       p_after_received_at: cursor.receivedAt,
       p_after_event_id: cursor.eventId,
+      p_after_state_sequence: cursor.stateSequence,
+      p_state_epoch: cursor.stateEpoch,
       p_limit: limit
     });
     this.#assertActive();
     return parsePullPage(payload);
   }
 
-  async getReconciliationBundle(cardId: string): Promise<ReconciliationBundle> {
+  async reconcileCard(cardId: string): Promise<ReconciledReviewState> {
     this.#assertActive();
-    const payload = await this.rpc.call("get_reconciliation_bundle", {
-      p_card_id: cardId
+    const payload = await this.rpc.call("edge:review-sync", {
+      action: "reconcile_card",
+      card_id: cardId
     });
     this.#assertActive();
-    const result = parseReconciliationBundle(payload);
+    const result = parseTrustedReconciledState(payload);
     if (result.cardId !== cardId) {
-      throw new Error("Cloud reconciliation bundle returned a different card.");
+      throw new Error("Trusted reconciliation returned a different card.");
     }
     return result;
-  }
-
-  async commitReconciliation(state: ReconciledReviewState): Promise<ReconciliationCommitResult> {
-    this.#assertActive();
-    const payload = await this.rpc.call("commit_reconciled_review_state", {
-      p_card_id: state.cardId,
-      p_expected_revision: state.expectedRevision,
-      p_event_set_hash: state.eventSetHash,
-      p_scheduler_state: state.schedulerState,
-      p_due_at: state.dueAt,
-      p_last_reviewed_at: state.lastReviewedAt,
-      p_scheduler_implementation_version: state.schedulerImplementationVersion
-    });
-    this.#assertActive();
-    return parseReconciliationCommit(payload);
   }
 
   dispose(): void {

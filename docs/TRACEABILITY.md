@@ -1,6 +1,8 @@
 # Traceability
 
-状态只能使用：
+Updated: 2026-08-26
+
+Allowed statuses:
 
 ```text
 Planned
@@ -13,110 +15,191 @@ Deferred
 Blocked
 ```
 
-Root Coordinator 在每个里程碑结束时更新。
+Evidence is deliberately layered. A local unit, browser, or SQL-structure pass does not become a live Supabase, real-device, or screen-reader pass.
 
-M0 note (2026-08-26): all P0 requirements have an owner and planned implementation/test location. The repository initially contained no runnable application, so no implementation row is marked verified at baseline.
+## Milestone status
 
-M1 note (2026-08-26): the local-first learning slice is implemented with 32 passing automated tests and a successful production build. Browser verification covered reveal-before-rating, a Good rating, IndexedDB persistence across reload, exclusion of the completed card from the queue, Research/Medical module isolation, and pending-sync UI. Real Supabase, multi-device, and offline-first-load scenarios remain unverified until their later milestones.
+- M0: baseline, architecture, ownership, and Git checkpoints complete.
+- M1: local-first Research learning slice complete and regression-covered.
+- M2: Auth, migrations, RLS/RPC definitions, both quotas, IndexedDB, FSRS, outbox, sync, and trusted reconciliation implemented. Live Supabase/RLS/OTP/two-client execution is Not verified.
+- M3: responsive PWA, offline App Shell and cached learning fixture, startup splitting, performance marks, and budgets implemented. Real installation and real-device checks are Not verified.
+- M4: 60 cards, v1 findings, remediation, final local regression, and both original-reviewer v2 reports are complete. External production-environment gaps remain explicitly Not verified.
 
-| Requirement | Priority | Owner                | Implementation                                             | Test / verification   | Status                 |
-| ----------- | -------: | -------------------- | ---------------------------------------------------------- | --------------------- | ---------------------- |
-| CORE-001    |       P0 | Frontend + Backend   | `src/domain/learning.ts`, `src/components/ContextCard.tsx` | TEST-002              | Automatically verified |
-| CORE-002    |       P0 | Backend              | `src/domain/learning.ts`; cloud normalization pending      | TEST-002              | In progress            |
-| CORE-003    |       P0 | Frontend             | `src/components/ContextCard.tsx`                           | TEST-002              | Automatically verified |
-| CORE-004    |       P0 | Frontend + Content   | `src/components/ContextCard.tsx`, demo cards               | TEST-002              | Automatically verified |
-| CORE-005    |       P0 | Backend + Frontend   | `src/app/moduleRoutes.ts`, scoped local repository         | TEST-006              | In progress            |
-| CORE-006    |       P0 | Backend + Frontend   | `src/data/demoLearningRepository.ts`, Today UI             | TEST-005              | In progress            |
-| CORE-007    |       P0 | Frontend + Scheduler | rating repository, controls, `fsrsScheduler.ts`            | TEST-015              | Automatically verified |
-| CORE-008    |       P0 | Backend              | `src/data/demoLearningRepository.ts`                       | repository tests      | Automatically verified |
-| CORE-009    |       P0 | Backend              | `src/domain/time.ts`, local daily records                  | TEST-014              | In progress            |
-| CORE-010    |       P0 | Root                 | project-wide release gate                                  | release gate          | In progress            |
-| RES-001     |       P0 | Backend              | assignment service and RPC                                 | TEST-003              | Planned                |
-| RES-002     |       P0 | Content              | `data/seed-data.json`                                      | Product review        | Planned                |
-| RES-003     |       P0 | Backend + Frontend   | structured shortage domain/RPC/UI                          | TEST-013              | Planned                |
-| MED-001     |       P0 | Backend              | Medical assignment service and RPC                         | TEST-004              | Planned                |
-| MED-002     |       P0 | Content              | Medical seed distribution                                  | TEST-034, TEST-037    | Planned                |
-| MED-003     |       P1 | Content              | Medical context genres in seed data                        | Product review        | Planned                |
-| SCOPE-001   |       P0 | Root                 | project-wide                                               | release gate          | In progress            |
-| SCOPE-002   | Deferred | Root                 | no implementation                                          | repository review     | Deferred               |
-| AUTH-001    |       P0 | Backend + Frontend   | Auth gateway, Supabase adapter, Login route                | auth tests            | Planned                |
-| AUTH-002    |       P0 | Backend + Frontend   | Auth gateway/state machine and Login UI                    | auth tests            | Planned                |
-| AUTH-003    |       P0 | Backend + Frontend   | local bootstrap and background session validation          | TEST-030              | Planned                |
-| DATA-001    |       P0 | Backend              | public-content migrations                                  | migration tests       | Planned                |
-| DATA-002    |       P0 | Backend              | private-learning migrations                                | migration tests       | Planned                |
-| DATA-003    |       P0 | Backend              | constraints/index migrations                               | database tests        | Planned                |
-| DATA-004    |       P0 | Backend + Root       | `src/data/runtime.ts`, explicit `VITE_APP_MODE`            | build/runtime tests   | Automatically verified |
-| ASSIGN-001  |       P0 | Backend              | `src/domain/time.ts`, cloud RPC pending                    | TEST-014              | In progress            |
-| ASSIGN-002  |       P0 | Backend              | `src/data/localAssignmentService.ts`                       | TEST-011              | In progress            |
-| ASSIGN-003  |       P0 | Backend              | `src/data/localAssignmentService.ts`; RPC pending          | TEST-003              | In progress            |
-| ASSIGN-004  |       P0 | Backend              | Medical cloud selector/RPC                                 | TEST-004              | In progress            |
-| ASSIGN-005  |       P0 | Backend              | local assignment exclusion; cloud pending                  | unit test             | In progress            |
-| ASSIGN-006  |       P0 | Backend              | locked assignment RPC/migration                            | TEST-012              | Planned                |
-| ASSIGN-007  |       P0 | Backend              | stable daily review assignment sets                        | TEST-005              | Planned                |
-| SCHED-001   |       P0 | Backend              | pinned `ts-fsrs`, `src/scheduler/fsrsScheduler.ts`         | scheduler tests       | Automatically verified |
-| SCHED-002   |       P0 | Backend              | `src/scheduler/fsrsScheduler.ts` adapter boundary          | architecture tests    | Automatically verified |
-| SCHED-003   |       P0 | Backend              | local review state; cloud repository pending               | scheduler/sync tests  | In progress            |
-| LOCAL-001   |       P0 | Backend              | `src/db/learningDatabase.ts`, scoped repository            | TEST-007, TEST-008    | Automatically verified |
-| LOCAL-002   |       P0 | Backend              | account/module compound keys                               | TEST-024              | Automatically verified |
-| LOCAL-003   |       P0 | Backend              | Dexie v1 schema and migration harness                      | TEST-010              | Automatically verified |
-| LOCAL-004   |       P0 | Backend              | indexed daily summaries                                    | TEST-031              | Automatically verified |
-| SYNC-001    |       P0 | Backend              | atomic Dexie rating transaction                            | TEST-007, TEST-015    | Automatically verified |
-| SYNC-002    |       P0 | Backend              | `src/domain/review.ts`, immutable outbox records           | sync tests            | Automatically verified |
-| SYNC-003    |       P0 | Backend              | idempotent ingest RPC/client                               | TEST-016              | Planned                |
-| SYNC-004    |       P0 | Backend              | local outbox repository; remote retry pending              | TEST-017              | In progress            |
-| SYNC-005    |       P0 | Backend              | sync coordinator and lock                                  | TEST-018              | Planned                |
-| SYNC-006    |       P0 | Backend              | push/pull merge pipeline                                   | integration test      | Planned                |
-| SYNC-007    |       P0 | Backend              | review event log and ingest RPC                            | TEST-019              | Planned                |
-| SYNC-008    |       P0 | Backend              | revision CAS and application metadata                      | TEST-019              | Planned                |
-| SYNC-009    |       P0 | Backend              | deterministic per-card reconciler                          | TEST-019              | Planned                |
-| SYNC-010    |       P1 | Backend              | clock anomaly policy in sync protocol                      | conflict tests        | Planned                |
-| SEC-001     |       P0 | Backend              | migrations                                                 | TEST-021              | Planned                |
-| SEC-002     |       P0 | Backend              | migrations                                                 | RLS tests             | Planned                |
-| SEC-003     |       P0 | Backend              | migrations                                                 | TEST-022              | Planned                |
-| SEC-004     |       P0 | Backend              | RPC/policies                                               | TEST-021              | Planned                |
-| SEC-005     |       P0 | Root + Backend       | env/build                                                  | TEST-023              | Planned                |
-| SEC-006     |       P0 | All                  | logging                                                    | code review           | Planned                |
-| SEC-007     |       P0 | QA                   | secret scan                                                | TEST-023              | Planned                |
-| UI-001      |       P0 | Frontend             | `src/routes/home/HomePage.tsx`                             | component/browser     | Automatically verified |
-| UI-002      |       P0 | Frontend             | `src/routes/today/TodayPage.tsx`                           | TEST-005/browser      | Automatically verified |
-| UI-003      |       P0 | Frontend             | `StudyPage.tsx`, rating controls                           | TEST-015/browser      | Automatically verified |
-| UI-004      |       P1 | Frontend             | style tokens and responsive layout                         | Product review        | In progress            |
-| UI-005      |       P0 | Frontend             | `src/routes/login/`                                        | auth UI tests         | Planned                |
-| UI-006      |       P0 | Frontend             | `src/main.tsx`, local-first startup                        | TEST-030/browser      | Automatically verified |
-| UI-007      |       P0 | Frontend             | Today state matrix                                         | component tests       | Automatically verified |
-| UI-008      |       P0 | Frontend             | `src/components/ContextCard.tsx` front                     | TEST-002              | Automatically verified |
-| UI-009      |       P0 | Frontend             | `src/components/ContextCard.tsx` back                      | TEST-002              | Automatically verified |
-| UI-010      |       P0 | Frontend             | guarded `RatingControls.tsx`                               | TEST-015              | Automatically verified |
-| UI-011      |       P0 | Frontend             | mobile responsive CSS                                      | mobile E2E            | In progress            |
-| UI-012      |       P0 | Frontend             | desktop layout/keyboard                                    | desktop E2E           | In progress            |
-| UI-013      |       P0 | Frontend             | theme bootstrap/settings                                   | theme tests           | Planned                |
-| UI-014      |       P1 | Frontend             | dependency/CSS architecture                                | Product review        | Planned                |
-| PWA-001     |       P0 | Frontend             | Vite PWA manifest and icons                                | TEST-025              | Planned                |
-| PWA-002     |       P0 | Frontend + QA        | production install assets/verification                     | TEST-027              | Planned                |
-| PWA-003     |       P0 | Frontend             | generated SW configuration                                 | TEST-026              | Planned                |
-| PWA-004     |       P0 | Frontend             | prompt update coordinator                                  | update test           | Planned                |
-| PERF-001    |       P0 | Frontend             | system-font CSS/local icons                                | TEST-033              | Planned                |
-| PERF-002    |       P0 | Frontend + Backend   | bootstrap pipeline                                         | TEST-030              | Planned                |
-| PERF-003    |       P0 | Frontend             | lazy remote adapters/startup                               | waterfall inspection  | Planned                |
-| PERF-004    |       P0 | Frontend             | App Shell/error boundaries                                 | TEST-030              | Planned                |
-| PERF-005    |       P0 | Frontend             | lazy route/chunk configuration                             | TEST-032              | Planned                |
-| PERF-006    |       P0 | Frontend + Content   | controlled import; no browser seed import                  | TEST-033              | Planned                |
-| PERF-007    |       P0 | Backend + Frontend   | indexed summary-only Home query                            | TEST-031              | Planned                |
-| PERF-008    |       P0 | Frontend             | performance marks/measures                                 | performance test      | Planned                |
-| PERF-009    |       P0 | QA                   | N/A                                                        | TEST-028              | Planned                |
-| PERF-010    |       P0 | QA                   | N/A                                                        | TEST-029              | Planned                |
-| PERF-011    |       P0 | Frontend + QA        | bundle/precache budget script                              | TEST-032              | Planned                |
-| PERF-012    |       P0 | QA                   | N/A                                                        | TEST-028, TEST-029    | Planned                |
-| A11Y-001    |       P0 | Frontend             | semantic UI, focus, live regions, reduced motion           | basic component tests | In progress            |
-| CONTENT-001 |       P0 | Content              | `data/seed-data.json`                                      | TEST-034              | Planned                |
-| CONTENT-002 |       P0 | Content              | `data/seed-data.json`                                      | TEST-034, TEST-037    | Planned                |
-| CONTENT-003 |       P0 | Content              | data schema                                                | TEST-036              | Planned                |
-| CONTENT-004 |       P0 | Content              | seed data                                                  | TEST-035              | Planned                |
-| CONTENT-005 |       P0 | Content              | seed data                                                  | TEST-037              | Planned                |
-| CONTENT-006 |       P0 | Content              | seed data                                                  | TEST-037              | Planned                |
-| CONTENT-007 |       P0 | Content              | seed data                                                  | TEST-037              | Planned                |
-| CONTENT-008 |       P0 | Content              | seed data                                                  | TEST-036, TEST-037    | Planned                |
-| CONTENT-009 |       P0 | Content              | validator                                                  | content tests         | Planned                |
-| CONTENT-010 |       P0 | Content              | data/scripts                                               | file check            | Planned                |
-| CONTENT-011 |       P0 | Content              | validator                                                  | content tests         | Planned                |
-| CONTENT-012 | Deferred | Root                 | no UI                                                      | repository review     | Deferred               |
+## Product and scope
+
+| Requirement | Priority | Owner                | Implementation                                                      | Evidence / limit                                     | Status                 |
+| ----------- | -------: | -------------------- | ------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------- |
+| CORE-001    |       P0 | Frontend + Content   | `learning.ts`, `ContextCard.tsx`, normalized seed                   | Context-card component, repository, content tests    | Automatically verified |
+| CORE-002    |       P0 | Backend + Content    | normalized words/senses/contexts/cards in domain, SQL, and seed IDs | Domain/content/migration tests                       | Automatically verified |
+| CORE-003    |       P0 | Frontend             | prompt side of `ContextCard.tsx`                                    | UI + E2E assert no answer leakage                    | Automatically verified |
+| CORE-004    |       P0 | Frontend + Content   | revealed card hierarchy and all required fields                     | UI/content tests and 60-card audit                   | Manually verified      |
+| CORE-005    |       P0 | Backend + Frontend   | account/module compound keys, two module routes and summaries       | Repository, sync, and E2E isolation checks           | Automatically verified |
+| CORE-006    |       P0 | Backend + Frontend   | distinct New/Review completion and frozen totals                    | Domain/repository/UI tests                           | Automatically verified |
+| CORE-007    |       P0 | Frontend + Scheduler | Again/Hard/Good/Easy controls and guarded rating                    | Component/repository/E2E checks                      | Automatically verified |
+| CORE-008    |       P0 | Backend              | distinct learned word-sense materialization                         | Repository/sync tests                                | Automatically verified |
+| CORE-009    |       P0 | Backend              | profile-timezone study date and study-day streak                    | midnight, UTC-offset, and DST tests                  | Automatically verified |
+| CORE-010    |       P0 | Root                 | runnable React/PWA/local/cloud implementation                       | Local gates; external release scenarios remain open  | Implemented            |
+| RES-001     |       P0 | Backend              | deterministic Research 5+2+3 local selector and RPC                 | Assignment/repository/cloud parser/SQL tests         | Automatically verified |
+| RES-002     |       P0 | Content              | 30 Research contexts across required reading genres                 | 60-card product audit                                | Manually verified      |
+| RES-003     |       P0 | Backend + Frontend   | frozen all-or-nothing structured shortage                           | Assignment, repository, UI, SQL tests                | Automatically verified |
+| MED-001     |       P0 | Backend              | deterministic Medical 10 local selector and RPC                     | Repository/cloud parser/E2E/SQL tests; live RPC open | Automatically verified |
+| MED-002     |       P0 | Content              | 30 cards across all 13 medical categories                           | Validator plus 60-card audit                         | Manually verified      |
+| MED-003     |       P1 | Content              | textbook, guideline, report, record, case, and procedure genres     | Validator plus 60-card audit                         | Manually verified      |
+| SCOPE-001   |       P0 | Root                 | all MVP subsystems have production implementation                   | Local evidence complete; external items listed below | Implemented            |
+| SCOPE-002   | Deferred | Root                 | no routes, controls, or placeholders for Deferred features          | Repository and reviewer inspection                   | Deferred               |
+
+## Auth, data, assignment, scheduler, and local state
+
+| Requirement | Priority | Owner              | Implementation                                                                                               | Evidence / limit                                            | Status                 |
+| ----------- | -------: | ------------------ | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- | ---------------------- |
+| AUTH-001    |       P0 | Backend + Frontend | Supabase Email OTP request and six-digit verify flow                                                         | Gateway/UI tests; real email delivery Not verified          | Implemented            |
+| AUTH-002    |       P0 | Backend + Frontend | resend/loading/error/restore/listener/expiry/sign-out states                                                 | Auth and UI tests; real provider Not verified               | Implemented            |
+| AUTH-003    |       P0 | Backend + Frontend | cached local bootstrap before remote validation; account disposal                                            | local-bootstrap and production cloud-startup harness        | Implemented            |
+| DATA-001    |       P0 | Backend            | normalized public content tables and read-only policies                                                      | Migration structure + seed generation checks; live DB open  | Implemented            |
+| DATA-002    |       P0 | Backend            | private profile/assignment/event/state/settings tables                                                       | Migration structure tests; live DB open                     | Implemented            |
+| DATA-003    |       P0 | Backend            | PK/FK/unique/check/index constraints                                                                         | Migration structure tests; SQL execution Not verified       | Implemented            |
+| DATA-004    |       P0 | Root               | explicit demo/cloud modes, adapters, docs, no fallback                                                       | Runtime/build/secret tests                                  | Automatically verified |
+| ASSIGN-001  |       P0 | Backend            | IANA profile study date in local domain and RPC validation                                                   | midnight/UTC/DST + SQL tests                                | Automatically verified |
+| ASSIGN-002  |       P0 | Backend            | persisted idempotent assignment sets and deterministic RPC                                                   | local repeat/reopen tests + SQL structure                   | Automatically verified |
+| ASSIGN-003  |       P0 | Backend            | exact Research selector and RPC quotas                                                                       | TEST-003 coverage                                           | Automatically verified |
+| ASSIGN-004  |       P0 | Backend            | Medical 10 deterministic rolling balance                                                                     | local/cloud/SQL coverage                                    | Automatically verified |
+| ASSIGN-005  |       P0 | Backend            | learned-card exclusion and assignment membership validation                                                  | assignment/ingest tests                                     | Automatically verified |
+| ASSIGN-006  |       P0 | Backend            | unique constraints and user-module advisory locks                                                            | Static SQL verified; concurrent Postgres execution open     | Implemented            |
+| ASSIGN-007  |       P0 | Backend            | explicit frozen Review sets, including zero-card set                                                         | local/cloud-day-cache/SQL tests                             | Automatically verified |
+| SCHED-001   |       P0 | Backend            | exact `ts-fsrs@5.4.1` dependency                                                                             | scheduler and replay tests                                  | Automatically verified |
+| SCHED-002   |       P0 | Backend            | project `ReviewScheduler` adapter boundary                                                                   | scheduler and architecture tests                            | Automatically verified |
+| SCHED-003   |       P0 | Backend            | materialized local/cloud state plus immutable event log                                                      | local tests + trusted-boundary static tests; live Edge open | Implemented            |
+| LOCAL-001   |       P0 | Backend            | Dexie v3 schema for cards, queues, events, states, card-scoped outbox, metadata, summaries, profile/settings | database/repository tests                                   | Automatically verified |
+| LOCAL-002   |       P0 | Backend            | account-scoped compound keys and lifecycle disposal                                                          | account-isolation tests                                     | Automatically verified |
+| LOCAL-003   |       P0 | Backend            | v1→v3/v2→v3 preservation; outbox card backfill validates immutable events and orphan upgrade rolls back      | migration preservation/failure tests                        | Automatically verified |
+| LOCAL-004   |       P0 | Backend            | indexed daily summaries and module/status/card outbox access                                                 | repository and 10,000-active-outbox tests                   | Automatically verified |
+
+## Sync and security
+
+| Requirement | Priority | Owner              | Implementation                                                            | Evidence / limit                                                | Status                 |
+| ----------- | -------: | ------------------ | ------------------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------- |
+| SYNC-001    |       P0 | Backend            | one atomic Dexie rating transaction                                       | transaction/failure/duplicate tests                             | Automatically verified |
+| SYNC-002    |       P0 | Backend            | immutable UUID event contract with scheduler evidence                     | domain, repository, parser tests                                | Automatically verified |
+| SYNC-003    |       P0 | Backend            | event fingerprint + UUID idempotent ingest                                | SQL structure and mocked transport tests; live retry open       | Implemented            |
+| SYNC-004    |       P0 | Backend            | v3 indexed bounded outbox, inclusive leases, partial ack, backoff         | boundary/Dexie/coordinator/10k-active tests                     | Automatically verified |
+| SYNC-005    |       P0 | Backend            | startup/online/focus/manual triggers and account lock                     | gateway/coalescing/lock tests                                   | Automatically verified |
+| SYNC-006    |       P0 | Backend            | pre-assignment push/pull/reconcile, day cache, final pass                 | gateway/coordinator integration tests                           | Automatically verified |
+| SYNC-007    |       P0 | Backend            | all events retained; mutable applications separated                       | migration and conflict tests                                    | Automatically verified |
+| SYNC-008    |       P0 | Backend            | base revision, event-set hash, trusted CAS commit                         | static SQL/transport/restart tests; live RPC open               | Implemented            |
+| SYNC-009    |       P0 | Backend            | durable skipped-state/conflict IDs and trusted deterministic FSRS replay  | restart reconciliation + executable Edge/browser golden parity  | Automatically verified |
+| SYNC-010    |       P1 | Backend            | clock anomaly flag and protected `ordering_at` rule                       | migration tests and `SYNC_PROTOCOL.md`                          | Automatically verified |
+| SEC-001     |       P0 | Backend            | RLS enabled on all private tables and related materializations            | Static migration checks; live A/B policy execution Not verified | Implemented            |
+| SEC-002     |       P0 | Backend            | authenticated read-only public content policies                           | Static migration checks; live role execution Not verified       | Implemented            |
+| SEC-003     |       P0 | Backend            | event table has no ordinary UPDATE/DELETE path                            | Static grants/policy checks; live attack Not verified           | Implemented            |
+| SEC-004     |       P0 | Backend            | `auth.uid()` identity in policies/RPCs/Edge session validation            | Static/adaptor checks; live attack Not verified                 | Implemented            |
+| SEC-005     |       P0 | Backend + Root     | browser uses URL + publishable key only; service role limited to Edge env | source/build secret scan                                        | Automatically verified |
+| SEC-006     |       P0 | Backend + Frontend | no OTP/token/session/privileged-secret logging                            | repository scan and tests                                       | Automatically verified |
+| SEC-007     |       P0 | QA                 | tracked-source and production-build secret scanner                        | TEST-023                                                        | Automatically verified |
+
+## UI, PWA, performance, and accessibility
+
+| Requirement | Priority | Owner              | Implementation                                                                                   | Evidence / limit                                                            | Status                 |
+| ----------- | -------: | ------------------ | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- | ---------------------- |
+| UI-001      |       P0 | Frontend           | simple Home with two modules, progress, learned words, streak, sync                              | component + browser checks                                                  | Automatically verified |
+| UI-002      |       P0 | Frontend           | Today separates New, Review, and total                                                           | component + E2E                                                             | Automatically verified |
+| UI-003      |       P0 | Frontend           | large controls, shortcuts, duplicate guard, immediate advance                                    | component + E2E                                                             | Automatically verified |
+| UI-004      |       P1 | Frontend           | quiet reading-focused visual system                                                              | Product reviewer desktop/mobile inspection                                  | Manually verified      |
+| UI-005      |       P0 | Frontend           | accessible Email + OTP form, resend/error/expiry/logout states                                   | UI/axe tests; real mobile keyboard open                                     | Automatically verified |
+| UI-006      |       P0 | Frontend           | summary-only cached Home before background sync                                                  | local bootstrap + cloud delay/failure harness                               | Automatically verified |
+| UI-007      |       P0 | Frontend           | honest loading/empty/offline/pending/shortage states                                             | component tests                                                             | Automatically verified |
+| UI-008      |       P0 | Frontend           | context prompt and highlighted target without answer                                             | component/E2E                                                               | Automatically verified |
+| UI-009      |       P0 | Frontend           | complete stable reveal hierarchy                                                                 | component/content/E2E                                                       | Automatically verified |
+| UI-010      |       P0 | Frontend           | rating disabled through local commit; sync non-blocking                                          | component/repository tests                                                  | Automatically verified |
+| UI-011      |       P0 | Frontend           | 320px responsive wrapping, safe-area and touch sizing                                            | Playwright emulation; physical Android Not verified                         | Automatically verified |
+| UI-012      |       P0 | Frontend           | centered bounded desktop layout and keyboard flow                                                | desktop browser/E2E; installed macOS app open                               | Automatically verified |
+| UI-013      |       P0 | Frontend           | system/light/dark, persisted settings, pre-React theme script                                    | theme/settings/UI/build tests                                               | Automatically verified |
+| UI-014      |       P1 | Frontend           | no UI framework/chart/icon font; CSS/token system only                                           | dependency and bundle inspection                                            | Automatically verified |
+| PWA-001     |       P0 | Frontend           | complete manifest and 192/512/maskable local icons                                               | PWA static check                                                            | Automatically verified |
+| PWA-002     |       P0 | Frontend + QA      | installable asset/config target                                                                  | Android/macOS installation not executed                                     | Not verified           |
+| PWA-003     |       P0 | Frontend           | generated SW, static-only precache, offline App Shell                                            | build/static/offline browser checks                                         | Automatically verified |
+| PWA-004     |       P0 | Frontend           | prompt update coordinator defers while rating and preserves IDB                                  | unit/component tests                                                        | Automatically verified |
+| PERF-001    |       P0 | Frontend           | system font stack; no remote font dependency                                                     | bundle/source checks                                                        | Automatically verified |
+| PERF-002    |       P0 | Frontend + Backend | shell/local bootstrap first; deferred remote sync/FSRS                                           | production cloud startup harness                                            | Automatically verified |
+| PERF-003    |       P0 | Frontend + Backend | remote validation/sync never gates cached Home                                                   | five-second/failure harness                                                 | Automatically verified |
+| PERF-004    |       P0 | Frontend           | startup/error shells and cached Home without white screen                                        | Playwright cloud/PWA checks                                                 | Automatically verified |
+| PERF-005    |       P0 | Frontend + Root    | lazy routes, Supabase, sync, FSRS, and settings chunks                                           | production bundle inspection                                                | Automatically verified |
+| PERF-006    |       P0 | Root + Content     | canonical 60-card dataset build-time only; 20-card controlled demo subset                        | sentinel and bundle checks                                                  | Automatically verified |
+| PERF-007    |       P0 | Backend            | Home reads summary; claims/card conflicts use bounded indexed outbox queries                     | 10,000-active-outbox regression                                             | Automatically verified |
+| PERF-008    |       P0 | Frontend           | four post-paint performance marks and measures                                                   | unit + Playwright assertions                                                | Automatically verified |
+| PERF-009    |       P0 | QA                 | three-run throttled synthetic FCP/LCP/INP approximation/CLS metrics                              | Playwright metrics; not Lighthouse/real phone                               | Automatically verified |
+| PERF-010    |       P0 | QA                 | primed-cache shell/Home/first-card three-run medians                                             | Playwright PWA fixture                                                      | Automatically verified |
+| PERF-011    |       P0 | Root               | enforced JS/CSS/precache gzip budgets                                                            | bundle script                                                               | Automatically verified |
+| PERF-012    |       P0 | QA                 | System Chrome 151, Android viewport, 4x CPU, Slow 4G, warm, offline, and delay/failure harnesses | Three-run CDP/Playwright evidence; not a Lighthouse/exported DevTools trace | Automatically verified |
+| A11Y-001    |       P0 | Frontend + QA      | semantics, labels, focus, contrast tokens, live regions, reduced motion                          | axe/component/keyboard checks; real screen reader open                      | Automatically verified |
+
+## Content
+
+| Requirement | Priority | Owner   | Implementation                                             | Evidence / limit          | Status                 |
+| ----------- | -------: | ------- | ---------------------------------------------------------- | ------------------------- | ---------------------- |
+| CONTENT-001 |       P0 | Content | 30 Research: 15 General, 6 Statistics, 9 Bioinformatics    | validator + 60-card audit | Manually verified      |
+| CONTENT-002 |       P0 | Content | 30 Medical across 13 categories                            | validator + 60-card audit | Manually verified      |
+| CONTENT-003 |       P0 | Content | complete JSON contract and stable entity IDs               | schema/validator tests    | Automatically verified |
+| CONTENT-004 |       P0 | Content | original examples have null citation fields                | validator + manual audit  | Manually verified      |
+| CONTENT-005 |       P0 | Content | natural context sentences with exact targets               | validator + manual audit  | Manually verified      |
+| CONTENT-006 |       P0 | Content | card-specific plain-English paraphrases                    | 60-card audit             | Manually verified      |
+| CONTENT-007 |       P0 | Content | contextual Chinese meanings and full translations          | 60-card audit             | Manually verified      |
+| CONTENT-008 |       P0 | Content | three natural collocations per card                        | validator + manual audit  | Manually verified      |
+| CONTENT-009 |       P0 | Content | identity/context/near-duplicate/inflection/spelling checks | negative validator tests  | Automatically verified |
+| CONTENT-010 |       P0 | Content | `seed-data.json`, flat `import-template.csv`, validator    | content files and tests   | Automatically verified |
+| CONTENT-011 |       P0 | Content | actionable failure codes for all specified invalid cases   | negative validator tests  | Automatically verified |
+| CONTENT-012 | Deferred | Root    | no content-generation/import/export UI                     | repository inspection     | Deferred               |
+
+## Acceptance tests
+
+| Requirement | Priority | Owner              | Implementation / evidence                                                                                           | Status                 |
+| ----------- | -------: | ------------------ | ------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| TEST-001    |       P0 | Root + QA          | All locally runnable gates pass; exact ledger and unavailable DB command are in `RELEASE_VERIFICATION.md`           | Automatically verified |
+| TEST-002    |       P0 | Frontend + Content | context-card component, content, and E2E checks                                                                     | Automatically verified |
+| TEST-003    |       P0 | Backend            | Research selector/parser/RPC structural tests                                                                       | Automatically verified |
+| TEST-004    |       P0 | Backend            | Medical selector/parser/demo/E2E/SQL tests                                                                          | Automatically verified |
+| TEST-005    |       P0 | Backend + Frontend | progress/repository/UI tests                                                                                        | Automatically verified |
+| TEST-006    |       P0 | Backend + Frontend | active two-module repository and E2E isolation                                                                      | Automatically verified |
+| TEST-007    |       P0 | Backend + QA       | rating + reload persistence E2E and database tests                                                                  | Automatically verified |
+| TEST-008    |       P0 | Backend + QA       | cached learning offline, 3 ratings/outbox/reload; live upload open                                                  | Automatically verified |
+| TEST-009    |       P0 | Frontend + QA      | Home null-cache plus Today/Study rejected-read offline component regressions; no replacement assignment/card/action | Automatically verified |
+| TEST-010    |       P0 | Backend            | IndexedDB v1/v2→v3 preservation, card backfill, and orphan rollback tests                                           | Automatically verified |
+| TEST-011    |       P0 | Backend            | local/repository/cloud idempotency tests; real second client open                                                   | Automatically verified |
+| TEST-012    |       P0 | Backend            | constraints/lock SQL structure; concurrent DB call not run                                                          | Not verified           |
+| TEST-013    |       P0 | Backend + Frontend | all-or-nothing shortage domain/UI/SQL tests                                                                         | Automatically verified |
+| TEST-014    |       P0 | Backend            | midnight, UTC difference, and DST tests                                                                             | Automatically verified |
+| TEST-015    |       P0 | Frontend + Backend | presentation action and UI double-click guards                                                                      | Automatically verified |
+| TEST-016    |       P0 | Backend            | duplicate UUID/fingerprint behavior in unit/static tests; live timeout retry open                                   | Automatically verified |
+| TEST-017    |       P0 | Backend            | partial push outcome tests                                                                                          | Automatically verified |
+| TEST-018    |       P0 | Backend            | coalescing and account lock tests                                                                                   | Automatically verified |
+| TEST-019    |       P0 | Backend            | conflict retention/order/replay/CAS plus same-epoch skipped-state cursor/restart/duplicate recovery                 | Automatically verified |
+| TEST-020    |       P0 | QA                 | Real Supabase two-client scenario not run                                                                           | Not verified           |
+| TEST-021    |       P0 | QA                 | Live user A/B RLS scenario not run                                                                                  | Not verified           |
+| TEST-022    |       P0 | QA                 | Live authenticated UPDATE/DELETE attack not run                                                                     | Not verified           |
+| TEST-023    |       P0 | QA                 | tracked source + production build secret scan                                                                       | Automatically verified |
+| TEST-024    |       P0 | Backend + QA       | local account lifecycle/isolation tests                                                                             | Automatically verified |
+| TEST-025    |       P0 | Frontend + QA      | manifest/static asset checks                                                                                        | Automatically verified |
+| TEST-026    |       P0 | Frontend + QA      | production SW/static precache/offline App Shell                                                                     | Automatically verified |
+| TEST-027    |       P0 | QA                 | Real Android/macOS installation not run                                                                             | Not verified           |
+| TEST-028    |       P0 | QA                 | three-run throttled synthetic metrics                                                                               | Automatically verified |
+| TEST-029    |       P0 | QA                 | three-run warm metrics                                                                                              | Automatically verified |
+| TEST-030    |       P0 | QA                 | production entry with 5s delay/failure plus offline PWA                                                             | Automatically verified |
+| TEST-031    |       P0 | Backend + QA       | 10,000 event plus 10,000 active-outbox bounded read/card-conflict regression                                        | Automatically verified |
+| TEST-032    |       P0 | Root + QA          | enforced gzip bundle/precache budgets                                                                               | Automatically verified |
+| TEST-033    |       P0 | Root + QA          | remote-font/full-vocabulary/Deferred sentinels                                                                      | Automatically verified |
+| TEST-034    |       P0 | Content + QA       | exact 60-card distributions                                                                                         | Automatically verified |
+| TEST-035    |       P0 | Content + QA       | original-source integrity validator and audit                                                                       | Manually verified      |
+| TEST-036    |       P0 | Content + QA       | required-field/target/collocation validator                                                                         | Automatically verified |
+| TEST-037    |       P0 | Product reviewer   | 60/60 card audit recorded in product v1                                                                             | Manually verified      |
+| TEST-038    |       P0 | Root + Reviewers   | independent read-only v1 reports complete                                                                           | Manually verified      |
+| TEST-039    |       P0 | Root               | every v1 finding has an allowed disposition in `REVIEW_RESOLUTION.md`                                               | Manually verified      |
+| TEST-040    |       P0 | Original reviewers | both original reviewers reran final evidence and returned PASS WITH EXTERNAL GAPS                                   | Manually verified      |
+
+## Explicit external gaps
+
+- Real Supabase Email OTP, resend, expiry, restore, and sign-out.
+- Migration execution, SQL syntax/runtime, RLS A/B isolation, immutable-event attacks, RPC grants, and concurrent assignment in Postgres.
+- Deployed `review-sync` Edge Function and real conflict convergence.
+- Real two-client assignment/progress/outbox idempotency.
+- Android Chrome and macOS Chrome installation/standalone launch.
+- Real screen reader, mobile soft keyboard, physical safe area, and Chrome-stable DevTools/Lighthouse run.
+- Cloudflare Pages deployment.

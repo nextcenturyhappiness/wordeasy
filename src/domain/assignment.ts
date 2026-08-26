@@ -1,4 +1,5 @@
 import {
+  MEDICAL_DAILY_NEW_QUOTA,
   RESEARCH_CATEGORY_QUOTAS,
   type ContentShortageRecord,
   type ResearchCategory
@@ -12,6 +13,8 @@ export interface AssignmentCandidate {
 export type ResearchSelectionResult =
   | { status: "ready"; cards: AssignmentCandidate[] }
   | { status: "shortage"; shortage: ContentShortageRecord };
+
+export type MedicalSelectionResult = ResearchSelectionResult;
 
 const RESEARCH_CATEGORY_LABELS: Record<ResearchCategory, string> = {
   general_research: "General Research",
@@ -72,4 +75,26 @@ export function selectResearchAssignment(
   }
 
   return { status: "ready", cards: selected };
+}
+
+export function selectMedicalAssignment(
+  candidates: AssignmentCandidate[],
+  userId: string,
+  studyDate: string
+): MedicalSelectionResult {
+  const available = deterministicOrder(candidates, userId, studyDate);
+  if (available.length < MEDICAL_DAILY_NEW_QUOTA) {
+    return {
+      status: "shortage",
+      shortage: {
+        code: "content_shortage",
+        category: null,
+        required: MEDICAL_DAILY_NEW_QUOTA,
+        available: available.length,
+        message: "Not enough new Medical English cards are available."
+      }
+    };
+  }
+
+  return { status: "ready", cards: available.slice(0, MEDICAL_DAILY_NEW_QUOTA) };
 }
