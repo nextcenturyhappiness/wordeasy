@@ -9,6 +9,7 @@ import { ContextCard } from "../../components/ContextCard";
 import { RatingControls } from "../../components/RatingControls";
 import { RouteNotice } from "../../components/RouteNotice";
 import { SyncStatus } from "../../components/SyncStatus";
+import { setPwaUpdateSafety } from "../../pwa/updateCoordinator";
 
 type StudyPhase = "prompt" | "revealed" | "committing" | "completed";
 
@@ -71,6 +72,13 @@ export function StudyPage() {
   const presentationActionIdRef = useRef(crypto.randomUUID());
   const answerRef = useRef<HTMLElement | null>(null);
   const questionRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setPwaUpdateSafety(phase !== "committing");
+    return () => {
+      setPwaUpdateSafety(true);
+    };
+  }, [phase]);
 
   useEffect(() => {
     if (module === null || queue === null) {

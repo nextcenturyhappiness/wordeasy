@@ -24,10 +24,13 @@
     "test:e2e": "playwright test",
     "test:db": "supabase test db",
     "test:pwa": "node scripts/check-pwa.mjs",
+    "test:pwa:offline": "playwright test --config playwright.pwa.config.ts",
     "test:bundle": "node scripts/check-bundle.mjs",
     "test:perf": "vitest run tests/performance",
     "test:secrets": "node scripts/check-secrets.mjs",
-    "content:validate": "node scripts/validate-content.mjs"
+    "content:validate": "node scripts/validate-content.mjs",
+    "content:seed-sql": "node scripts/generate-seed-sql.mjs",
+    "content:seed-sql:check": "node scripts/generate-seed-sql.mjs --check"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.112.4",

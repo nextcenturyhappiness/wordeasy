@@ -1,6 +1,7 @@
 import type {
   AuthGateway,
   LearningRepository,
+  SessionView,
   SettingsGateway,
   SyncGateway
 } from "../application/contracts";
@@ -23,11 +24,17 @@ export type LearningRuntimeConfig = DemoRuntimeConfig | CloudRuntimeConfig;
 
 export interface LearningRuntime {
   mode: "demo" | "cloud";
+  accountUserId: string | null;
   auth: AuthGateway;
   learning: LearningRepository;
   settings: SettingsGateway;
   sync: SyncGateway;
   dispose(): Promise<void>;
+}
+
+export interface CloudRuntimeManager {
+  readonly auth: AuthGateway;
+  createRuntime(session: SessionView): Promise<LearningRuntime>;
 }
 
 export class RuntimeConfigurationError extends Error {
@@ -51,4 +58,9 @@ export async function createLearningRuntime(
   throw new RuntimeConfigurationError(
     "Cloud runtime is unavailable in M1; production must not fall back to demo mode."
   );
+}
+
+export async function createCloudRuntimeManager(): Promise<CloudRuntimeManager> {
+  const { createBrowserCloudRuntimeManager } = await import("./cloudRuntime");
+  return createBrowserCloudRuntimeManager();
 }

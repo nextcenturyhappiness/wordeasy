@@ -18,6 +18,7 @@ export interface LearningAppContextValue {
   home: HomeResource;
   syncState: SyncState;
   ensureInitialized: () => Promise<void>;
+  syncNow: () => Promise<SyncState>;
   applyRatingResult: (result: RateCardResult) => void;
 }
 

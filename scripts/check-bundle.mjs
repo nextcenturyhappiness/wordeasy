@@ -59,8 +59,39 @@ const initialCss = (
   await Promise.all(initialStyles.map((path) => gzipSize(assetPath(path))))
 ).reduce((total, size) => total + size, 0);
 
-// Home is eager by design, so its cumulative JavaScript is the initial entry graph.
-const homeJavaScript = initialJavaScript;
+// Cloud mode opens the account-scoped local runtime before rendering cached Home.
+// Supabase remains in a separate chunk and starts only after that local render.
+const assetFiles = await collectFiles(join(distDirectory, "assets"));
+const localHomeChunks = assetFiles.filter((path) =>
+  /^cloudRuntime-[^/]+\.js$/u.test(relative(join(distDirectory, "assets"), path))
+);
+if (localHomeChunks.length !== 1) {
+  throw new Error(
+    `Expected one local cloud runtime chunk; found ${String(localHomeChunks.length)}.`
+  );
+}
+const homeJavaScript =
+  initialJavaScript +
+  (await Promise.all(localHomeChunks.map((path) => gzipSize(path)))).reduce(
+    (total, size) => total + size,
+    0
+  );
+const deferredSupabaseChunks = assetFiles.filter((path) =>
+  /^supabaseRemote-[^/]+\.js$/u.test(relative(join(distDirectory, "assets"), path))
+);
+const deferredSupabaseChunk = deferredSupabaseChunks[0];
+if (deferredSupabaseChunks.length !== 1 || deferredSupabaseChunk === undefined) {
+  throw new Error(
+    `Expected one deferred Supabase runtime chunk; found ${String(deferredSupabaseChunks.length)}.`
+  );
+}
+const deferredSupabaseJavaScript = await gzipSize(deferredSupabaseChunk);
+const deferredSupabaseFileName = relative(distDirectory, deferredSupabaseChunk);
+for (const path of initialScripts) {
+  if ((await readFile(assetPath(path), "utf8")).includes(deferredSupabaseFileName)) {
+    throw new Error("The initial entry directly imports the deferred Supabase runtime.");
+  }
+}
 const precacheExtensions = new Set([".html", ".css", ".js", ".png", ".svg", ".webmanifest"]);
 const precacheFiles = (await collectFiles(distDirectory)).filter((path) => {
   const name = relative(distDirectory, path);
@@ -110,6 +141,7 @@ console.log(
     {
       initialJavaScriptGzip: formatBytes(initialJavaScript),
       homeJavaScriptGzip: formatBytes(homeJavaScript),
+      deferredSupabaseJavaScriptGzip: formatBytes(deferredSupabaseJavaScript),
       initialCssGzip: formatBytes(initialCss),
       compressedPrecache: formatBytes(compressedPrecache),
       precacheFileCount: precacheFiles.length,

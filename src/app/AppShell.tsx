@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Link, Outlet } from "react-router-dom";
 
+import { PwaUpdateNotice } from "../components/PwaUpdateNotice";
 import { useOptionalAuthSession } from "./AuthSessionContext";
 
 function RouteLoading() {
@@ -39,6 +40,7 @@ export function AppShell({ authenticationEnabled }: { authenticationEnabled: boo
           {remoteNotice}
         </div>
       )}
+      <PwaUpdateNotice />
       <main className="app-main" id="main-content" tabIndex={-1}>
         <Suspense fallback={<RouteLoading />}>
           <Outlet />

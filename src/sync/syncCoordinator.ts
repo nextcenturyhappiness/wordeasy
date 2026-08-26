@@ -78,12 +78,17 @@ export class CloudSyncCoordinator implements SyncGateway {
     };
   }
 
-  dispose(): void {
+  async dispose(): Promise<void> {
+    if (this.#disposed) {
+      await this.#activeRun?.catch(() => undefined);
+      return;
+    }
     this.#disposed = true;
     this.#listeners.clear();
     if (this.#activeRun === null) {
       this.#disposeAdapters();
     }
+    await this.#activeRun?.catch(() => undefined);
   }
 
   async #run(): Promise<SyncState> {

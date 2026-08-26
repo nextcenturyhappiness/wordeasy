@@ -11,6 +11,7 @@ export {
 export { createCloudRpcClient, SupabaseRpcError, type CloudRpcClient } from "./rpcClient";
 export { DisposedCloudRepositoryError, SupabaseCloudRepository } from "./supabaseCloudRepository";
 export { AccountCloudDayCache } from "./cloudDayCache";
+export { AccountCloudSettingsGateway, type AccountPreferences } from "./accountPreferences";
 export type {
   CloudContextCard,
   CloudDailyLearningSnapshot,

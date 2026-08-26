@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import assignmentSql from "../../supabase/migrations/20260826000200_assignment_rpcs.sql?raw";
+import preferencesSql from "../../supabase/migrations/20260826000400_account_preferences_rpcs.sql?raw";
 import schemaSql from "../../supabase/migrations/20260826000100_learning_schema.sql?raw";
+import seedSql from "../../supabase/migrations/20260826000500_seed_content.sql?raw";
 import syncSql from "../../supabase/migrations/20260826000300_review_sync_rpcs.sql?raw";
 
 const SCHEMA = schemaSql.toLowerCase();
 const ASSIGNMENTS = assignmentSql.toLowerCase();
 const SYNC = syncSql.toLowerCase();
+const PREFERENCES = preferencesSql.toLowerCase();
+const SEED = seedSql.toLowerCase();
 
 const PUBLIC_CONTENT_TABLES = [
   "modules",
@@ -169,5 +173,28 @@ describe("Supabase migration contracts", () => {
     );
     expect(SCHEMA).toContain("reviewed_at timestamptz not null");
     expect(SCHEMA).toContain("ordering_at timestamptz not null");
+  });
+
+  it("creates account preferences only for auth.uid and returns scope evidence", () => {
+    for (const name of ["ensure_account_preferences", "set_account_preferences"]) {
+      const body = functionBody(PREFERENCES, name);
+      expect(body).toContain("security definer");
+      expect(body).toContain("set search_path = ''");
+      expect(body).toContain("auth.uid()");
+      expect(body).toContain("'user_id', v_user_id");
+      expect(body).not.toContain("p_user_id");
+    }
+    expect(PREFERENCES).toContain("to authenticated");
+    expect(PREFERENCES).not.toContain("service_role");
+  });
+
+  it("ships the validated normalized content as a controlled migration", () => {
+    for (const table of PUBLIC_CONTENT_TABLES) {
+      expect(SEED).toContain(`insert into public.${table}`);
+    }
+    expect(SEED).toContain("generated from data/seed-data.json");
+    expect(SEED.match(/'context_recall', true\)/g)).toHaveLength(60);
+    expect(SEED).toContain("begin;");
+    expect(SEED).toContain("commit;");
   });
 });

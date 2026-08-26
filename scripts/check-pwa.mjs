@@ -59,8 +59,10 @@ assert(
   "Service Worker does not precache the App Shell HTML."
 );
 assert(!serviceWorker.includes("og.png"), "Non-essential social artwork must not enter precache.");
+// A statically cached JavaScript chunk may contain "supabase" in its filename. The boundary is
+// that no Auth/REST endpoint or token-bearing response is registered as a runtime cache target.
 assert(
-  !/(?:supabase|\/auth\/v1|\/rest\/v1|access_token|refresh_token)/iu.test(serviceWorker),
+  !/(?:\/auth\/v1|\/rest\/v1|access_token|refresh_token)/iu.test(serviceWorker),
   "Service Worker contains a private API or token cache pattern."
 );
 

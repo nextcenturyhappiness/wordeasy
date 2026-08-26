@@ -7,6 +7,7 @@ import type {
   SyncGateway,
   SyncState
 } from "../application/contracts";
+import { markPerformanceOnce } from "../application/performance";
 import {
   LearningAppContext,
   type HomeResource,
@@ -53,6 +54,13 @@ export function LearningAppProvider({
     return promise;
   }, [repository]);
 
+  const syncNow = useCallback((): Promise<SyncState> => {
+    if (syncGateway === undefined) {
+      return Promise.resolve(initialSyncState);
+    }
+    return syncGateway.sync();
+  }, [initialSyncState, syncGateway]);
+
   useEffect(() => {
     if (syncGateway === undefined) {
       return;
@@ -80,13 +88,31 @@ export function LearningAppProvider({
     const unsubscribe = syncGateway.subscribe((nextState) => {
       setSyncState(nextState);
       if (nextState.status === "synced") {
+        markPerformanceOnce("remote-sync-complete");
         void refreshHomeAfterSync();
       }
     });
 
+    const triggerSync = () => {
+      void syncGateway.sync().catch(() => undefined);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        triggerSync();
+      }
+    };
+
+    window.addEventListener("online", triggerSync);
+    window.addEventListener("focus", triggerSync);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    triggerSync();
+
     return () => {
       active = false;
       unsubscribe();
+      window.removeEventListener("online", triggerSync);
+      window.removeEventListener("focus", triggerSync);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [repository, syncGateway]);
 
@@ -121,30 +147,35 @@ export function LearningAppProvider({
     };
   }, [ensureInitialized, initialHome, repository]);
 
-  const applyRatingResult = useCallback((result: RateCardResult) => {
-    setHome((current) => {
-      if (current.status !== "ready") {
-        return current;
-      }
-
-      return {
-        status: "ready",
-        snapshot: {
-          ...current.snapshot,
-          modules: {
-            ...current.snapshot.modules,
-            [result.summary.module]: result.summary
-          },
-          pendingSyncCount: current.snapshot.pendingSyncCount + 1
+  const applyRatingResult = useCallback(
+    (result: RateCardResult) => {
+      setHome((current) => {
+        if (current.status !== "ready") {
+          return current;
         }
-      };
-    });
 
-    setSyncState((current) => ({
-      status: "pending",
-      pendingCount: current.pendingCount + 1
-    }));
-  }, []);
+        return {
+          status: "ready",
+          snapshot: {
+            ...current.snapshot,
+            modules: {
+              ...current.snapshot.modules,
+              [result.summary.module]: result.summary
+            },
+            pendingSyncCount: current.snapshot.pendingSyncCount + 1
+          }
+        };
+      });
+
+      setSyncState((current) =>
+        syncGateway === undefined
+          ? { status: "pending", pendingCount: current.pendingCount + 1 }
+          : syncGateway.getState()
+      );
+      void syncNow().catch(() => undefined);
+    },
+    [syncGateway, syncNow]
+  );
 
   const value = useMemo<LearningAppContextValue>(
     () => ({
@@ -152,9 +183,10 @@ export function LearningAppProvider({
       home,
       syncState,
       ensureInitialized,
+      syncNow,
       applyRatingResult
     }),
-    [applyRatingResult, ensureInitialized, home, repository, syncState]
+    [applyRatingResult, ensureInitialized, home, repository, syncNow, syncState]
   );
 
   return <LearningAppContext.Provider value={value}>{children}</LearningAppContext.Provider>;

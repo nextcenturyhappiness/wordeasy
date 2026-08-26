@@ -34,6 +34,7 @@ export async function createDemoRuntime(config: DemoRuntimeConfig): Promise<Lear
 
   return {
     mode: "demo",
+    accountUserId: userId,
     auth: new DemoSessionAdapter(userId, email),
     learning,
     settings: new DemoSettingsGateway(database, userId),

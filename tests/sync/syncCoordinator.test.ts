@@ -294,12 +294,13 @@ describe("account-scoped sync coordinator", () => {
     await vi.waitFor(() => {
       expect(cloud.pushCalls).toBe(1);
     });
-    coordinator.dispose();
+    const disposal = coordinator.dispose();
     if (releasePush !== undefined) {
       releasePush();
     }
 
     await expect(running).rejects.toBeInstanceOf(SyncDisposedError);
+    await disposal;
     expect(local.releaseCalls).toBe(1);
     expect(local.disposed).toBe(true);
     expect(cloud.disposed).toBe(true);

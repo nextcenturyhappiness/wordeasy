@@ -2,6 +2,7 @@ import type { SyncState } from "../application/contracts";
 
 interface SyncStatusProps {
   state: SyncState;
+  onSync?: () => void;
 }
 
 function statusText(state: SyncState): string {
@@ -25,11 +26,23 @@ function statusText(state: SyncState): string {
   }
 }
 
-export function SyncStatus({ state }: SyncStatusProps) {
+export function SyncStatus({ state, onSync }: SyncStatusProps) {
   return (
-    <p className={`sync-status sync-status--${state.status}`} role="status" aria-live="polite">
-      <span className="sync-status__dot" aria-hidden="true" />
-      {statusText(state)}
-    </p>
+    <div className="sync-status-group">
+      <p className={`sync-status sync-status--${state.status}`} role="status" aria-live="polite">
+        <span className="sync-status__dot" aria-hidden="true" />
+        {statusText(state)}
+      </p>
+      {onSync === undefined ? null : (
+        <button
+          className="sync-now-button"
+          type="button"
+          disabled={state.status === "syncing"}
+          onClick={onSync}
+        >
+          Sync now
+        </button>
+      )}
+    </div>
   );
 }

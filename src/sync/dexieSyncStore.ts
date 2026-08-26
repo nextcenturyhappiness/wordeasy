@@ -453,7 +453,10 @@ export class DexieAccountSyncStore implements AccountLocalSyncStore {
         .length,
       reviewTotal: reviewAssignments.length,
       totalLearned: learnedCount,
-      streak: calculateStreak(studyDays.map((day) => day.studyDate)),
+      streak: calculateStreak(
+        studyDays.map((day) => day.studyDate),
+        studyDate
+      ),
       pendingSyncCount,
       updatedAt: existing?.updatedAt ?? updatedAt
     };

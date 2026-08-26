@@ -16,14 +16,17 @@ export interface LocalAppState {
 export async function loadLocalAppState({
   repository,
   authGateway,
-  settingsGateway
+  settingsGateway,
+  initialSession: providedSession
 }: {
   repository: LearningRepository;
   authGateway: AuthGateway;
   settingsGateway: SettingsGateway;
+  initialSession?: SessionView;
 }): Promise<LocalAppState> {
   const homePromise = repository.getCachedHome();
-  const sessionPromise = authGateway.restoreLocal();
+  const sessionPromise =
+    providedSession === undefined ? authGateway.restoreLocal() : Promise.resolve(providedSession);
   const themePromise = settingsGateway.getTheme();
 
   const [initialHome, initialSession, initialTheme] = await Promise.all([

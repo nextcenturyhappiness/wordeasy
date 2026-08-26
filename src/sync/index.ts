@@ -10,3 +10,10 @@ export { LocalSyncStateStore } from "./localSyncState";
 export { reconcileReviewEvents, sortReconciliationEvents } from "./reconciler";
 export { CloudSyncCoordinator, SyncDisposedError } from "./syncCoordinator";
 export { BrowserAccountSyncRunLock } from "./syncRunLock";
+export {
+  AccountSyncGateway,
+  type AccountDayCachePort,
+  type AccountSettingsSyncPort,
+  type AccountSyncCoordinatorPort,
+  type AccountSyncGatewayOptions
+} from "./accountSyncGateway";

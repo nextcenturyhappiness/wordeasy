@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import type { SettingsGateway, ThemePreference } from "../../application/contracts";
 import { useAuthSession } from "../../app/AuthSessionContext";
+import { useLearningApp } from "../../app/LearningAppContext";
 import { useThemePreference } from "../../app/ThemeContext";
 
 type TimezoneResource =
@@ -31,6 +32,7 @@ function isIanaTimezone(value: string): boolean {
 
 export function SettingsPage({ gateway }: { gateway: SettingsGateway }) {
   const { preference, saving: themeSaving, setPreference } = useThemePreference();
+  const { syncNow } = useLearningApp();
   const { session, signOut } = useAuthSession();
   const navigate = useNavigate();
   const [timezone, setTimezone] = useState<TimezoneResource>({ status: "loading" });
@@ -67,6 +69,7 @@ export function SettingsPage({ gateway }: { gateway: SettingsGateway }) {
     try {
       await setPreference(nextTheme);
       setNotice(`Theme preference saved as ${nextTheme}.`);
+      void syncNow().catch(() => undefined);
     } catch (themeError) {
       setError(messageFrom(themeError));
     }
@@ -89,6 +92,7 @@ export function SettingsPage({ gateway }: { gateway: SettingsGateway }) {
       setTimezone({ status: "ready", value: nextTimezone });
       setTimezoneInput(nextTimezone);
       setNotice("Study timezone saved. Existing daily assignments stay unchanged.");
+      void syncNow().catch(() => undefined);
     } catch (timezoneError) {
       setError(messageFrom(timezoneError));
     } finally {

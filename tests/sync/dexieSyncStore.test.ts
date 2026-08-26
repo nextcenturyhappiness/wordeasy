@@ -46,7 +46,7 @@ describe("Dexie account sync store", () => {
   it("claims only its account and acknowledges idempotent cloud acceptance outside events", async () => {
     activeHarness = await createRepositoryHarness();
     const { database, repository, userId } = activeHarness;
-    const card = requireCard(await repository.getStudyQueue("research_english", "new"), 0);
+    const card = requireCard((await repository.getStudyQueue("research_english", "new")).cards, 0);
     const rated = await repository.rateCard({
       presentationActionId: "sync-claim",
       cardId: card.cardId,
@@ -79,7 +79,7 @@ describe("Dexie account sync store", () => {
   it("preserves partial failures with bounded retry metadata", async () => {
     activeHarness = await createRepositoryHarness();
     const { database, repository, userId } = activeHarness;
-    const cards = await repository.getStudyQueue("research_english", "new");
+    const cards = (await repository.getStudyQueue("research_english", "new")).cards;
     const first = requireCard(cards, 0);
     const second = requireCard(cards, 1);
     const firstResult = await repository.rateCard({
@@ -125,7 +125,7 @@ describe("Dexie account sync store", () => {
   it("merges a remote-device event idempotently and rebuilds local materializations", async () => {
     activeHarness = await createRepositoryHarness();
     const { database, repository, userId } = activeHarness;
-    const card = requireCard(await repository.getStudyQueue("research_english", "new"), 0);
+    const card = requireCard((await repository.getStudyQueue("research_english", "new")).cards, 0);
     const page: CloudPullPage = {
       events: [
         {

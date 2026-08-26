@@ -28,7 +28,10 @@ function greetingFor(timeZone: string): string {
 }
 
 export function HomePage() {
-  const { home, syncState } = useLearningApp();
+  const { home, syncState, syncNow } = useLearningApp();
+  const triggerSync = () => {
+    void syncNow().catch(() => undefined);
+  };
 
   if (home.status === "loading") {
     return (
@@ -56,7 +59,7 @@ export function HomePage() {
         <p className="eyebrow">Saved progress</p>
         <h1>No learning day is cached on this device.</h1>
         <p>Connect once to receive an assignment. No replacement cards were generated.</p>
-        <SyncStatus state={syncState} />
+        <SyncStatus state={syncState} onSync={triggerSync} />
       </section>
     );
   }
@@ -70,7 +73,7 @@ export function HomePage() {
           <p className="eyebrow">{snapshot.studyDate}</p>
           <h1>{greetingFor(snapshot.timezone)}</h1>
         </div>
-        <SyncStatus state={syncState} />
+        <SyncStatus state={syncState} onSync={triggerSync} />
       </header>
 
       <div className="module-grid">
