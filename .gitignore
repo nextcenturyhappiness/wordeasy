@@ -1,0 +1,23 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+.vite/
+
+# Test artifacts
+playwright-report/
+test-results/
+*.log
+
+# Local environment and Supabase state
+.env
+.env.*
+!.env.example
+!.env.demo
+supabase/.temp/
+
+# User and editor state
+.DS_Store
+.obsidian/
+.idea/
+.vscode/
