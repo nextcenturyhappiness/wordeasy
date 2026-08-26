@@ -319,14 +319,19 @@ export class DemoLearningRepository implements LearningRepository {
             .where("[userId+module+studyDate]")
             .equals([this.#userId, module, studyDate])
             .sortBy("position");
+    const incompleteAssignments = assignments.filter(
+      (assignment) => assignment.completedAt === null
+    );
     const cards = await Promise.all(
-      assignments.map((assignment) =>
+      incompleteAssignments.map((assignment) =>
         this.#database.cached_cards.get([this.#userId, assignment.cardId])
       )
     );
     return cards.map((card, index) => {
       if (card === undefined) {
-        throw new Error(`Assigned card ${assignments[index]?.cardId ?? "unknown"} is not cached.`);
+        throw new Error(
+          `Assigned card ${incompleteAssignments[index]?.cardId ?? "unknown"} is not cached.`
+        );
       }
       return toContextCardView(card);
     });

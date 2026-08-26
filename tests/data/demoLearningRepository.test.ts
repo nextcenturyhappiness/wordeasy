@@ -210,7 +210,7 @@ describe("DemoLearningRepository", () => {
     expect(await reopenedDatabase.sync_outbox.count()).toBe(4);
     expect(
       (await reopened.getStudyQueue("research_english", "new")).map((card) => card.cardId)
-    ).toEqual(queue.map((card) => card.cardId));
+    ).toEqual(queue.slice(4).map((card) => card.cardId));
     reopenedDatabase.close();
   });
 

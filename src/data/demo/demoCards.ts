@@ -73,7 +73,8 @@ export const DEMO_RESEARCH_CARDS: NormalizedContextCard[] = [
     ipa: "/əˈtenjueɪt/",
     meaningEn: "to make an effect, association, or signal weaker",
     meaningZh: "减弱；降低",
-    usageNote: "Common in Results and Discussion after adjustment changes an estimate.",
+    usageNote:
+      "Common in Results and Discussion when covariate adjustment weakens an association or effect estimate.",
     contextSentence:
       "The association was substantially attenuated after adjustment for age and BMI.",
     targetText: "attenuated",
@@ -95,7 +96,7 @@ export const DEMO_RESEARCH_CARDS: NormalizedContextCard[] = [
       "The survival benefit remained robust across all prespecified sensitivity analyses.",
     targetText: "robust",
     plainEnglishParaphrase:
-      "The survival finding stayed reliable under several alternative analyses.",
+      "The survival benefit stayed reliable in every alternative analysis planned in advance.",
     sentenceTranslationZh: "在所有预先设定的敏感性分析中，生存获益仍然稳健。",
     collocations: ["robust finding", "robust estimate", "robust evidence"]
   }),
@@ -112,7 +113,8 @@ export const DEMO_RESEARCH_CARDS: NormalizedContextCard[] = [
     contextSentence:
       "Single-cell profiling may elucidate how stromal cells promote treatment resistance.",
     targetText: "elucidate",
-    plainEnglishParaphrase: "Single-cell data may clarify how stromal cells cause resistance.",
+    plainEnglishParaphrase:
+      "Single-cell data may clarify how stromal cells contribute to treatment resistance.",
     sentenceTranslationZh: "单细胞分析可能阐明基质细胞如何促进治疗耐药。",
     collocations: ["elucidate a mechanism", "elucidate the role", "elucidate a pathway"]
   }),
@@ -124,7 +126,7 @@ export const DEMO_RESEARCH_CARDS: NormalizedContextCard[] = [
     partOfSpeech: "verb",
     ipa: "/kəˈrɒbəreɪt/",
     meaningEn: "to provide additional evidence that supports a result",
-    meaningZh: "证实；佐证",
+    meaningZh: "佐证；支持",
     usageNote: "Signals agreement between independent analyses or data sources.",
     contextSentence: "The imaging findings were corroborated by histopathological examination.",
     targetText: "corroborated",
@@ -141,12 +143,13 @@ export const DEMO_RESEARCH_CARDS: NormalizedContextCard[] = [
     partOfSpeech: "adjective",
     ipa: "/ˈseɪliənt/",
     meaningEn: "especially important or noticeable in the present context",
-    meaningZh: "显著的；突出的；重要的",
+    meaningZh: "突出的；值得注意的；重要的",
     usageNote: "Highlights a feature that deserves particular attention.",
     contextSentence: "A salient feature of the cohort was the high prevalence of multimorbidity.",
     targetText: "salient",
-    plainEnglishParaphrase: "One especially notable cohort feature was frequent multimorbidity.",
-    sentenceTranslationZh: "该队列的一个突出特点是多病共存患病率较高。",
+    plainEnglishParaphrase:
+      "Many participants had more than one chronic disease, which was a notable feature of the study group.",
+    sentenceTranslationZh: "该队列的一个突出特点是多病共存者比例较高。",
     collocations: ["salient feature", "salient finding", "clinically salient"]
   }),
   createDemoCard({
@@ -203,7 +206,7 @@ export const DEMO_RESEARCH_CARDS: NormalizedContextCard[] = [
     plainEnglishParaphrase:
       "Poor reads were discarded before matching reads to the reference genome.",
     sentenceTranslationZh: "在与参考基因组进行序列比对前，先去除了低质量读段。",
-    collocations: ["sequence alignment", "alignment rate", "reference alignment"]
+    collocations: ["sequence alignment", "alignment rate", "align reads to a reference genome"]
   }),
   createDemoCard({
     key: "enrichment",
@@ -216,11 +219,11 @@ export const DEMO_RESEARCH_CARDS: NormalizedContextCard[] = [
     meaningZh: "富集；过度代表",
     usageNote: "Usually interpreted relative to a defined background gene universe.",
     contextSentence:
-      "Pathway enrichment revealed increased interferon signaling in malignant cells.",
+      "Pathway enrichment analysis showed that interferon-response genes were overrepresented among genes upregulated in malignant cells.",
     targetText: "enrichment",
     plainEnglishParaphrase:
-      "Interferon-related genes appeared more often than expected in malignant cells.",
-    sentenceTranslationZh: "通路富集分析显示恶性细胞中的干扰素信号增强。",
+      "Interferon-response genes appeared more often than expected in the upregulated gene list.",
+    sentenceTranslationZh: "通路富集分析显示，恶性细胞上调基因中干扰素反应相关基因的占比高于预期。",
     collocations: ["pathway enrichment", "gene set enrichment", "enrichment analysis"]
   }),
   createDemoCard({
