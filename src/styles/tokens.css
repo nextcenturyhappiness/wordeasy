@@ -1,0 +1,77 @@
+:root {
+  color-scheme: light;
+  --color-canvas: #f6f3ec;
+  --color-surface: #fffdf8;
+  --color-surface-muted: #eeebe3;
+  --color-text: #17201d;
+  --color-text-muted: #5d6762;
+  --color-border: #cfcfc5;
+  --color-accent: #173f35;
+  --color-accent-strong: #0e2f27;
+  --color-accent-text: #ffffff;
+  --color-mark: #f4df8b;
+  --color-mark-text: #2b260f;
+  --color-focus: #236eab;
+  --color-warning: #755000;
+  --color-warning-surface: #fff2c7;
+  --color-error: #8e2d27;
+  --color-error-surface: #fff0ed;
+  --color-success: #23604f;
+  --shadow-soft: 0 1px 2px rgb(23 32 29 / 8%), 0 8px 24px rgb(23 32 29 / 5%);
+  --radius-small: 0.55rem;
+  --radius-medium: 0.9rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --content-width: 48rem;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-canvas: #121714;
+  --color-surface: #1a211e;
+  --color-surface-muted: #242c28;
+  --color-text: #edf2ee;
+  --color-text-muted: #b5c0ba;
+  --color-border: #3f4b45;
+  --color-accent: #9ed3c1;
+  --color-accent-strong: #c0eadb;
+  --color-accent-text: #10211b;
+  --color-mark: #675823;
+  --color-mark-text: #fff3b5;
+  --color-focus: #8bcaff;
+  --color-warning: #f6d87c;
+  --color-warning-surface: #382f15;
+  --color-error: #ffb7ad;
+  --color-error-surface: #3a201e;
+  --color-success: #9ed3c1;
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 28%), 0 8px 24px rgb(0 0 0 / 18%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-canvas: #121714;
+    --color-surface: #1a211e;
+    --color-surface-muted: #242c28;
+    --color-text: #edf2ee;
+    --color-text-muted: #b5c0ba;
+    --color-border: #3f4b45;
+    --color-accent: #9ed3c1;
+    --color-accent-strong: #c0eadb;
+    --color-accent-text: #10211b;
+    --color-mark: #675823;
+    --color-mark-text: #fff3b5;
+    --color-focus: #8bcaff;
+    --color-warning: #f6d87c;
+    --color-warning-surface: #382f15;
+    --color-error: #ffb7ad;
+    --color-error-surface: #3a201e;
+    --color-success: #9ed3c1;
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 28%), 0 8px 24px rgb(0 0 0 / 18%);
+  }
+}
