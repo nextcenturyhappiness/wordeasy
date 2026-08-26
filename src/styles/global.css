@@ -549,6 +549,28 @@ kbd {
   margin-block: var(--space-7);
 }
 
+@media (max-width: 41.99rem) {
+  .study-page {
+    padding-bottom: calc(10rem + env(safe-area-inset-bottom));
+  }
+
+  .study-actions {
+    position: fixed;
+    right: 0;
+    left: 0;
+    width: 100%;
+    margin-inline: 0;
+    padding-right: max(var(--space-4), env(safe-area-inset-right));
+    padding-left: max(var(--space-4), env(safe-area-inset-left));
+    box-shadow: 0 -0.75rem 2rem rgb(15 49 42 / 10%);
+  }
+
+  .study-actions > * {
+    width: min(100%, var(--content-width));
+    margin-inline: auto;
+  }
+}
+
 @media (min-width: 42rem) {
   .module-grid,
   .queue-grid {
