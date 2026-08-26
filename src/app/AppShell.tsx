@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { Link, Outlet } from "react-router-dom";
 
+import { useOptionalAuthSession } from "./AuthSessionContext";
+
 function RouteLoading() {
   return (
     <section className="route-state" aria-busy="true" aria-live="polite">
@@ -9,7 +11,11 @@ function RouteLoading() {
   );
 }
 
-export function AppShell() {
+export function AppShell({ authenticationEnabled }: { authenticationEnabled: boolean }) {
+  const auth = useOptionalAuthSession();
+  const remoteNotice =
+    auth?.remoteSession.status === "unavailable" ? auth.remoteSession.message : null;
+
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -19,7 +25,20 @@ export function AppShell() {
         <Link className="wordmark" to="/" aria-label="Article English home">
           Article English
         </Link>
+        {authenticationEnabled ? (
+          <nav className="app-nav" aria-label="Primary navigation">
+            <Link to="/">Home</Link>
+            <Link to={auth?.session.status === "authenticated" ? "/settings" : "/login"}>
+              {auth?.session.status === "authenticated" ? "Settings" : "Sign in"}
+            </Link>
+          </nav>
+        ) : null}
       </header>
+      {remoteNotice === null ? null : (
+        <div className="app-status-notice" role="status">
+          {remoteNotice}
+        </div>
+      )}
       <main className="app-main" id="main-content" tabIndex={-1}>
         <Suspense fallback={<RouteLoading />}>
           <Outlet />

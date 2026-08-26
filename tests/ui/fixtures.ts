@@ -8,10 +8,18 @@ import type {
   HomeSnapshot,
   LearningRepository,
   ModuleSlug,
+  SessionView,
+  SettingsGateway,
+  SyncGateway,
   SyncState,
+  ThemePreference,
   TodaySnapshot
 } from "../../src/application/contracts";
+import type { AuthGateway } from "../../src/application/contracts";
+import { AuthSessionProvider } from "../../src/app/AuthSessionProvider";
 import { LearningAppProvider } from "../../src/app/LearningAppProvider";
+import { ThemeProvider } from "../../src/app/ThemeProvider";
+import { authenticatedSession, createAuthGateway, createSettingsGateway } from "../auth/fixtures";
 
 afterEach(cleanup);
 
@@ -157,4 +165,55 @@ export function renderWithLearningApp(
   });
 
   return { repository, ...render(view) };
+}
+
+interface RenderWithAuthenticatedAppOptions extends RenderWithLearningAppOptions {
+  authGateway?: AuthGateway;
+  settingsGateway?: SettingsGateway;
+  initialSession?: SessionView;
+  initialTheme?: ThemePreference;
+  accountUserId?: string | null;
+  onAccountChange?: (session: SessionView) => void | Promise<void>;
+  syncGateway?: SyncGateway;
+}
+
+export function renderWithAuthenticatedApp(
+  ui: ReactElement,
+  options: RenderWithAuthenticatedAppOptions = {}
+) {
+  const repository = options.repository ?? createRepository();
+  const initialHome =
+    options.initialHome === undefined
+      ? buildHomeSnapshot({ userId: "account-a" })
+      : options.initialHome;
+  const syncState = options.syncState ?? { status: "synced", pendingCount: 0 };
+  const initialEntries = options.initialEntries ?? ["/"];
+  const authGateway = options.authGateway ?? createAuthGateway();
+  const settingsGateway = options.settingsGateway ?? createSettingsGateway();
+  const initialSession = options.initialSession ?? authenticatedSession;
+  const initialTheme = options.initialTheme ?? "system";
+  const accountUserId =
+    options.accountUserId === undefined ? (initialHome?.userId ?? null) : options.accountUserId;
+  const router = createElement(MemoryRouter, { initialEntries }, ui);
+  const learning = createElement(LearningAppProvider, {
+    repository,
+    initialHome,
+    initialSyncState: syncState,
+    ...(options.syncGateway === undefined ? {} : { syncGateway: options.syncGateway }),
+    children: router
+  });
+  const theme = createElement(ThemeProvider, {
+    gateway: settingsGateway,
+    initialTheme,
+    children: learning
+  });
+  const auth = createElement(AuthSessionProvider, {
+    gateway: authGateway,
+    initialSession,
+    accountUserId,
+    ...(options.onAccountChange === undefined ? {} : { onAccountChange: options.onAccountChange }),
+    children: theme
+  });
+
+  return { repository, authGateway, settingsGateway, ...render(auth) };
 }

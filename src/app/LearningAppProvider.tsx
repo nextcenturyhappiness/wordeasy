@@ -4,6 +4,7 @@ import type {
   HomeSnapshot,
   LearningRepository,
   RateCardResult,
+  SyncGateway,
   SyncState
 } from "../application/contracts";
 import {
@@ -16,6 +17,7 @@ export interface LearningAppProviderProps {
   repository: LearningRepository;
   initialHome: HomeSnapshot | null;
   initialSyncState: SyncState;
+  syncGateway?: SyncGateway;
   children: ReactNode;
 }
 
@@ -27,12 +29,15 @@ export function LearningAppProvider({
   repository,
   initialHome,
   initialSyncState,
+  syncGateway,
   children
 }: LearningAppProviderProps) {
   const [home, setHome] = useState<HomeResource>(() =>
     initialHome === null ? { status: "loading" } : { status: "ready", snapshot: initialHome }
   );
-  const [syncState, setSyncState] = useState<SyncState>(initialSyncState);
+  const [syncState, setSyncState] = useState<SyncState>(() =>
+    syncGateway === undefined ? initialSyncState : syncGateway.getState()
+  );
   const initializationRef = useRef<{
     repository: LearningRepository;
     promise: Promise<void>;
@@ -47,6 +52,43 @@ export function LearningAppProvider({
     initializationRef.current = { repository, promise };
     return promise;
   }, [repository]);
+
+  useEffect(() => {
+    if (syncGateway === undefined) {
+      return;
+    }
+
+    let active = true;
+
+    async function refreshHomeAfterSync() {
+      try {
+        const snapshot = await repository.getCachedHome();
+        if (active && snapshot !== null) {
+          setHome((current) => {
+            if (current.status === "ready" && current.snapshot.userId !== snapshot.userId) {
+              return current;
+            }
+
+            return { status: "ready", snapshot };
+          });
+        }
+      } catch {
+        // A background refresh must not replace an already usable cached Home.
+      }
+    }
+
+    const unsubscribe = syncGateway.subscribe((nextState) => {
+      setSyncState(nextState);
+      if (nextState.status === "synced") {
+        void refreshHomeAfterSync();
+      }
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [repository, syncGateway]);
 
   useEffect(() => {
     let active = true;

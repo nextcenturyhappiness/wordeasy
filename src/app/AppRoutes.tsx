@@ -3,29 +3,56 @@ import { Route, Routes } from "react-router-dom";
 
 import { RouteNotice } from "../components/RouteNotice";
 import { HomePage } from "../routes/home/HomePage";
+import type { SettingsGateway } from "../application/contracts";
+import { AuthGate } from "./AuthGate";
 import { AppShell } from "./AppShell";
-import { preloadStudyRoute, preloadTodayRoute } from "./lazyRoutes";
+import {
+  preloadLoginRoute,
+  preloadSettingsRoute,
+  preloadStudyRoute,
+  preloadTodayRoute
+} from "./lazyRoutes";
 
 const TodayPage = lazy(preloadTodayRoute);
 const StudyPage = lazy(preloadStudyRoute);
+const LoginPage = lazy(preloadLoginRoute);
+const SettingsPage = lazy(preloadSettingsRoute);
 
-export function AppRoutes() {
+function NotFoundRoute() {
+  return (
+    <RouteNotice
+      eyebrow="Page not found"
+      title="This learning page does not exist."
+      message="Return home to continue with an assigned module."
+    />
+  );
+}
+
+export function AppRoutes({ settingsGateway }: { settingsGateway: SettingsGateway | null }) {
+  const authenticationEnabled = settingsGateway !== null;
+
   return (
     <Routes>
-      <Route element={<AppShell />}>
-        <Route index element={<HomePage />} />
-        <Route path="today/:module" element={<TodayPage />} />
-        <Route path="study/:module" element={<StudyPage />} />
-        <Route
-          path="*"
-          element={
-            <RouteNotice
-              eyebrow="Page not found"
-              title="This learning page does not exist."
-              message="Return home to continue with an assigned module."
-            />
-          }
-        />
+      <Route element={<AppShell authenticationEnabled={authenticationEnabled} />}>
+        {authenticationEnabled ? (
+          <>
+            <Route path="login" element={<LoginPage />} />
+            <Route element={<AuthGate />}>
+              <Route index element={<HomePage />} />
+              <Route path="today/:module" element={<TodayPage />} />
+              <Route path="study/:module" element={<StudyPage />} />
+              <Route path="settings" element={<SettingsPage gateway={settingsGateway} />} />
+            </Route>
+            <Route path="*" element={<NotFoundRoute />} />
+          </>
+        ) : (
+          <>
+            <Route index element={<HomePage />} />
+            <Route path="today/:module" element={<TodayPage />} />
+            <Route path="study/:module" element={<StudyPage />} />
+            <Route path="*" element={<NotFoundRoute />} />
+          </>
+        )}
       </Route>
     </Routes>
   );
