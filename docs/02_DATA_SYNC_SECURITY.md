@@ -307,11 +307,7 @@ type ReviewRating = "again" | "hard" | "good" | "easy";
 
 interface ReviewScheduler {
   preview(card: SchedulerCard, now: Date): RatingPreview;
-  rate(
-    card: SchedulerCard,
-    rating: ReviewRating,
-    now: Date
-  ): ReviewResult;
+  rate(card: SchedulerCard, rating: ReviewRating, now: Date): ReviewResult;
 }
 ```
 

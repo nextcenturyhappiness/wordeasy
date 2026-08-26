@@ -63,14 +63,14 @@ docs/                 requirements, protocol, evidence, reviews
 
 ### 3.2 Routes and loading
 
-| Route | Loading | Scope |
-|---|---|---|
-| `/` | eager | Local-first Home, two module summaries, streak, sync state |
-| `/login` | lazy | Email → six-digit OTP, resend, restore/expired/error states |
-| `/today/:module` | lazy | Separate New, Review, Total, shortage/offline states |
-| `/study/:module?queue=new\|review` | lazy | Context-first prompt/reveal/rating flow |
-| `/settings` | lazy | Theme, IANA timezone, manual sync, sign out only |
-| `*` | lazy | Minimal not-found page without fake navigation |
+| Route                              | Loading | Scope                                                       |
+| ---------------------------------- | ------- | ----------------------------------------------------------- |
+| `/`                                | eager   | Local-first Home, two module summaries, streak, sync state  |
+| `/login`                           | lazy    | Email → six-digit OTP, resend, restore/expired/error states |
+| `/today/:module`                   | lazy    | Separate New, Review, Total, shortage/offline states        |
+| `/study/:module?queue=new\|review` | lazy    | Context-first prompt/reveal/rating flow                     |
+| `/settings`                        | lazy    | Theme, IANA timezone, manual sync, sign out only            |
+| `*`                                | lazy    | Minimal not-found page without fake navigation              |
 
 Canonical domain module IDs are `research_english` and `medical_english`; route aliases are `research` and `medical` and are validated centrally.
 
@@ -196,13 +196,13 @@ The UI advances only after this local transaction commits; remote sync is never 
 
 ## 4. File ownership
 
-| Agent | Writable paths | Must not modify |
-|---|---|---|
-| Backend & Sync | `src/domain/**`, `src/auth/**`, `src/data/**`, `src/db/**`, `src/scheduler/**`, `src/sync/**`, `supabase/**`, `tests/data/**`, `tests/scheduler/**`, `tests/sync/**`, `docs/SYNC_PROTOCOL.md` | package/lock/config, frontend, content, shared docs |
-| Frontend & PWA | `src/app/**`, `src/routes/**`, `src/components/**`, `src/styles/**`, `src/pwa/**`, `public/icons/**`, `tests/ui/**` | backend/data internals, content, package/lock/config, shared docs |
-| Seed Content | `data/**`, `scripts/lib/content-*`, `scripts/validate-content.*`, `tests/content/**` | auth, sync, UI, package/lock/config, shared docs |
-| QA & Integration | `tests/integration/**`, `tests/e2e/**`, `tests/performance/**`, small integration fixes explicitly assigned by Root | requirements, accepted architecture, deleting/weakening/skipping tests |
-| Root | shared contracts, package/lock/config, `index.html`, deployment, generated seed integration, README, all shared docs | user-local `.obsidian/` and unrelated files |
+| Agent            | Writable paths                                                                                                                                                                                | Must not modify                                                        |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Backend & Sync   | `src/domain/**`, `src/auth/**`, `src/data/**`, `src/db/**`, `src/scheduler/**`, `src/sync/**`, `supabase/**`, `tests/data/**`, `tests/scheduler/**`, `tests/sync/**`, `docs/SYNC_PROTOCOL.md` | package/lock/config, frontend, content, shared docs                    |
+| Frontend & PWA   | `src/app/**`, `src/routes/**`, `src/components/**`, `src/styles/**`, `src/pwa/**`, `public/icons/**`, `tests/ui/**`                                                                           | backend/data internals, content, package/lock/config, shared docs      |
+| Seed Content     | `data/**`, `scripts/lib/content-*`, `scripts/validate-content.*`, `tests/content/**`                                                                                                          | auth, sync, UI, package/lock/config, shared docs                       |
+| QA & Integration | `tests/integration/**`, `tests/e2e/**`, `tests/performance/**`, small integration fixes explicitly assigned by Root                                                                           | requirements, accepted architecture, deleting/weakening/skipping tests |
+| Root             | shared contracts, package/lock/config, `index.html`, deployment, generated seed integration, README, all shared docs                                                                          | user-local `.obsidian/` and unrelated files                            |
 
 Writing agents use separate Git worktrees after the M0 checkpoint. Root integrates and resolves shared-file requests serially.
 
@@ -218,14 +218,14 @@ Writing agents use separate Git worktrees after the M0 checkpoint. Root integrat
 ### M2 — Cloud, assignment, and sync
 
 - Scope: OTP/session, migrations/RLS/RPCs, both module quotas, stable New/Review sets, FSRS, outbox push/pull, idempotency, account isolation, deterministic reconciliation.
-- Requirements: AUTH-*, DATA-*, ASSIGN-*, SCHED-*, LOCAL-*, SYNC-*, SEC-* plus completed CORE progress semantics.
+- Requirements: AUTH-_, DATA-_, ASSIGN-_, SCHED-_, LOCAL-_, SYNC-_, SEC-* plus completed CORE progress semantics.
 - Tests: TEST-003–024 and regression from M1. pgTAP/local Supabase tests run only if a compatible runtime is available; otherwise SQL artifacts remain implemented but environment-dependent tests are Not verified.
 - Exit: all automated non-environmental tests and build pass; secrets scan passes; real Supabase/two-client verification reported truthfully; Git checkpoint.
 
 ### M3 — PWA and performance
 
 - Scope: manifest/icons/SW/update, offline shell and cached cards, responsive Android/macOS UI, keyboard and A11Y, theme, route splitting, startup marks, bundle/performance checks.
-- Requirements: UI-011–014, PWA-*, PERF-*, A11Y-001.
+- Requirements: UI-011–014, PWA-_, PERF-_, A11Y-001.
 - Tests: TEST-025–033 plus all prior regression.
 - Exit: generated assets and offline production shell verified automatically; browser/device measurements recorded; real installation remains Not verified until actually performed; Git checkpoint.
 

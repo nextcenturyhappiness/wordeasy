@@ -85,11 +85,7 @@ pmid
   "target_text": "attenuated",
   "plain_english_paraphrase": "Adjusting for age and BMI made the observed association weaker.",
   "sentence_translation_zh": "调整年龄和 BMI 后，该关联明显减弱。",
-  "collocations": [
-    "attenuate the association",
-    "attenuate an effect",
-    "attenuate inflammation"
-  ],
+  "collocations": ["attenuate the association", "attenuate an effect", "attenuate inflammation"],
   "source_type": "original_example",
   "source_title": null,
   "source_url": null,
@@ -116,11 +112,7 @@ Medical 示例：
   "target_text": "palpable",
   "plain_english_paraphrase": "The examiner could feel a firm mass in the right upper abdomen.",
   "sentence_translation_zh": "右上腹可触及一个质硬、无压痛的肿块。",
-  "collocations": [
-    "palpable mass",
-    "palpable lymph nodes",
-    "palpable pulse"
-  ],
+  "collocations": ["palpable mass", "palpable lymph nodes", "palpable pulse"],
   "source_type": "original_example",
   "source_title": null,
   "source_url": null,
