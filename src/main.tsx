@@ -2,16 +2,11 @@ import { createRoot } from "react-dom/client";
 
 import { ArticleEnglishApp } from "./app/ArticleEnglishApp";
 import { BootstrapShell, ConfigurationFailure } from "./app/StartupScreens";
+import { markPerformanceOnce, measurePerformance } from "./application/performance";
 import { createLearningRuntime, RuntimeConfigurationError } from "./data";
 import { registerPwaUpdateCoordinator } from "./pwa/updateCoordinator";
 import "./styles/tokens.css";
 import "./styles/global.css";
-
-function markOnce(name: string): void {
-  if (performance.getEntriesByName(name, "mark").length === 0) {
-    performance.mark(name);
-  }
-}
 
 const container = document.querySelector<HTMLDivElement>("#root");
 
@@ -21,7 +16,7 @@ if (container === null) {
 
 const root = createRoot(container);
 root.render(<BootstrapShell />);
-markOnce("app-shell-visible");
+markPerformanceOnce("app-shell-visible");
 
 async function bootstrap(): Promise<void> {
   try {
@@ -30,8 +25,8 @@ async function bootstrap(): Promise<void> {
     const initialHome = await runtime.learning.getCachedHome();
 
     if (initialHome !== null) {
-      markOnce("cached-home-ready");
-      performance.measure("app-shell-to-cached-home", "app-shell-visible", "cached-home-ready");
+      markPerformanceOnce("cached-home-ready");
+      measurePerformance("app-shell-to-cached-home", "app-shell-visible", "cached-home-ready");
     }
 
     root.render(
