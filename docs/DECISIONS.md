@@ -140,6 +140,30 @@ Alternatives rejected: 不推进整个 state cursor；全量扫描 active outbox
 Consequences: v2→v3 migration 通过 immutable local event 回填并校验 `cardId`；找不到或不匹配 event 时 version-change 事务中止并保留旧库。迁移与 epoch reset 仍可能一次性线性扫描既有 row，但正常 claim、计数和 card conflict 路径有界。真实双客户端收敛仍为外部 Not verified。
 Tests/docs affected: `learningDatabase.ts`, `dexieSyncStore.ts`, v3 migration rollback/boundary/restart tests, 10,000-active-outbox benchmark, `docs/SYNC_PROTOCOL.md`, `docs/TRACEABILITY.md`.
 
+### DEC-023 · 无 Supabase 时的显式托管预览
+
+Date: 2026-08-27
+Status: Accepted
+Related requirements: DATA-004, AUTH-003, SEC-005, PWA-001/002/003, TEST-025/026
+Context: 用户已有 Cloudflare 账户并要求立即部署，但尚未创建 Supabase。原 cloud production 在缺少公开配置时按 DEC-019 fail closed，开发 Demo 又不能作为生产构建发布。
+Decision: 增加专用 `preview` build/runtime，使用受控 20-card 本地数据、独立 `wordeasy:preview:*` IndexedDB namespace 和独立 Preview manifest。页面常驻说明数据只保存在当前浏览器且没有登录、备份或跨设备同步；同步状态显示 `Saved on this device`。Preview 只能在显式 preview build 中创建，不配置 Supabase，也不得让默认 cloud production 回退本地数据。
+Reason: 允许在真实 HTTPS 和安装式 PWA 上验证当前学习体验，同时保持云端账户、安全边界和发布状态诚实。
+Alternatives rejected: 解除 production Demo 禁令；用 Cloudflare D1 临时替换已锁定的 Supabase 架构；把配置错误页发布为可体验产品。
+Consequences: Preview 只有 20 张受控卡片；清除站点数据、使用其他浏览器或设备会失去进度；正式 Supabase 版应使用独立 Cloudflare 项目/origin。Preview build、PWA、secret、评分刷新、直达路由和离线重启必须独立验证。
+Tests/docs affected: runtime/UI tests, `playwright.preview.config.ts`, `previewDeployment.spec.ts`, preview build/PWA/secret checks, `README.md`, `docs/TRACEABILITY.md`, `docs/RELEASE_VERIFICATION.md`.
+
+### DEC-024 · 托管 Preview 默认私有
+
+Date: 2026-08-28
+Status: Accepted
+Related requirements: DATA-004, SEC-008, PWA-002/003, TEST-041
+Context: Cloudflare Pages 的 `pages.dev` 固定入口和哈希部署别名默认公开。用户明确要求 Preview 只能由本人账号登录访问，并要求把网络安全作为发布硬门槛。
+Decision: Preview 发布前创建两个 Cloudflare Access 保护目标：`wordeasy-preview.pages.dev` 与 `*.wordeasy-preview.pages.dev`。两者复用默认拒绝的 owner-only Allow 策略：Include 为当前 Cloudflare Account Member，Require 为当前所有者的精确邮箱；应用和策略会话均为 30 分钟。仅启用 Cloudflare IdP 和 instant authentication，关闭 Cloudflare One Client authentication；启用 `HttpOnly`、Binding Cookie、`SameSite=Lax`，并从 App Launcher 隐藏。不得配置 Everyone、Bypass、Service Auth 或其他更宽的 Allow 策略。Preview 构建单独生成严格 CSP、同源 `connect-src`、noindex、HSTS、nosniff、frame denial、Permissions Policy、COOP/CORP 与 no-referrer；Service Worker 不得把 `/cdn-cgi/` Access callback/logout 当作 SPA 导航；默认 cloud build 不生成该 `_headers`。Vite mode 与 `VITE_APP_MODE` 必须匹配，任何 Preview runtime/非 Preview Vite mode 或 Preview Vite mode/非 Preview runtime 组合均在构建配置阶段失败。
+Reason: 只保护固定入口会留下原子部署 URL 的旁路；只靠链接保密或 noindex 不是访问控制。Access 在静态内容与 Service Worker 之前执行身份验证，Preview-only CSP 再限制登录后页面的浏览器能力和网络外连。
+Alternatives rejected: 公开发布后只隐藏 URL；只添加 noindex；只保护固定 `pages.dev` 主机；把客户端口令写入 JavaScript；用 Preview 的 CSP 阻断未来 Supabase cloud build。
+Consequences: 用户必须先通过 Cloudflare Access 登录；新增 Cloudflare 账户成员不会自动获得权限，只有同时匹配精确 owner identity 才可访问。若所有者邮箱变更，必须先更新 Access 策略以免锁定。Access 无法远程撤销已安装设备上的离线 App Shell 或 IndexedDB，本机磁盘/用户会话安全仍是独立边界。在线发布必须验证匿名固定入口、哈希别名和静态资源均被拦截。
+Tests/docs affected: Preview build checker, Cloudflare online acceptance, `README.md`, `docs/02_DATA_SYNC_SECURITY.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`, `docs/RELEASE_VERIFICATION.md`.
+
 ## 新决策模板
 
 ```text

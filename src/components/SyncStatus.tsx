@@ -7,6 +7,10 @@ interface SyncStatusProps {
 
 function statusText(state: SyncState): string {
   switch (state.status) {
+    case "local-only":
+      return state.pendingCount > 0
+        ? `Saved on this device · ${String(state.pendingCount)} local ${state.pendingCount === 1 ? "review" : "reviews"}`
+        : "Saved on this device";
     case "synced":
       return "Synced";
     case "syncing":
@@ -33,7 +37,7 @@ export function SyncStatus({ state, onSync }: SyncStatusProps) {
         <span className="sync-status__dot" aria-hidden="true" />
         {statusText(state)}
       </p>
-      {onSync === undefined ? null : (
+      {onSync === undefined || state.status === "local-only" ? null : (
         <button
           className="sync-now-button"
           type="button"

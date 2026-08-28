@@ -123,6 +123,25 @@ describe("Home and Today", () => {
     expect(within(medical).getByText("3 / 10")).toBeInTheDocument();
   });
 
+  it("describes local-only persistence without offering a fake cloud sync", async () => {
+    const user = userEvent.setup();
+    renderWithLearningApp(
+      <>
+        <HomePage />
+        <ApplyResearchResult />
+      </>,
+      { syncState: { status: "local-only", pendingCount: 0 } }
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent("Saved on this device");
+    expect(screen.queryByRole("button", { name: "Sync now" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /apply saved research rating/i }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Saved on this device · 1 local review");
+    expect(screen.queryByRole("button", { name: "Sync now" })).not.toBeInTheDocument();
+  });
+
   it("keeps New, Review, and Total progress separate and reports pending sync", async () => {
     const getToday = vi.fn<LearningRepository["getToday"]>(() =>
       Promise.resolve(buildTodaySnapshot())

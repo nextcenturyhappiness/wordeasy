@@ -12,12 +12,12 @@ The MVP contains two isolated modules, stable daily New and Review queues, offli
 
 ## Current status
 
-The repository is a release candidate. Local automated checks exercise the demo learning flow, cloud adapters, sync failure and conflict handling, PWA offline launch, cached offline learning, bundle budgets, and startup under delayed or failed Supabase requests. The following still require an external environment and are intentionally not reported as passed:
+The repository is a release candidate. A private, local-data Preview is deployed at [wordeasy-preview.pages.dev](https://wordeasy-preview.pages.dev) behind owner-only Cloudflare Access. Local automated checks exercise the demo learning flow, cloud adapters, sync failure and conflict handling, PWA offline launch, cached offline learning, bundle budgets, and startup under delayed or failed Supabase requests. The following still require an external environment and are intentionally not reported as passed:
 
 - real Supabase migration, RLS, RPC, Edge Function, OTP, and two-client checks;
 - Android Chrome and macOS Chrome installation;
 - real screen-reader and physical-device keyboard/safe-area checks;
-- Cloudflare Pages publication.
+- hosted-origin offline restart, live global Cloudflare Access logout, and raw authenticated-response header capture.
 
 See `docs/RELEASE_VERIFICATION.md` for the exact evidence boundary.
 
@@ -43,7 +43,7 @@ See `docs/RELEASE_VERIFICATION.md` for the exact evidence boundary.
 
 ## Run locally
 
-Requirements: Node.js 22 or newer and npm.
+Requirements: Node.js 22.12 or newer and npm.
 
 ```bash
 npm ci
@@ -67,6 +67,33 @@ npm run dev:cloud
 ```
 
 Production does not silently fall back to demo when configuration is absent.
+
+## Deploy a local-data preview without Supabase
+
+The explicit Preview build is for trying the installable PWA before a Supabase project exists:
+
+> Current private deployment: [https://wordeasy-preview.pages.dev](https://wordeasy-preview.pages.dev). Access requires the configured owner identity; Preview progress remains only in that browser.
+
+```bash
+npm run build:preview
+npm run test:preview-build
+npm run test:pwa:preview
+npm run test:secrets -- dist-preview
+npm run test:preview:e2e
+```
+
+Upload `dist-preview` to a separate Cloudflare Pages project. Do not configure Supabase variables. Before publishing, protect both the permanent hostname and every atomic deployment alias with Cloudflare Access:
+
+```text
+wordeasy-preview.pages.dev
+*.wordeasy-preview.pages.dev
+```
+
+Use a default-deny policy that requires both `Cloudflare Account Member` and the owner's exact email identity, with no `Everyone`, `Bypass`, or Service Auth rule. The current deployment uses a 30-minute application and policy session, Cloudflare IdP only, instant authentication, and no Cloudflare One Client authentication. Both applications enable `HttpOnly` and Binding Cookie with `SameSite=Lax` and stay hidden from the App Launcher. The Preview build emits a Cloudflare `_headers` file with strict same-origin CSP, noindex, HSTS, frame denial, no-referrer, nosniff, and a minimal Permissions Policy. Its Service Worker excludes `/cdn-cgi/` so Access login/logout routes cannot be replaced by the cached SPA. The cloud production build intentionally does not emit these Preview-only headers because it must connect to Supabase.
+
+The deployed app always discloses that progress is saved only in the current browser, uses a separate IndexedDB namespace, provides no fake sync action, and does not silently replace the cloud production mode. Access protects network delivery; it cannot remotely revoke an App Shell or IndexedDB data already cached on an unlocked Mac user account.
+
+Clearing site data, using private browsing, changing browsers, or changing devices loses Preview progress. The Preview contains the controlled 20-card subset and is not the complete cloud product.
 
 ## Configure Supabase
 
@@ -95,6 +122,10 @@ After applying migrations and deploying the function, run the live acceptance sc
 
 ## Deploy the PWA to Cloudflare Pages
 
+For the local-data Preview, use `npm run build:preview` and output directory `dist-preview` in a separate Pages project, with no environment variables. Complete the two-hostname Cloudflare Access gate above before the first publication, then verify anonymous denial for the root page, a direct route, `sw.js`, and the deployment-specific hostname.
+
+For the complete cloud product:
+
 1. Push this repository to GitHub.
 2. In Cloudflare Pages, import `nextcenturyhappiness/wordeasy` through Git integration.
 3. Use build command `npm run build` and output directory `dist`.
@@ -120,6 +151,10 @@ npm run content:seed-sql:check
 npm run build
 npm run test:bundle
 npm run test:pwa
+npm run build:preview
+npm run test:preview-build
+npm run test:pwa:preview
+npm run test:preview:e2e
 npm run test:pwa:offline
 npm run test:perf
 npm run test:perf:e2e

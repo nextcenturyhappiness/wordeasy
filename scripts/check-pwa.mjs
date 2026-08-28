@@ -1,7 +1,7 @@
 import { access, readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 
-const distDirectory = join(process.cwd(), "dist");
+const distDirectory = join(process.cwd(), process.argv[2] ?? "dist");
 const manifestPath = join(distDirectory, "manifest.webmanifest");
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 

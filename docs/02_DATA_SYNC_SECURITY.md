@@ -573,6 +573,25 @@ service_role
 
 QA 必须搜索源码和生产构建产物，确认不存在 service role 或私密环境变量。
 
+### SEC-008 · P0 · 托管 Preview 私有访问边界
+
+无 Supabase 的托管 Preview 不得作为匿名公开站点发布。Cloudflare Pages 发布前必须同时：
+
+- 使用 Cloudflare Access 保护固定生产主机名和所有哈希/分支部署别名；
+- 使用默认拒绝策略，身份必须同时是 `Cloudflare Account Member` 并匹配当前所有者的精确邮箱；
+- 不配置 `Everyone`、`Bypass` 或匿名服务令牌规则；
+- 应用会话时长不超过 24 小时；
+- Preview 构建生成严格 CSP、`noindex`、`nosniff`、禁止嵌入、最小 Permissions Policy、无 referrer、子域 HSTS，并移除不需要的跨源资源共享响应头；
+- CSP 的 `connect-src` 仅允许同源，防止本地学习数据被 Preview 代码发送到第三方；
+- Service Worker 的导航 fallback 必须排除 `/cdn-cgi/`，不得截获 Access callback 或 logout；
+- 上述 Preview-only 响应头不得进入正式 cloud 构建，后者仍需连接 Supabase；
+- Vite build mode 与 `VITE_APP_MODE` 必须一致；不得生成带 Preview 本地 runtime 却缺少 Preview manifest/安全响应头的混合产物；
+- 在线验收必须证明匿名请求在取得任何 App Shell、Service Worker 或静态资源前被 Access 拦截，并证明登录后的 App Shell 和离线 PWA 仍可用。
+
+当前 owner-only 部署基线进一步收紧为：应用和策略会话均为 30 分钟；只启用 Cloudflare IdP 与 instant authentication；关闭 Cloudflare One Client authentication；开启 `HttpOnly`、Binding Cookie 与 `SameSite=Lax`；应用不显示在 App Launcher。所有者邮箱只保存在 Access 策略中，不写入仓库、前端构建或发布文档。
+
+Access 保护的是网络入口，不是本机操作系统账户。已经在设备上缓存或安装的离线 App Shell，以及 IndexedDB 中的本地学习进度，仍由该 Mac 的用户会话和磁盘安全负责；不得把 Access 描述为远程撤销本地缓存。
+
 ---
 
 ## 10. 无真实 Supabase 凭据
@@ -591,6 +610,16 @@ QA 必须搜索源码和生产构建产物，确认不存在 service role 或私
 - 配置文档。
 
 Demo mode 必须与 production 明确分离，不得默认进入生产构建。
+
+在用户明确要求、但尚无 Supabase 项目时，可以发布显式 `preview` 构建用于真实 HTTPS/PWA 安装体验。该模式必须同时满足：
+
+- 仅由 `VITE_APP_MODE=preview` 的专用构建启用；
+- 使用与开发 Demo、云端账户都不同的 IndexedDB namespace；
+- 所有页面常驻显示“数据仅保存在当前浏览器、未连接登录与跨设备同步”；
+- 状态只能描述为本机保存，不得显示 `Synced` 或提供无效的 `Sync now`；
+- 不需要或包含任何 Supabase 配置；
+- 托管时满足 SEC-008 的双主机名 Access 覆盖和 Preview-only 安全响应头；
+- 不得称为完整 production/cloud release，正式 cloud 构建继续 fail closed。
 
 最终报告必须把真实跨设备场景标记为：
 

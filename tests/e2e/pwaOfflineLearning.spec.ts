@@ -51,7 +51,7 @@ test("keeps cached learning progress and outbox events across an offline restart
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.getByText(/Card 1 of 7/u)).toBeVisible();
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await expect(page.getByText("3 changes pending")).toBeVisible();
+  await expect(page.getByText("Saved on this device · 3 local reviews")).toBeVisible();
   await expect(
     page.getByRole("article", { name: "Research English" }).getByText("3 / 10")
   ).toBeVisible();
@@ -62,6 +62,6 @@ test("keeps cached learning progress and outbox events across an offline restart
 
   await context.setOffline(false);
   await page.reload();
-  await expect(page.getByText("3 changes pending")).toBeVisible();
+  await expect(page.getByText("Saved on this device · 3 local reviews")).toBeVisible();
   expect(await page.evaluate(outboxCount)).toBe(3);
 });

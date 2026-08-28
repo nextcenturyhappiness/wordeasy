@@ -169,7 +169,9 @@ export function LearningAppProvider({
 
       setSyncState((current) =>
         syncGateway === undefined
-          ? { status: "pending", pendingCount: current.pendingCount + 1 }
+          ? current.status === "local-only"
+            ? { status: "local-only", pendingCount: current.pendingCount + 1 }
+            : { status: "pending", pendingCount: current.pendingCount + 1 }
           : syncGateway.getState()
       );
       void syncNow().catch(() => undefined);

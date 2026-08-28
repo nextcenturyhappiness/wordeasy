@@ -387,6 +387,21 @@ Deferred by explicit MVP scope
 
 修复后两位原 Reviewer 重新检查实际代码和测试，分别输出 v2。
 
+### TEST-041 · 托管 Preview 私有入口
+
+Cloudflare Pages Preview 发布前后必须保留以下证据：
+
+1. 固定主机名 `wordeasy-preview.pages.dev` 和 `*.wordeasy-preview.pages.dev` 均绑定 Cloudflare Access；
+2. 两个入口都使用默认拒绝策略，身份必须同时是 `Cloudflare Account Member` 并匹配所有者精确邮箱，会话不超过 24 小时；
+3. 无身份会话的新浏览器上下文访问根页面、直达路由、`sw.js` 和主 JavaScript 资源时，在内容返回前进入 Access 登录或拒绝响应；
+4. 已登录的账户可以打开 Home、完成一次评分并刷新保留进度；
+5. 响应包含 Preview-only CSP、subdomain HSTS、noindex、nosniff、frame denial、Permissions Policy 和 no-referrer，且没有通配 `Access-Control-Allow-Origin`；
+6. CSP 不产生浏览器违规，Service Worker 安装和离线重启仍通过；
+7. `/cdn-cgi/access/logout` 不被 Service Worker 的 SPA fallback 截获；
+8. 默认 cloud production 构建不包含 Preview-only `_headers`。
+
+若固定主机名已保护但哈希部署别名仍匿名可访问，则为 BLOCKER，不得发布。
+
 ---
 
 ## 11. 发布门槛

@@ -5,21 +5,25 @@ import { FsrsSchedulerAdapter } from "../scheduler/fsrsScheduler";
 import { LocalSyncStateStore } from "../sync/localSyncState";
 import { DemoLearningRepository } from "./demoLearningRepository";
 import { DemoSettingsGateway } from "./demo/demoSettingsGateway";
-import type { DemoRuntimeConfig, LearningRuntime } from "./runtime";
+import type { DemoRuntimeConfig, LearningRuntime, PreviewRuntimeConfig } from "./runtime";
 
 function browserTimezone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 }
 
-export async function createDemoRuntime(config: DemoRuntimeConfig): Promise<LearningRuntime> {
-  const userId = config.userId ?? "demo-user";
-  const email = config.email ?? "demo@wordeasy.invalid";
+export async function createDemoRuntime(
+  config: DemoRuntimeConfig | PreviewRuntimeConfig
+): Promise<LearningRuntime> {
+  const preview = config.mode === "preview";
+  const userId = config.userId ?? (preview ? "preview-user" : "demo-user");
+  const email = config.email ?? (preview ? "preview@wordeasy.invalid" : "demo@wordeasy.invalid");
   const timezone = config.timezone ?? browserTimezone();
   assertIanaTimezone(timezone);
-  const databaseName = config.databaseName ?? `wordeasy:demo:${userId}`;
-  const deviceId = config.deviceId ?? `demo-device:${userId}`;
+  const namespace = preview ? "preview" : "demo";
+  const databaseName = config.databaseName ?? `wordeasy:${namespace}:${userId}`;
+  const deviceId = config.deviceId ?? `${namespace}-device:${userId}`;
   const database = new LearningDatabase(databaseName);
-  const syncState = new LocalSyncStateStore();
+  const syncState = new LocalSyncStateStore(true);
   const learning = new DemoLearningRepository({
     database,
     userId,
@@ -33,7 +37,7 @@ export async function createDemoRuntime(config: DemoRuntimeConfig): Promise<Lear
   await learning.initialize();
 
   return {
-    mode: "demo",
+    mode: config.mode,
     accountUserId: userId,
     auth: new DemoSessionAdapter(userId, email),
     learning,

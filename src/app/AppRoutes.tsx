@@ -28,12 +28,25 @@ function NotFoundRoute() {
   );
 }
 
-export function AppRoutes({ settingsGateway }: { settingsGateway: SettingsGateway | null }) {
+export function AppRoutes({
+  settingsGateway,
+  environmentNotice
+}: {
+  settingsGateway: SettingsGateway | null;
+  environmentNotice?: string;
+}) {
   const authenticationEnabled = settingsGateway !== null;
 
   return (
     <Routes>
-      <Route element={<AppShell authenticationEnabled={authenticationEnabled} />}>
+      <Route
+        element={
+          <AppShell
+            authenticationEnabled={authenticationEnabled}
+            {...(environmentNotice === undefined ? {} : { environmentNotice })}
+          />
+        }
+      >
         {authenticationEnabled ? (
           <>
             <Route path="login" element={<LoginPage />} />

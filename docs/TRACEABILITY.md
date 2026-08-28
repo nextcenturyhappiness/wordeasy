@@ -1,6 +1,6 @@
 # Traceability
 
-Updated: 2026-08-26
+Updated: 2026-08-28
 
 Allowed statuses:
 
@@ -22,8 +22,8 @@ Evidence is deliberately layered. A local unit, browser, or SQL-structure pass d
 - M0: baseline, architecture, ownership, and Git checkpoints complete.
 - M1: local-first Research learning slice complete and regression-covered.
 - M2: Auth, migrations, RLS/RPC definitions, both quotas, IndexedDB, FSRS, outbox, sync, and trusted reconciliation implemented. Live Supabase/RLS/OTP/two-client execution is Not verified.
-- M3: responsive PWA, offline App Shell and cached learning fixture, startup splitting, performance marks, and budgets implemented. Real installation and real-device checks are Not verified.
-- M4: 60 cards, v1 findings, remediation, final local regression, and both original-reviewer v2 reports are complete. External production-environment gaps remain explicitly Not verified.
+- M3: responsive PWA, offline App Shell and cached learning fixture, startup splitting, performance marks, budgets, and an explicit local-data HTTPS Preview implemented. The Preview is published behind verified owner-only Cloudflare Access; real installation and real-device checks remain Not verified.
+- M4: 60 cards, v1 findings, remediation, final local regression, both original-reviewer v2 reports, and private Preview publication are complete. Remaining external production-environment gaps are explicitly listed below.
 
 ## Product and scope
 
@@ -58,7 +58,7 @@ Evidence is deliberately layered. A local unit, browser, or SQL-structure pass d
 | DATA-001    |       P0 | Backend            | normalized public content tables and read-only policies                                                      | Migration structure + seed generation checks; live DB open  | Implemented            |
 | DATA-002    |       P0 | Backend            | private profile/assignment/event/state/settings tables                                                       | Migration structure tests; live DB open                     | Implemented            |
 | DATA-003    |       P0 | Backend            | PK/FK/unique/check/index constraints                                                                         | Migration structure tests; SQL execution Not verified       | Implemented            |
-| DATA-004    |       P0 | Root               | explicit demo/cloud modes, adapters, docs, no fallback                                                       | Runtime/build/secret tests                                  | Automatically verified |
+| DATA-004    |       P0 | Root               | explicit demo/preview/cloud modes, separate namespaces, visible local-only boundary, no fallback             | Runtime/UI/preview build/E2E/secret tests                   | Automatically verified |
 | ASSIGN-001  |       P0 | Backend            | IANA profile study date in local domain and RPC validation                                                   | midnight/UTC/DST + SQL tests                                | Automatically verified |
 | ASSIGN-002  |       P0 | Backend            | persisted idempotent assignment sets and deterministic RPC                                                   | local repeat/reopen tests + SQL structure                   | Automatically verified |
 | ASSIGN-003  |       P0 | Backend            | exact Research selector and RPC quotas                                                                       | TEST-003 coverage                                           | Automatically verified |
@@ -76,25 +76,26 @@ Evidence is deliberately layered. A local unit, browser, or SQL-structure pass d
 
 ## Sync and security
 
-| Requirement | Priority | Owner              | Implementation                                                            | Evidence / limit                                                | Status                 |
-| ----------- | -------: | ------------------ | ------------------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------- |
-| SYNC-001    |       P0 | Backend            | one atomic Dexie rating transaction                                       | transaction/failure/duplicate tests                             | Automatically verified |
-| SYNC-002    |       P0 | Backend            | immutable UUID event contract with scheduler evidence                     | domain, repository, parser tests                                | Automatically verified |
-| SYNC-003    |       P0 | Backend            | event fingerprint + UUID idempotent ingest                                | SQL structure and mocked transport tests; live retry open       | Implemented            |
-| SYNC-004    |       P0 | Backend            | v3 indexed bounded outbox, inclusive leases, partial ack, backoff         | boundary/Dexie/coordinator/10k-active tests                     | Automatically verified |
-| SYNC-005    |       P0 | Backend            | startup/online/focus/manual triggers and account lock                     | gateway/coalescing/lock tests                                   | Automatically verified |
-| SYNC-006    |       P0 | Backend            | pre-assignment push/pull/reconcile, day cache, final pass                 | gateway/coordinator integration tests                           | Automatically verified |
-| SYNC-007    |       P0 | Backend            | all events retained; mutable applications separated                       | migration and conflict tests                                    | Automatically verified |
-| SYNC-008    |       P0 | Backend            | base revision, event-set hash, trusted CAS commit                         | static SQL/transport/restart tests; live RPC open               | Implemented            |
-| SYNC-009    |       P0 | Backend            | durable skipped-state/conflict IDs and trusted deterministic FSRS replay  | restart reconciliation + executable Edge/browser golden parity  | Automatically verified |
-| SYNC-010    |       P1 | Backend            | clock anomaly flag and protected `ordering_at` rule                       | migration tests and `SYNC_PROTOCOL.md`                          | Automatically verified |
-| SEC-001     |       P0 | Backend            | RLS enabled on all private tables and related materializations            | Static migration checks; live A/B policy execution Not verified | Implemented            |
-| SEC-002     |       P0 | Backend            | authenticated read-only public content policies                           | Static migration checks; live role execution Not verified       | Implemented            |
-| SEC-003     |       P0 | Backend            | event table has no ordinary UPDATE/DELETE path                            | Static grants/policy checks; live attack Not verified           | Implemented            |
-| SEC-004     |       P0 | Backend            | `auth.uid()` identity in policies/RPCs/Edge session validation            | Static/adaptor checks; live attack Not verified                 | Implemented            |
-| SEC-005     |       P0 | Backend + Root     | browser uses URL + publishable key only; service role limited to Edge env | source/build secret scan                                        | Automatically verified |
-| SEC-006     |       P0 | Backend + Frontend | no OTP/token/session/privileged-secret logging                            | repository scan and tests                                       | Automatically verified |
-| SEC-007     |       P0 | QA                 | tracked-source and production-build secret scanner                        | TEST-023                                                        | Automatically verified |
+| Requirement | Priority | Owner              | Implementation                                                                                 | Evidence / limit                                                     | Status                 |
+| ----------- | -------: | ------------------ | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------- |
+| SYNC-001    |       P0 | Backend            | one atomic Dexie rating transaction                                                            | transaction/failure/duplicate tests                                  | Automatically verified |
+| SYNC-002    |       P0 | Backend            | immutable UUID event contract with scheduler evidence                                          | domain, repository, parser tests                                     | Automatically verified |
+| SYNC-003    |       P0 | Backend            | event fingerprint + UUID idempotent ingest                                                     | SQL structure and mocked transport tests; live retry open            | Implemented            |
+| SYNC-004    |       P0 | Backend            | v3 indexed bounded outbox, inclusive leases, partial ack, backoff                              | boundary/Dexie/coordinator/10k-active tests                          | Automatically verified |
+| SYNC-005    |       P0 | Backend            | startup/online/focus/manual triggers and account lock                                          | gateway/coalescing/lock tests                                        | Automatically verified |
+| SYNC-006    |       P0 | Backend            | pre-assignment push/pull/reconcile, day cache, final pass                                      | gateway/coordinator integration tests                                | Automatically verified |
+| SYNC-007    |       P0 | Backend            | all events retained; mutable applications separated                                            | migration and conflict tests                                         | Automatically verified |
+| SYNC-008    |       P0 | Backend            | base revision, event-set hash, trusted CAS commit                                              | static SQL/transport/restart tests; live RPC open                    | Implemented            |
+| SYNC-009    |       P0 | Backend            | durable skipped-state/conflict IDs and trusted deterministic FSRS replay                       | restart reconciliation + executable Edge/browser golden parity       | Automatically verified |
+| SYNC-010    |       P1 | Backend            | clock anomaly flag and protected `ordering_at` rule                                            | migration tests and `SYNC_PROTOCOL.md`                               | Automatically verified |
+| SEC-001     |       P0 | Backend            | RLS enabled on all private tables and related materializations                                 | Static migration checks; live A/B policy execution Not verified      | Implemented            |
+| SEC-002     |       P0 | Backend            | authenticated read-only public content policies                                                | Static migration checks; live role execution Not verified            | Implemented            |
+| SEC-003     |       P0 | Backend            | event table has no ordinary UPDATE/DELETE path                                                 | Static grants/policy checks; live attack Not verified                | Implemented            |
+| SEC-004     |       P0 | Backend            | `auth.uid()` identity in policies/RPCs/Edge session validation                                 | Static/adaptor checks; live attack Not verified                      | Implemented            |
+| SEC-005     |       P0 | Backend + Root     | browser uses URL + publishable key only; service role limited to Edge env                      | source/build secret scan                                             | Automatically verified |
+| SEC-006     |       P0 | Backend + Frontend | no OTP/token/session/privileged-secret logging                                                 | repository scan and tests                                            | Automatically verified |
+| SEC-007     |       P0 | QA                 | tracked-source and production-build secret scanner                                             | TEST-023                                                             | Automatically verified |
+| SEC-008     |       P0 | Root + QA          | Preview-only headers, mode fail-closed, `/cdn-cgi/` exclusion, owner-only apex/wildcard Access | live Access plus local header/PWA checks; hosted offline/logout open | Implemented            |
 
 ## UI, PWA, performance, and accessibility
 
@@ -115,7 +116,7 @@ Evidence is deliberately layered. A local unit, browser, or SQL-structure pass d
 | UI-013      |       P0 | Frontend           | system/light/dark, persisted settings, pre-React theme script                                    | theme/settings/UI/build tests                                               | Automatically verified |
 | UI-014      |       P1 | Frontend           | no UI framework/chart/icon font; CSS/token system only                                           | dependency and bundle inspection                                            | Automatically verified |
 | PWA-001     |       P0 | Frontend           | complete manifest and 192/512/maskable local icons                                               | PWA static check                                                            | Automatically verified |
-| PWA-002     |       P0 | Frontend + QA      | installable asset/config target                                                                  | Android/macOS installation not executed                                     | Not verified           |
+| PWA-002     |       P0 | Frontend + QA      | installable cloud and explicit local-data preview targets                                        | macOS/Android installation not yet executed                                 | Not verified           |
 | PWA-003     |       P0 | Frontend           | generated SW, static-only precache, offline App Shell                                            | build/static/offline browser checks                                         | Automatically verified |
 | PWA-004     |       P0 | Frontend           | prompt update coordinator defers while rating and preserves IDB                                  | unit/component tests                                                        | Automatically verified |
 | PERF-001    |       P0 | Frontend           | system font stack; no remote font dependency                                                     | bundle/source checks                                                        | Automatically verified |
@@ -193,6 +194,7 @@ Evidence is deliberately layered. A local unit, browser, or SQL-structure pass d
 | TEST-038    |       P0 | Root + Reviewers   | independent read-only v1 reports complete                                                                           | Manually verified      |
 | TEST-039    |       P0 | Root               | every v1 finding has an allowed disposition in `REVIEW_RESOLUTION.md`                                               | Manually verified      |
 | TEST-040    |       P0 | Original reviewers | both original reviewers reran final evidence and returned PASS WITH EXTERNAL GAPS                                   | Manually verified      |
+| TEST-041    |       P0 | Root + QA          | live apex/hash/asset denial and owner rating/reload pass; PWA/header checks pass; live global Access logout not run | Implemented            |
 
 ## Explicit external gaps
 
@@ -202,4 +204,4 @@ Evidence is deliberately layered. A local unit, browser, or SQL-structure pass d
 - Real two-client assignment/progress/outbox idempotency.
 - Android Chrome and macOS Chrome installation/standalone launch.
 - Real screen reader, mobile soft keyboard, physical safe area, and Chrome-stable DevTools/Lighthouse run.
-- Cloudflare Pages deployment.
+- Access-protected hosted-origin offline restart, live `/cdn-cgi/access/logout` global sign-out, and raw authenticated-response header capture; local offline/header checks plus Cloudflare deployment parsing are recorded.

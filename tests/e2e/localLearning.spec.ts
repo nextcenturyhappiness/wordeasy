@@ -28,7 +28,7 @@ test("persists a Context Card rating locally across reload", async ({ page }) =>
   await page.reload();
   await expect(page.getByText(/Card 1 of 9/u)).toBeVisible();
   await page.goto("/");
-  await expect(page.getByText("1 change pending")).toBeVisible();
+  await expect(page.getByText("Saved on this device · 1 local review")).toBeVisible();
   await expect(page.getByText("1 / 10")).toBeVisible();
   await expect(page.getByText("0 / 10")).toBeVisible();
 });

@@ -32,6 +32,7 @@ export interface ArticleEnglishAppProps {
   initialSyncState: SyncState;
   syncGateway?: SyncGateway;
   account?: AuthenticatedAccountServices;
+  environmentNotice?: string;
 }
 
 export function ArticleEnglishApp({
@@ -39,7 +40,8 @@ export function ArticleEnglishApp({
   initialHome,
   initialSyncState,
   syncGateway,
-  account
+  account,
+  environmentNotice
 }: ArticleEnglishAppProps) {
   const learningProviderProps = {
     repository,
@@ -53,7 +55,10 @@ export function ArticleEnglishApp({
       <AppErrorBoundary>
         <LearningAppProvider {...learningProviderProps}>
           <BrowserRouter>
-            <AppRoutes settingsGateway={null} />
+            <AppRoutes
+              settingsGateway={null}
+              {...(environmentNotice === undefined ? {} : { environmentNotice })}
+            />
           </BrowserRouter>
         </LearningAppProvider>
       </AppErrorBoundary>
@@ -77,7 +82,10 @@ export function ArticleEnglishApp({
         <ThemeProvider gateway={account.settingsGateway} initialTheme={account.initialTheme}>
           <LearningAppProvider {...learningProviderProps}>
             <BrowserRouter>
-              <AppRoutes settingsGateway={account.settingsGateway} />
+              <AppRoutes
+                settingsGateway={account.settingsGateway}
+                {...(environmentNotice === undefined ? {} : { environmentNotice })}
+              />
             </BrowserRouter>
           </LearningAppProvider>
         </ThemeProvider>

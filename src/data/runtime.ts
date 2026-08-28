@@ -16,14 +16,24 @@ export interface DemoRuntimeConfig {
   deviceId?: string;
 }
 
+export interface PreviewRuntimeConfig {
+  mode: "preview";
+  userId?: string;
+  email?: string;
+  timezone?: string;
+  now?: () => Date;
+  databaseName?: string;
+  deviceId?: string;
+}
+
 export interface CloudRuntimeConfig {
   mode: "cloud";
 }
 
-export type LearningRuntimeConfig = DemoRuntimeConfig | CloudRuntimeConfig;
+export type LearningRuntimeConfig = DemoRuntimeConfig | PreviewRuntimeConfig | CloudRuntimeConfig;
 
 export interface LearningRuntime {
-  mode: "demo" | "cloud";
+  mode: "demo" | "preview" | "cloud";
   accountUserId: string | null;
   auth: AuthGateway;
   learning: LearningRepository;
@@ -47,9 +57,17 @@ export class RuntimeConfigurationError extends Error {
 export async function createLearningRuntime(
   config: LearningRuntimeConfig
 ): Promise<LearningRuntime> {
-  if (config.mode === "demo") {
-    if (import.meta.env.PROD) {
+  if (config.mode === "demo" || config.mode === "preview") {
+    if (config.mode === "demo" && import.meta.env.PROD) {
       throw new RuntimeConfigurationError("Demo runtime is disabled in production builds.");
+    }
+    if (
+      config.mode === "preview" &&
+      (import.meta.env.MODE !== "preview" || import.meta.env.VITE_APP_MODE !== "preview")
+    ) {
+      throw new RuntimeConfigurationError(
+        "Preview runtime requires matching preview Vite mode and app mode."
+      );
     }
     const { createDemoRuntime } = await import("./demoRuntime");
     return createDemoRuntime(config);

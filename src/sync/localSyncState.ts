@@ -1,8 +1,14 @@
 import type { SyncGateway, SyncState } from "../application/contracts";
 
 export class LocalSyncStateStore implements SyncGateway {
-  #state: SyncState = { status: "synced", pendingCount: 0 };
+  #state: SyncState;
   readonly #listeners = new Set<(state: SyncState) => void>();
+
+  constructor(private readonly localOnly = false) {
+    this.#state = localOnly
+      ? { status: "local-only", pendingCount: 0 }
+      : { status: "synced", pendingCount: 0 };
+  }
 
   getState(): SyncState {
     return this.#state;
@@ -20,8 +26,9 @@ export class LocalSyncStateStore implements SyncGateway {
   }
 
   setPendingCount(pendingCount: number): void {
-    this.#state =
-      pendingCount === 0
+    this.#state = this.localOnly
+      ? { status: "local-only", pendingCount }
+      : pendingCount === 0
         ? { status: "synced", pendingCount: 0 }
         : { status: "pending", pendingCount };
     for (const listener of this.#listeners) {

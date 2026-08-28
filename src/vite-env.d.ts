@@ -7,7 +7,7 @@ declare module "virtual:article-english-demo-seed" {
 }
 
 interface ImportMetaEnv {
-  readonly VITE_APP_MODE?: "demo" | "cloud";
+  readonly VITE_APP_MODE?: "demo" | "preview" | "cloud";
   readonly VITE_SUPABASE_URL?: string;
   readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string;
 }

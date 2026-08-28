@@ -13,7 +13,13 @@ function RouteLoading() {
   );
 }
 
-export function AppShell({ authenticationEnabled }: { authenticationEnabled: boolean }) {
+export function AppShell({
+  authenticationEnabled,
+  environmentNotice
+}: {
+  authenticationEnabled: boolean;
+  environmentNotice?: string;
+}) {
   const auth = useOptionalAuthSession();
   const remoteNotice =
     auth?.remoteSession.status === "unavailable" ? auth.remoteSession.message : null;
@@ -38,6 +44,11 @@ export function AppShell({ authenticationEnabled }: { authenticationEnabled: boo
           </nav>
         ) : null}
       </header>
+      {environmentNotice === undefined ? null : (
+        <div className="app-status-notice" role="status" aria-label="Deployment status">
+          {environmentNotice}
+        </div>
+      )}
       {remoteNotice === null ? null : (
         <div className="app-status-notice" role="status">
           {remoteNotice}

@@ -4,14 +4,16 @@
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "vite --mode demo",
     "dev:demo": "vite --mode demo",
     "dev:cloud": "vite --mode production",
     "build": "npm run typecheck && vite build",
+    "build:preview": "npm run typecheck && vite build --mode preview --outDir dist-preview",
     "preview": "vite preview",
+    "preview:local": "vite preview --outDir dist-preview",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings=0",
@@ -26,6 +28,9 @@
     "test:e2e": "playwright test",
     "test:db": "supabase test db",
     "test:pwa": "node scripts/check-pwa.mjs",
+    "test:pwa:preview": "node scripts/check-pwa.mjs dist-preview",
+    "test:preview-build": "node scripts/check-preview-build.mjs",
+    "test:preview:e2e": "playwright test --config playwright.preview.config.ts",
     "test:pwa:offline": "node scripts/run-pwa-offline-e2e.mjs",
     "test:pwa:offline:app-shell": "playwright test --config playwright.pwa.config.ts",
     "test:pwa:offline:learning": "playwright test --config playwright.pwa-learning.config.ts",

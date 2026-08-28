@@ -8,6 +8,7 @@ export default tseslint.config(
   {
     ignores: [
       "dist/**",
+      "dist-preview/**",
       "coverage/**",
       "node_modules/**",
       "playwright-report/**",
@@ -44,10 +45,18 @@ export default tseslint.config(
   },
   {
     ...tseslint.configs.disableTypeChecked,
-    files: ["**/*.{js,mjs}"],
+    files: ["eslint.config.js", "scripts/**/*.mjs", "tests/**/*.mjs"],
     languageOptions: {
       ...tseslint.configs.disableTypeChecked.languageOptions,
       globals: globals.node
+    }
+  },
+  {
+    ...tseslint.configs.disableTypeChecked,
+    files: ["public/**/*.js"],
+    languageOptions: {
+      ...tseslint.configs.disableTypeChecked.languageOptions,
+      globals: globals.browser
     }
   }
 );

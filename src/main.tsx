@@ -36,7 +36,7 @@ function sessionIdentity(session: SessionView): string {
 function startupFailure(error: unknown): void {
   const message =
     error instanceof RuntimeConfigurationError
-      ? "Connect the public Supabase URL and publishable key for cloud mode. Demo mode is available only through the explicit development command."
+      ? "Connect the public Supabase URL and publishable key for cloud mode. Local preview mode requires its explicit preview build."
       : error instanceof Error
         ? error.message
         : "An unknown startup error occurred.";
@@ -81,6 +81,12 @@ async function renderRuntime(
       initialSyncState={runtime.sync.getState()}
       {...(runtime.mode === "cloud" ? { syncGateway: runtime.sync } : {})}
       {...(account === undefined ? {} : { account })}
+      {...(runtime.mode === "preview"
+        ? {
+            environmentNotice:
+              "Preview mode · Progress stays in this browser. Sign-in and cross-device sync are not connected yet."
+          }
+        : {})}
     />
   );
 
@@ -107,9 +113,9 @@ async function switchCloudAccount(session: SessionView): Promise<void> {
 
 async function bootstrap(): Promise<void> {
   try {
-    if (import.meta.env.VITE_APP_MODE === "demo") {
+    if (import.meta.env.VITE_APP_MODE === "demo" || import.meta.env.VITE_APP_MODE === "preview") {
       const generation = ++runtimeGeneration;
-      const runtime = await createLearningRuntime({ mode: "demo" });
+      const runtime = await createLearningRuntime({ mode: import.meta.env.VITE_APP_MODE });
       const session = await runtime.auth.restoreLocal();
       await renderRuntime(runtime, session, generation);
       return;

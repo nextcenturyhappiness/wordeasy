@@ -78,6 +78,7 @@ export interface StudyQueueSnapshot {
 }
 
 export type SyncState =
+  | { status: "local-only"; pendingCount: number }
   | { status: "synced"; pendingCount: 0 }
   | { status: "syncing"; pendingCount: number }
   | { status: "offline"; pendingCount: number }
