@@ -6,6 +6,12 @@ import { verifyBuildModeBoundary } from "./lib/build-mode-boundary.mjs";
 
 const root = new URL("..", import.meta.url).pathname;
 const output = join(root, "dist-preview");
+const limits = {
+  initialJavaScript: 150 * 1024,
+  homeJavaScript: 200 * 1024,
+  initialCss: 30 * 1024,
+  precache: 1.5 * 1024 * 1024
+};
 
 function assert(condition, message) {
   if (!condition) {
@@ -37,31 +43,123 @@ async function fileExists(path) {
   }
 }
 
-const [manifestText, indexHtml, serviceWorker, securityHeaders, themeInitializer, assetNames] =
-  await Promise.all([
-    readFile(join(output, "manifest.webmanifest"), "utf8"),
-    readFile(join(output, "index.html"), "utf8"),
-    readFile(join(output, "sw.js"), "utf8"),
-    readFile(join(output, "_headers"), "utf8"),
-    readFile(join(output, "theme-init.js"), "utf8"),
-    readdir(join(output, "assets"))
-  ]);
+function formatBytes(value) {
+  return `${(value / 1024).toFixed(2)} KiB`;
+}
+
+function assertBudget(label, actual, maximum) {
+  assert(
+    actual <= maximum,
+    `${label} is ${formatBytes(actual)}; budget is ${formatBytes(maximum)}.`
+  );
+}
+
+function javascriptAssetName(path) {
+  return path
+    .replace(/[?#].*$/u, "")
+    .replace(/^.*\/assets\//u, "")
+    .replace(/^\.\//u, "");
+}
+
+function staticJavaScriptImports(source) {
+  const imports = source.matchAll(
+    /\b(?:import|export)\s*(?!\s*\()[^;"']*?(?:from\s*)?["']([^"']+\.js(?:\?[^"']*)?)["']/gu
+  );
+  return [...imports].map((match) => javascriptAssetName(match[1]));
+}
+
+function staticReachableJavaScript(entryFiles, javascriptByName) {
+  const reachable = new Set();
+  const pending = [...entryFiles];
+
+  while (pending.length > 0) {
+    const name = pending.pop();
+    if (name === undefined || reachable.has(name)) {
+      continue;
+    }
+    const source = javascriptByName.get(name);
+    assert(source !== undefined, `JavaScript dependency ${name} is missing from the build.`);
+    reachable.add(name);
+    for (const dependency of staticJavaScriptImports(source)) {
+      if (!reachable.has(dependency)) {
+        pending.push(dependency);
+      }
+    }
+  }
+
+  return reachable;
+}
+
+const [
+  manifestText,
+  indexHtml,
+  serviceWorker,
+  securityHeaders,
+  themeInitializer,
+  assetNames,
+  canonicalSeed
+] = await Promise.all([
+  readFile(join(output, "manifest.webmanifest"), "utf8"),
+  readFile(join(output, "index.html"), "utf8"),
+  readFile(join(output, "sw.js"), "utf8"),
+  readFile(join(output, "_headers"), "utf8"),
+  readFile(join(output, "theme-init.js"), "utf8"),
+  readdir(join(output, "assets")),
+  readFile(join(root, "data", "seed-data.json"), "utf8").then(JSON.parse)
+]);
 const manifest = JSON.parse(manifestText);
-const javascript = (
+const javascriptFiles = assetNames.filter((name) => name.endsWith(".js"));
+const javascriptByName = new Map(
   await Promise.all(
-    assetNames
-      .filter((name) => name.endsWith(".js"))
-      .map((name) => readFile(join(output, "assets", name), "utf8"))
+    javascriptFiles.map(async (name) => [
+      name,
+      await readFile(join(output, "assets", name), "utf8")
+    ])
   )
-).join("\n");
-const initialScripts = [...indexHtml.matchAll(/<script[^>]+src="([^"]+\.js)"/gu)].map(
-  (match) => match[1]
 );
+const javascript = [...javascriptByName.values()].join("\n");
+const initialScripts = [
+  ...new Set([
+    ...[...indexHtml.matchAll(/<script[^>]+src="([^"]+\.js)"/gu)].map((match) => match[1]),
+    ...[...indexHtml.matchAll(/<link[^>]+rel="modulepreload"[^>]+href="([^"]+\.js)"/gu)].map(
+      (match) => match[1]
+    )
+  ])
+];
 const initialStyles = [...indexHtml.matchAll(/<link[^>]+href="([^"]+\.css)"/gu)].map(
   (match) => match[1]
 );
+const initialEntryFiles = initialScripts
+  .map(javascriptAssetName)
+  .filter((name) => javascriptByName.has(name));
+const initialRootScripts = initialScripts.filter(
+  (path) => !javascriptByName.has(javascriptAssetName(path))
+);
+const initialFiles = staticReachableJavaScript(initialEntryFiles, javascriptByName);
 const initialJavaScript = (
-  await Promise.all(initialScripts.map((path) => gzipSize(join(output, path.replace(/^\//u, "")))))
+  await Promise.all([
+    ...[...initialFiles].map((name) => gzipSize(join(output, "assets", name))),
+    ...initialRootScripts.map((path) => gzipSize(join(output, path.replace(/^\//u, ""))))
+  ])
+).reduce((total, size) => total + size, 0);
+const previewRuntimeFiles = [...javascriptByName]
+  .filter(
+    ([, source]) => source.includes("preview-user") && source.includes("preview@wordeasy.invalid")
+  )
+  .map(([name]) => name);
+assert(
+  previewRuntimeFiles.length === 1,
+  `Expected one Preview runtime chunk; found ${String(previewRuntimeFiles.length)}.`
+);
+const homeFiles = staticReachableJavaScript(
+  [...initialFiles, ...previewRuntimeFiles],
+  javascriptByName
+);
+const homeJavaScript = (
+  await Promise.all([
+    ...[...homeFiles].map((name) => gzipSize(join(output, "assets", name))),
+    ...initialRootScripts.map((path) => gzipSize(join(output, path.replace(/^\//u, ""))))
+  ])
 ).reduce((total, size) => total + size, 0);
 const initialCss = (
   await Promise.all(initialStyles.map((path) => gzipSize(join(output, path.replace(/^\//u, "")))))
@@ -78,8 +176,44 @@ const compressedPrecache = (await Promise.all(precacheFiles.map((path) => gzipSi
   (total, size) => total + size,
   0
 );
+const activeCards = canonicalSeed.cards.filter((card) => card.active);
+const researchQuotas = new Map([
+  ["general_research", 5],
+  ["statistics_methodology", 2],
+  ["bioinformatics", 3]
+]);
+const medicalCategories = [
+  "anatomy",
+  "physiology",
+  "pathology",
+  "symptoms",
+  "signs",
+  "diseases",
+  "diagnosis",
+  "laboratory",
+  "imaging",
+  "treatment"
+];
+const expectedPreviewIds = new Set([
+  ...[...researchQuotas].flatMap(([category, quota]) =>
+    activeCards
+      .filter((card) => card.module === "research_english" && card.category === category)
+      .slice(0, quota)
+      .map((card) => card.id)
+  ),
+  ...medicalCategories.flatMap((category) =>
+    activeCards
+      .filter((card) => card.module === "medical_english" && card.category === category)
+      .slice(0, 1)
+      .map((card) => card.id)
+  )
+]);
+const bundledCanonicalIds = activeCards
+  .map((card) => card.id)
+  .filter((cardId) => javascript.includes(cardId));
 
-assert(manifest.name === "Article English Preview", "Preview manifest name is missing.");
+assert(manifest.name === "wordeasy Preview", "Preview manifest name is missing.");
+assert(manifest.short_name === "wordeasy Preview", "Preview manifest short name is missing.");
 assert(manifest.display === "standalone", "Preview manifest is not standalone.");
 assert(
   !(await fileExists(join(root, "dist", "_headers"))),
@@ -129,16 +263,27 @@ assert(
   javascript.includes("preview-user"),
   "Preview bundle does not contain the explicit preview runtime."
 );
+assert(expectedPreviewIds.size === 20, "Expected Preview catalog must contain exactly 20 cards.");
+assert(
+  bundledCanonicalIds.length === 20 &&
+    bundledCanonicalIds.every((cardId) => expectedPreviewIds.has(cardId)),
+  `Preview bundle crossed its 20-card boundary; found ${String(bundledCanonicalIds.length)} canonical card IDs.`
+);
+assert(
+  !assetNames.some((name) => name.startsWith("standaloneCards-")),
+  "Preview build emitted the complete standalone-card module."
+);
 assert(
   !javascript.includes("SUPABASE_SERVICE_ROLE_KEY"),
   "Preview bundle contains a privileged Supabase secret name."
 );
-assert(initialJavaScript <= 150 * 1024, "Preview initial JavaScript exceeds the 150 KiB budget.");
-assert(initialCss <= 30 * 1024, "Preview CSS exceeds the 30 KiB budget.");
-assert(compressedPrecache <= 1.5 * 1024 * 1024, "Preview precache exceeds the 1.5 MiB budget.");
+assertBudget("Preview initial JavaScript gzip", initialJavaScript, limits.initialJavaScript);
+assertBudget("Preview Home cumulative JavaScript gzip", homeJavaScript, limits.homeJavaScript);
+assertBudget("Preview initial CSS gzip", initialCss, limits.initialCss);
+assertBudget("Preview compressed precache", compressedPrecache, limits.precache);
 
 await verifyBuildModeBoundary(root);
 
 console.log(
-  `Explicit local-data preview build and mode-boundary checks passed: initial JS ${(initialJavaScript / 1024).toFixed(2)} KiB gzip, CSS ${(initialCss / 1024).toFixed(2)} KiB gzip, precache ${(compressedPrecache / 1024).toFixed(2)} KiB gzip.`
+  `Explicit local-data preview build and mode-boundary checks passed: ${formatBytes(initialJavaScript)} initial JS, ${formatBytes(homeJavaScript)} Home JS, ${formatBytes(initialCss)} CSS, ${formatBytes(compressedPrecache)} precache.`
 );

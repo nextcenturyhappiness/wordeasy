@@ -11,7 +11,7 @@ import "../../src/styles/global.css";
 const container = document.querySelector<HTMLDivElement>("#root");
 
 if (container === null) {
-  throw new Error("The Article English root element is missing.");
+  throw new Error("The wordeasy root element is missing.");
 }
 
 const root = createRoot(container);

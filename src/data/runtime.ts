@@ -26,14 +26,37 @@ export interface PreviewRuntimeConfig {
   deviceId?: string;
 }
 
+export interface StandaloneRuntimeConfig {
+  mode: "standalone";
+  userId?: string;
+  email?: string;
+  timezone?: string;
+  now?: () => Date;
+  databaseName?: string;
+  deviceId?: string;
+}
+
+export interface DesktopRuntimeConfig {
+  mode: "desktop";
+  userId?: string;
+  email?: string;
+  timezone?: string;
+  now?: () => Date;
+  databaseName?: string;
+  deviceId?: string;
+}
+
 export interface CloudRuntimeConfig {
   mode: "cloud";
 }
 
-export type LearningRuntimeConfig = DemoRuntimeConfig | PreviewRuntimeConfig | CloudRuntimeConfig;
+export type LocalRuntimeConfig =
+  DemoRuntimeConfig | PreviewRuntimeConfig | StandaloneRuntimeConfig | DesktopRuntimeConfig;
+
+export type LearningRuntimeConfig = LocalRuntimeConfig | CloudRuntimeConfig;
 
 export interface LearningRuntime {
-  mode: "demo" | "preview" | "cloud";
+  mode: "demo" | "preview" | "standalone" | "desktop" | "cloud";
   accountUserId: string | null;
   auth: AuthGateway;
   learning: LearningRepository;
@@ -54,10 +77,24 @@ export class RuntimeConfigurationError extends Error {
   }
 }
 
+const includeTestRuntimes = import.meta.env.MODE === "test";
+const demoRuntimeLoader =
+  includeTestRuntimes ||
+  import.meta.env.VITE_APP_MODE === "demo" ||
+  import.meta.env.VITE_APP_MODE === "preview"
+    ? () => import("./demoRuntime")
+    : null;
+const standaloneRuntimeLoader =
+  includeTestRuntimes ||
+  import.meta.env.VITE_APP_MODE === "standalone" ||
+  import.meta.env.VITE_APP_MODE === "desktop"
+    ? () => import("./standaloneRuntime")
+    : null;
+
 export async function createLearningRuntime(
   config: LearningRuntimeConfig
 ): Promise<LearningRuntime> {
-  if (config.mode === "demo" || config.mode === "preview") {
+  if (config.mode !== "cloud") {
     if (config.mode === "demo" && import.meta.env.PROD) {
       throw new RuntimeConfigurationError("Demo runtime is disabled in production builds.");
     }
@@ -69,8 +106,36 @@ export async function createLearningRuntime(
         "Preview runtime requires matching preview Vite mode and app mode."
       );
     }
-    const { createDemoRuntime } = await import("./demoRuntime");
-    return createDemoRuntime(config);
+    if (
+      config.mode === "standalone" &&
+      (import.meta.env.MODE !== "standalone" || import.meta.env.VITE_APP_MODE !== "standalone")
+    ) {
+      throw new RuntimeConfigurationError(
+        "Standalone runtime requires matching standalone Vite mode and app mode."
+      );
+    }
+    if (
+      config.mode === "desktop" &&
+      (import.meta.env.MODE !== "desktop" || import.meta.env.VITE_APP_MODE !== "desktop")
+    ) {
+      throw new RuntimeConfigurationError(
+        "Desktop runtime requires matching desktop Vite mode and app mode."
+      );
+    }
+    if (config.mode === "demo" || config.mode === "preview") {
+      if (demoRuntimeLoader === null) {
+        throw new RuntimeConfigurationError("Demo/Preview runtime is unavailable in this build.");
+      }
+      const { createDemoRuntime } = await demoRuntimeLoader();
+      return createDemoRuntime(config);
+    }
+    if (standaloneRuntimeLoader === null) {
+      throw new RuntimeConfigurationError(
+        "Standalone/Desktop runtime is unavailable in this build."
+      );
+    }
+    const { createStandaloneRuntime } = await standaloneRuntimeLoader();
+    return createStandaloneRuntime(config);
   }
 
   throw new RuntimeConfigurationError(

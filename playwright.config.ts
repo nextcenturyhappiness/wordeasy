@@ -11,7 +11,8 @@ export default defineConfig({
     "**/pwaOfflineLearning.spec.ts",
     "**/cloudStartupPerformance.spec.ts",
     "**/performance.spec.ts",
-    "**/previewDeployment.spec.ts"
+    "**/previewDeployment.spec.ts",
+    "**/standaloneDeployment.spec.ts"
   ],
   fullyParallel: false,
   workers: 1,

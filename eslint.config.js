@@ -9,6 +9,10 @@ export default tseslint.config(
     ignores: [
       "dist/**",
       "dist-preview/**",
+      "dist-standalone/**",
+      "dist-desktop/**",
+      "src-tauri/target/**",
+      "src-tauri/gen/**",
       "coverage/**",
       "node_modules/**",
       "playwright-report/**",

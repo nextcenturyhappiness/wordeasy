@@ -10,7 +10,7 @@ export function BootstrapShell() {
   return (
     <div className="app-shell" aria-busy="true">
       <header className="app-header">
-        <span className="wordmark">Article English</span>
+        <span className="wordmark">wordeasy</span>
       </header>
       <main className="app-main">
         <section className="panel panel--centered" aria-live="polite">
@@ -28,7 +28,7 @@ export function ConfigurationFailure({ message }: { message: string }) {
     <div className="fatal-error" role="alert">
       <section className="panel panel--centered">
         <p className="eyebrow">Configuration needed</p>
-        <h1>Article English could not open.</h1>
+        <h1>wordeasy could not open.</h1>
         <p>{message}</p>
       </section>
     </div>

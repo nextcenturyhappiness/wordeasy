@@ -32,8 +32,8 @@ export function AppShell({
         Skip to learning content
       </a>
       <header className="app-header">
-        <Link className="wordmark" to="/" aria-label="Article English home">
-          Article English
+        <Link className="wordmark" to="/" aria-label="wordeasy home">
+          wordeasy
         </Link>
         {authenticationEnabled ? (
           <nav className="app-nav" aria-label="Primary navigation">

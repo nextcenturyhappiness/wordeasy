@@ -18,7 +18,7 @@ import "./styles/global.css";
 const container = document.querySelector<HTMLDivElement>("#root");
 
 if (container === null) {
-  throw new Error("The Article English root element is missing.");
+  throw new Error("The wordeasy root element is missing.");
 }
 
 const root = createRoot(container);
@@ -36,7 +36,7 @@ function sessionIdentity(session: SessionView): string {
 function startupFailure(error: unknown): void {
   const message =
     error instanceof RuntimeConfigurationError
-      ? "Connect the public Supabase URL and publishable key for cloud mode. Local preview mode requires its explicit preview build."
+      ? "This build has an invalid runtime configuration. Use the matching cloud, standalone, desktop, preview, or demo build command."
       : error instanceof Error
         ? error.message
         : "An unknown startup error occurred.";
@@ -87,6 +87,18 @@ async function renderRuntime(
               "Preview mode · Progress stays in this browser. Sign-in and cross-device sync are not connected yet."
           }
         : {})}
+      {...(runtime.mode === "standalone"
+        ? {
+            environmentNotice:
+              "Personal edition · Progress is stored only on this device. Cloud backup and cross-device sync are not connected."
+          }
+        : {})}
+      {...(runtime.mode === "desktop"
+        ? {
+            environmentNotice:
+              "Personal Mac edition · Progress is stored only on this Mac. Cloud backup and Android sync are not connected."
+          }
+        : {})}
     />
   );
 
@@ -113,7 +125,12 @@ async function switchCloudAccount(session: SessionView): Promise<void> {
 
 async function bootstrap(): Promise<void> {
   try {
-    if (import.meta.env.VITE_APP_MODE === "demo" || import.meta.env.VITE_APP_MODE === "preview") {
+    if (
+      import.meta.env.VITE_APP_MODE === "demo" ||
+      import.meta.env.VITE_APP_MODE === "preview" ||
+      import.meta.env.VITE_APP_MODE === "standalone" ||
+      import.meta.env.VITE_APP_MODE === "desktop"
+    ) {
       const generation = ++runtimeGeneration;
       const runtime = await createLearningRuntime({ mode: import.meta.env.VITE_APP_MODE });
       const session = await runtime.auth.restoreLocal();
@@ -140,4 +157,6 @@ window.addEventListener(
 );
 
 void bootstrap();
-void registerPwaUpdateCoordinator();
+if (import.meta.env.VITE_APP_MODE !== "desktop") {
+  void registerPwaUpdateCoordinator();
+}

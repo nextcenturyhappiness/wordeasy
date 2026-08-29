@@ -2,6 +2,10 @@
 node_modules
 dist/
 dist-preview/
+dist-standalone/
+dist-desktop/
+src-tauri/target/
+src-tauri/gen/
 coverage/
 .vite/
 
@@ -16,6 +20,8 @@ test-results/
 !.env.example
 !.env.demo
 !.env.preview
+!.env.standalone
+!.env.desktop
 supabase/.temp/
 
 # User and editor state

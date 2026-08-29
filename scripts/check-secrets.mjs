@@ -9,7 +9,10 @@ const frontendProductionTargets = [
   "dist",
   "index.html",
   "vite.config.ts",
-  ".env.example"
+  ".env.example",
+  ".env.standalone",
+  ".env.desktop",
+  "src-tauri"
 ];
 const additionalSourceTargets = ["supabase/functions"];
 const textExtensions = new Set([
@@ -19,7 +22,9 @@ const textExtensions = new Set([
   ".js",
   ".json",
   ".mjs",
+  ".rs",
   ".svg",
+  ".toml",
   ".ts",
   ".tsx",
   ".txt",
@@ -42,7 +47,10 @@ async function collect(path) {
     const entries = await readdir(path, { withFileTypes: true });
     const nested = await Promise.all(
       entries
-        .filter((entry) => entry.name !== "node_modules")
+        .filter(
+          (entry) =>
+            entry.name !== "node_modules" && entry.name !== "target" && entry.name !== "gen"
+        )
         .map((entry) => {
           const child = join(path, entry.name);
           return entry.isDirectory() ? collect(child) : Promise.resolve([child]);

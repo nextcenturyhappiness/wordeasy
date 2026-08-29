@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { RateCardInput } from "../../src/application/contracts";
+import { DEMO_CARDS } from "../../src/data/demo/demoCards";
 import { DemoLearningRepository } from "../../src/data/demoLearningRepository";
 import { LearningDatabase } from "../../src/db/learningDatabase";
 import { FsrsSchedulerAdapter } from "../../src/scheduler/fsrsScheduler";
@@ -166,6 +167,7 @@ describe("DemoLearningRepository", () => {
       deviceId: "device-test-user-a",
       scheduler: new FsrsSchedulerAdapter(),
       syncState,
+      cards: DEMO_CARDS,
       now: () => new Date(FIXED_NOW),
       eventIdFactory: () => collidingEventId
     });
@@ -232,6 +234,7 @@ describe("DemoLearningRepository", () => {
       deviceId: "device-test-user-a",
       scheduler: new FsrsSchedulerAdapter(),
       syncState: reopenedSync,
+      cards: DEMO_CARDS,
       now: () => new Date(FIXED_NOW)
     });
     await reopened.initialize();
@@ -289,6 +292,7 @@ describe("DemoLearningRepository", () => {
       deviceId: "device-b",
       scheduler: new FsrsSchedulerAdapter(),
       syncState: syncB,
+      cards: DEMO_CARDS,
       now: () => new Date(FIXED_NOW)
     });
     await accountB.initialize();
@@ -315,6 +319,7 @@ describe("DemoLearningRepository", () => {
       deviceId: "device-test-user-a",
       scheduler: new FsrsSchedulerAdapter(),
       syncState: new LocalSyncStateStore(),
+      cards: DEMO_CARDS,
       now: () => new Date("2026-08-27T08:00:00.000Z")
     });
     await nextDay.initialize();

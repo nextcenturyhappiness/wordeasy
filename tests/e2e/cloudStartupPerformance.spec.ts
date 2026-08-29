@@ -29,6 +29,18 @@ test("renders production cloud Cached Home while Supabase remains delayed for fi
     page.getByRole("article", { name: "Research English" }).getByText("2 / 10")
   ).toBeVisible();
   const homeVisibleAt = Date.now() - startedAt;
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() =>
+          Number(
+            performance.getEntriesByName("app-shell-visible", "mark").length > 0 &&
+              performance.getEntriesByName("cached-home-ready", "mark").length > 0
+          )
+        ),
+      { timeout: 1_500 }
+    )
+    .toBe(1);
   const marks = await page.evaluate(() => ({
     appShell: performance.getEntriesByName("app-shell-visible", "mark").at(-1)?.startTime ?? 0,
     cachedHome: performance.getEntriesByName("cached-home-ready", "mark").at(-1)?.startTime ?? 0,
@@ -37,6 +49,7 @@ test("renders production cloud Cached Home while Supabase remains delayed for fi
 
   expect(homeVisibleAt).toBeLessThan(1_500);
   expect(marks.appShell).toBeGreaterThan(0);
+  expect(marks.appShell).toBeLessThan(1_500);
   expect(marks.cachedHome).toBeGreaterThanOrEqual(marks.appShell);
   expect(marks.remoteSync).toBe(0);
   await expect.poll(() => requests.length).toBeGreaterThan(0);

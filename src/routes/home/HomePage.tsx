@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { ModuleSummaryCard } from "../../components/ModuleSummaryCard";
 import { SyncStatus } from "../../components/SyncStatus";
 import { useLearningApp } from "../../app/LearningAppContext";
+import { prefetchHomeLearning, scheduleIdlePrefetch } from "../../app/homePrefetch";
 import { markPerformanceAfterPaint, measurePerformance } from "../../application/performance";
 
 function greetingFor(timeZone: string): string {
@@ -31,17 +32,30 @@ function greetingFor(timeZone: string): string {
 }
 
 export function HomePage() {
-  const { home, syncState, syncNow } = useLearningApp();
+  const { home, repository, syncState, syncNow } = useLearningApp();
 
   useEffect(() => {
     if (home.status !== "ready") {
       return;
     }
 
-    return markPerformanceAfterPaint("cached-home-ready", () => {
+    let active = true;
+    let cancelIdlePrefetch: () => void = () => undefined;
+    const cancelAfterPaint = markPerformanceAfterPaint("cached-home-ready", () => {
       measurePerformance("app-shell-to-cached-home", "app-shell-visible", "cached-home-ready");
+      if (active) {
+        cancelIdlePrefetch = scheduleIdlePrefetch(() => {
+          void prefetchHomeLearning(repository, home.snapshot);
+        });
+      }
     });
-  }, [home.status]);
+
+    return () => {
+      active = false;
+      cancelAfterPaint();
+      cancelIdlePrefetch();
+    };
+  }, [home, repository]);
 
   const triggerSync = () => {
     void syncNow().catch(() => undefined);

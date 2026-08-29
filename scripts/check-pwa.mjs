@@ -58,6 +58,10 @@ assert(
   serviceWorker.includes("index.html"),
   "Service Worker does not precache the App Shell HTML."
 );
+assert(
+  /denylist\s*:\s*\[[^\]]*cdn-cgi[^\]]*\]/u.test(serviceWorker),
+  "Service Worker navigation fallback does not explicitly exclude /cdn-cgi/."
+);
 assert(!serviceWorker.includes("og.png"), "Non-essential social artwork must not enter precache.");
 // A statically cached JavaScript chunk may contain "supabase" in its filename. The boundary is
 // that no Auth/REST endpoint or token-bearing response is registered as a runtime cache target.

@@ -6,7 +6,7 @@ Current state: M0–M4 implementation and the local release-candidate gate are c
 
 ## 1. Goal and execution order
 
-Build the complete Article English MVP in the repository-defined order:
+Build the complete wordeasy MVP in the repository-defined order:
 
 ```text
 M0 baseline/planning

@@ -2,10 +2,10 @@ import { useLearningApp } from "../../src/app/LearningAppContext";
 import { HomePage } from "../../src/routes/home/HomePage";
 import { TodayPage } from "../../src/routes/today/TodayPage";
 import type { LearningRepository } from "../../src/application/contracts";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { Route, Routes } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   buildHomeSnapshot,
@@ -13,6 +13,10 @@ import {
   createRepository,
   renderWithLearningApp
 } from "./fixtures";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 function ApplyResearchResult() {
   const { applyRatingResult } = useLearningApp();
@@ -104,6 +108,28 @@ describe("Home and Today", () => {
     );
     expect(screen.getByRole("status")).toHaveTextContent("Synced");
     expect(getCachedHome).not.toHaveBeenCalled();
+  });
+
+  it("waits until after Home paint and browser idle before prefetching the likely module", () => {
+    let idleCallback: IdleRequestCallback | null = null;
+    const requestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
+      idleCallback = callback;
+      return 19;
+    });
+    vi.stubGlobal("requestAnimationFrame", undefined);
+    vi.stubGlobal("requestIdleCallback", requestIdleCallback);
+    vi.stubGlobal("cancelIdleCallback", vi.fn());
+    const prefetchToday = vi.fn<LearningRepository["prefetchToday"]>(() => Promise.resolve());
+    const repository = createRepository({ prefetchToday });
+
+    renderWithLearningApp(<HomePage />, { repository });
+
+    expect(requestIdleCallback).toHaveBeenCalledOnce();
+    expect(prefetchToday).not.toHaveBeenCalled();
+    act(() => {
+      idleCallback?.({ didTimeout: false, timeRemaining: () => 50 });
+    });
+    expect(prefetchToday).toHaveBeenCalledWith("research_english");
   });
 
   it("updates only the rated module and leaves the other module unchanged", async () => {

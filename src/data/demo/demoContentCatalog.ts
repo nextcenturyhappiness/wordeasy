@@ -20,4 +20,17 @@ export class DemoContentCatalog {
       );
     });
   }
+
+  async replace(cachedAt: string): Promise<void> {
+    for (const card of this.cards) {
+      assertNormalizedContextCard(card);
+    }
+
+    await this.database.transaction("rw", this.database.cached_cards, async () => {
+      await this.database.cached_cards.where("userId").equals(this.userId).delete();
+      await this.database.cached_cards.bulkPut(
+        this.cards.map((card) => cachedCardFromNormalized(this.userId, card, cachedAt))
+      );
+    });
+  }
 }

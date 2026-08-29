@@ -21,6 +21,7 @@
     "playwright.performance.config.ts",
     "playwright.cloud-performance.config.ts",
     "playwright.preview.config.ts",
+    "playwright.standalone.config.ts",
     "eslint.config.js"
   ]
 }

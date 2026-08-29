@@ -89,6 +89,7 @@ export interface LearningQueries {
   getCachedHome(): Promise<HomeSnapshot | null>;
   getToday(module: ModuleSlug): Promise<TodaySnapshot>;
   getStudyQueue(module: ModuleSlug, queue: QueueKind): Promise<StudyQueueSnapshot>;
+  prefetchToday(module: ModuleSlug): Promise<void>;
 }
 
 export interface RateCardInput {

@@ -20,7 +20,7 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
       return (
         <main className="fatal-error" id="main-content">
           <div className="panel panel--centered" role="alert">
-            <p className="eyebrow">Article English</p>
+            <p className="eyebrow">wordeasy</p>
             <h1>The learning view could not be displayed.</h1>
             <p>Your locally saved progress has not been cleared.</p>
             <button

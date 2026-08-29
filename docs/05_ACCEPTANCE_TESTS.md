@@ -387,20 +387,38 @@ Deferred by explicit MVP scope
 
 修复后两位原 Reviewer 重新检查实际代码和测试，分别输出 v2。
 
-### TEST-041 · 托管 Preview 私有入口
+### TEST-041 · 托管本地数据 PWA 私有入口
 
-Cloudflare Pages Preview 发布前后必须保留以下证据：
+Cloudflare Pages 上的 Preview 或正式 standalone PWA 发布前后必须保留以下证据：
 
 1. 固定主机名 `wordeasy-preview.pages.dev` 和 `*.wordeasy-preview.pages.dev` 均绑定 Cloudflare Access；
 2. 两个入口都使用默认拒绝策略，身份必须同时是 `Cloudflare Account Member` 并匹配所有者精确邮箱，会话不超过 24 小时；
 3. 无身份会话的新浏览器上下文访问根页面、直达路由、`sw.js` 和主 JavaScript 资源时，在内容返回前进入 Access 登录或拒绝响应；
 4. 已登录的账户可以打开 Home、完成一次评分并刷新保留进度；
-5. 响应包含 Preview-only CSP、subdomain HSTS、noindex、nosniff、frame denial、Permissions Policy 和 no-referrer，且没有通配 `Access-Control-Allow-Origin`；
+5. 响应包含 local-only CSP、subdomain HSTS、noindex、nosniff、frame denial、Permissions Policy 和 no-referrer，且没有通配 `Access-Control-Allow-Origin`；
 6. CSP 不产生浏览器违规，Service Worker 安装和离线重启仍通过；
 7. `/cdn-cgi/access/logout` 不被 Service Worker 的 SPA fallback 截获；
-8. 默认 cloud production 构建不包含 Preview-only `_headers`。
+8. 默认 cloud production 构建不包含 local-only `_headers`；
+9. 若现有 Preview 项目被正式 standalone 替换，部署详情、匿名固定/哈希入口拦截和登录后 UI 都必须证明当前内容是完整 standalone，而不是仍把历史 Preview 当作产品交付。
 
 若固定主机名已保护但哈希部署别名仍匿名可访问，则为 BLOCKER，不得发布。
+
+### TEST-042 · macOS 个人版 DMG
+
+必须分别记录自动证据与真实运行证据：
+
+1. `dist-desktop` 不包含 Service Worker、Manifest、Workbox、Cloudflare `_headers`、Supabase 配置或 privileged secret；
+2. 完整 60-card 内容位于 deferred desktop chunk，不进入首屏 JavaScript；
+3. `cargo fmt --check`、Clippy `-D warnings`、Cargo tests 和 release build 通过；
+4. `.app` 与 `.dmg` 均实际生成，主二进制为 `arm64`，identifier 为 `com.nextcenturyhappiness.wordeasy`；
+5. ad-hoc `codesign --verify --deep --strict` 与 `hdiutil verify` 通过；
+6. DMG 实际挂载，挂载卷内包含应用和 Applications 安装入口；
+7. 应用在完全不依赖 Supabase / Cloudflare 的情况下启动 Home，可进入 Research / Medical、Reveal 和评分；
+8. 评分后完全退出并重开，进度和 60-card catalog 仍保留；
+9. 远程导航测试拒绝非本地 URL，Tauri capability / plugin 清单保持最小；
+10. 明确记录 Developer ID 签名、Apple 公证和第三方 Mac 分发未验证，不得把 ad-hoc 签名等同于公证。
+
+TEST-042 通过不能替代 TEST-027 的真实 Android Chrome PWA 安装验收。
 
 ---
 

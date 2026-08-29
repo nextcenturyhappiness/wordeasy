@@ -164,6 +164,54 @@ Alternatives rejected: 公开发布后只隐藏 URL；只添加 noindex；只保
 Consequences: 用户必须先通过 Cloudflare Access 登录；新增 Cloudflare 账户成员不会自动获得权限，只有同时匹配精确 owner identity 才可访问。若所有者邮箱变更，必须先更新 Access 策略以免锁定。Access 无法远程撤销已安装设备上的离线 App Shell 或 IndexedDB，本机磁盘/用户会话安全仍是独立边界。在线发布必须验证匿名固定入口、哈希别名和静态资源均被拦截。
 Tests/docs affected: Preview build checker, Cloudflare online acceptance, `README.md`, `docs/02_DATA_SYNC_SECURITY.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`, `docs/RELEASE_VERIFICATION.md`.
 
+### DEC-025 · PWA 核心增加 macOS 个人版 Tauri DMG
+
+Date: 2026-08-28
+Status: Accepted
+Related requirements: SCOPE-001/002, PWA-001–004, DESKTOP-001–004, PERF-006/011, TEST-027/042
+Context: 用户明确要求不再把私有 Preview 当成产品交付，而是生成个人使用的 macOS App，同时保留 Android 手机运行能力。原 SCOPE-002 将所有原生包装列为 Deferred，与本次明确授权冲突。
+Decision: 同一 React / TypeScript / Vite 学习前端保留 installable Android PWA，并新增 Tauri 2 macOS 外壳。正式本地 Web target 使用 `standalone` mode，Mac 使用 `desktop` mode；二者加载完整 60-card canonical seed 的 deferred chunk，分别使用稳定独立的 IndexedDB namespace。桌面 target 不生成 Service Worker，并以 `com.nextcenturyhappiness.wordeasy`、严格 CSP、零 capability、无 IPC command、无远程网络和导航拒绝进行 ad-hoc 个人版 `.app` / `.dmg` 打包。
+Reason: Tauri 只承担 Mac 安装和窗口生命周期，不复制前端或学习内核；Android 仍获得标准 PWA 安装和离线能力。显式 mode、独立数据 identity 和可见本地边界避免把 Preview、云端同步或跨设备能力伪装成正式可用功能。
+Alternatives rejected: 把 20-card Preview 直接改名打包；为 Android 和 macOS 分别重写原生应用；把 Tauri Service Worker 与 bundle 更新同时启用；在没有 Supabase 时伪造账号和跨设备同步。
+Consequences: SCOPE-002 只继续 Deferred Android APK/AAB、应用商店及 Developer ID 签名/Apple 公证。Mac、Android、旧 Preview 的本地进度暂不互通；修改 bundle identifier、WebView scheme 或本地 namespace 会表现为新数据空间。ad-hoc DMG 只作为本人使用产物，不代表可无提示分发给其他 Mac 用户。
+Tests/docs affected: Tauri config/Rust guard, local runtime/seed, desktop/standalone build checks and E2E, `README.md`, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`, `docs/RELEASE_VERIFICATION.md`.
+
+### DEC-026 · 正式 standalone PWA 继承 owner-only 托管边界
+
+Date: 2026-08-29
+Status: Accepted
+Related requirements: DATA-004, SEC-008, PWA-001–003, TEST-041; DEC-024/025
+Context: 用户要求 Android 继续运行，但不再把 20-card 私有 Preview 作为产品交付。正式 `standalone` 已有完整 60-card 内容、独立稳定 namespace 和本地离线能力，现有 Cloudflare Pages 项目则已配置固定主机与通配部署别名的 owner-only Access。
+Decision: 使用验证通过的 `dist-standalone` 替换现有 Pages 项目的 production 内容，同时保留 `wordeasy-preview.pages.dev` 这一历史项目主机名和原有两层 Access 覆盖。20-card Preview 仅保留在部署历史；当前安装名称、manifest、runtime 和数据 namespace 均为正式 `wordeasy` standalone。正式本地数据 PWA 继承 DEC-024 的默认拒绝 Access、local-only `_headers`、同源 CSP、`/cdn-cgi/` 排除和匿名静态资源拦截要求。
+Reason: 在不引入假账号或假同步的情况下提供真实 Android PWA 安装目标，同时避免新建并重新配置一套容易出现哈希域名旁路的安全边界。历史 URL 中包含 `preview` 不应决定当前 artifact 的产品身份。
+Alternatives rejected: 继续把 20-card Preview 当产品；公开 standalone 后只隐藏 URL；只保护固定域名；在无 Supabase 时增加客户端口令；为改名另建未完成 Access 验证的新项目。
+Consequences: README 和发布账本必须明确 URL 是历史项目名而当前内容是正式 60-card PWA。Access 仍不能远程撤销已缓存的离线 App Shell；Android 与 Mac 进度仍不互通。浏览器仿真和线上部署成功不能替代真实 Android 安装，PWA-002/TEST-027 继续 Not verified。
+Tests/docs affected: standalone build/PWA/E2E checks, Cloudflare deployment and anonymous Access checks, `README.md`, `docs/02_DATA_SYNC_SECURITY.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`, `docs/RELEASE_VERIFICATION.md`.
+
+### DEC-027 · 正式个人版按需加载内容并冻结本地 Review 队列
+
+Date: 2026-08-29
+Status: Accepted
+Related requirements: CORE-006, ASSIGN-007, SCHED-001/002, PERF-005/006, TEST-033; DEC-025
+Context: 第一轮正式 runtime 审查发现 standalone/desktop 复用了 Demo 的永久空 Review 策略，并在 Home 前静态加载完整 60-card catalog 和 FSRS。旧构建已可能在当日写入无版本的空 Review set。
+Decision: 正式本地 target 使用独立 `PersonalLearningRepository`。Home render-critical path 只打开 IndexedDB、刷新按日 summary，并在无 catalog 时生成轻量 New 配额；Home 可见绘制完成后再通过可取消的 idle callback 预取 Today/Study route 与未完成卡最多的模块今日卡片。60-card catalog 在该 idle 预取或首次显式 Today/Study 访问时动态加载、按版本原子替换可重建缓存，FSRS 只在首次评分时动态加载。每天先固定 New assignment，再按 profile IANA timezone 将本学习日结束前到期且不属于当日 New 的 card 以 `dueAt + cardId` 稳定排序并冻结 Review set；零卡也冻结。`personal-review-queues-v1` 只在首次升级时删除旧版无 row 的空 set 并立即写入 user-scoped migration marker，之后任何同日空/非空集合都不得因新状态而改变。
+Reason: Review total 必须可解释且 Again/relearning 不能动态扩大当日队列；完整词库和调度算法也不能位于首屏关键路径。显式一次性迁移能够修复旧正式构建，而不会把合法冻结的零队列误判为坏数据。
+Alternatives rejected: 继续复用 `DemoLearningRepository.ensureEmptyReviewSet`；根据“当前有 due state”无版本重建同日空集合；在 Home 初始化前 bulkPut 60 卡并实例化 FSRS；用自写调度算法替代固定版本 `ts-fsrs`。
+Consequences: fresh Home 首次绘制时 New 显示 0/10 且 IndexedDB 尚无 card row；浏览器空闲后或用户先进入 Today/Study 时缓存严格 30+30，并记录 `canonical-60-v1`。旧/残留 catalog row 会在首次正式加载时被替换，但 review event/state/outbox 等用户学习记录不被删除。长期开启应用跨本地午夜时会构建新日 summary/queues。Mac、Android 与旧 Preview 的 namespace 和进度仍彼此独立。
+Tests/docs affected: personal repository/DST/runtime tests, Home idle-prefetch unit/component tests, standalone E2E, build import-graph checks, `docs/TRACEABILITY.md`, `docs/RELEASE_VERIFICATION.md`.
+
+### DEC-028 · 对外产品名统一为 wordeasy 并保持数据身份稳定
+
+Date: 2026-08-29
+Status: Accepted
+Related requirements: DATA-004, LOCAL-002/003, PWA-001/002, DESKTOP-002/004, TEST-025/041/042
+Context: 用户明确要求把产品名改为小写 `wordeasy`，并确认部署当前正式 standalone PWA。现有 Mac 与浏览器本地学习进度依赖已经发布的数据 namespace、WebView identity 和 bundle identifier。
+Decision: HTML title、应用内 wordmark、PWA `name`/`short_name`、macOS product/window/App/DMG 名称、安装说明和发布文档统一使用小写 `wordeasy`。保留 `com.nextcenturyhappiness.wordeasy`、`wordeasy:standalone:v1`、`desktop:v1`、既有 `article-english:*` 兼容性存储键、Cloudflare Pages 项目主机名和两层 owner-only Access 应用；这些内部身份不得因品牌改名而迁移或清空。
+Reason: 用户看到和安装的是一致的 `wordeasy`，同时已有 IndexedDB、主题、Session、设备 identity、Access 策略和 Mac WebView 数据仍可连续使用。
+Alternatives rejected: 全局字符串替换并创建新本地数据空间；为改名新建未验证 Access 的 Cloudflare 项目；修改 bundle identifier 导致 macOS 把应用视为另一产品。
+Consequences: 源码中为兼容性保留的历史内部 key 或测试 hook 不是对外品牌；删除或迁移它们需要单独的版本化数据迁移。历史 Cloudflare URL 仍含 `preview`，但当前安装 manifest、UI 和正式产物名均为 `wordeasy`。
+Tests/docs affected: manifest/build assertions, AppShell/E2E brand assertions, Tauri artifact verification, `README.md`, `docs/01_PRODUCT_CORE.md`, `docs/TRACEABILITY.md`, `docs/RELEASE_VERIFICATION.md`.
+
 ## 新决策模板
 
 ```text

@@ -22,6 +22,26 @@ export async function verifyBuildModeBoundary(projectRoot) {
       name: "cloud runtime under preview Vite mode",
       mode: "preview",
       appMode: "cloud"
+    },
+    {
+      name: "standalone runtime under production Vite mode",
+      mode: "production",
+      appMode: "standalone"
+    },
+    {
+      name: "cloud runtime under standalone Vite mode",
+      mode: "standalone",
+      appMode: "cloud"
+    },
+    {
+      name: "desktop runtime under production Vite mode",
+      mode: "production",
+      appMode: "desktop"
+    },
+    {
+      name: "cloud runtime under desktop Vite mode",
+      mode: "desktop",
+      appMode: "cloud"
     }
   ];
 

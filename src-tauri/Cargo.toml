@@ -1,0 +1,28 @@
+[package]
+name = "wordeasy"
+version = "0.1.0"
+description = "Personal macOS edition of wordeasy"
+authors = ["nextcenturyhappiness"]
+license = ""
+repository = "https://github.com/nextcenturyhappiness/wordeasy"
+edition = "2021"
+rust-version = "1.77.2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "wordeasy_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "=2.6.3", features = [] }
+
+[dependencies]
+tauri = { version = "=2.11.5", features = [] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

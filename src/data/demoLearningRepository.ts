@@ -1,7 +1,6 @@
 import type { ReviewScheduler } from "../application/contracts";
+import type { NormalizedContextCard } from "../domain/learning";
 import type { LearningDatabase } from "../db/learningDatabase";
-import { DemoContentCatalog } from "./demo/demoContentCatalog";
-import { DEMO_CARDS } from "./demo/demoCards";
 import {
   IndexedDbLearningRepository,
   type PendingSyncCountPort
@@ -14,18 +13,20 @@ export interface DemoLearningRepositoryOptions {
   email: string;
   timezone: string;
   deviceId: string;
-  scheduler: ReviewScheduler;
+  scheduler: ReviewScheduler | (() => Promise<ReviewScheduler>);
   syncState: PendingSyncCountPort;
   now?: () => Date;
   eventIdFactory?: () => string;
+  cards: NormalizedContextCard[];
 }
 
 export class DemoLearningRepository extends IndexedDbLearningRepository {
   constructor(options: DemoLearningRepositoryOptions) {
     super({
       ...options,
-      bootstrap: async ({ database, userId, studyDate, initializedAt }) => {
-        const catalog = new DemoContentCatalog(database, userId, DEMO_CARDS);
+      dailyBootstrap: async ({ database, userId, studyDate, initializedAt }) => {
+        const { DemoContentCatalog } = await import("./demo/demoContentCatalog");
+        const catalog = new DemoContentCatalog(database, userId, options.cards);
         await catalog.seed(initializedAt);
         const assignments = new LocalAssignmentService(database, userId);
         await assignments.ensureResearchNew(studyDate, initializedAt);

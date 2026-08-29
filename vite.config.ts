@@ -8,8 +8,10 @@ import { VitePWA } from "vite-plugin-pwa";
 
 const demoSeedModuleId = "virtual:article-english-demo-seed";
 const resolvedDemoSeedModuleId = `\0${demoSeedModuleId}`;
+const standaloneSeedModuleId = "virtual:article-english-standalone-seed";
+const resolvedStandaloneSeedModuleId = `\0${standaloneSeedModuleId}`;
 const projectRoot = fileURLToPath(new URL(".", import.meta.url));
-const previewSecurityHeaders = `/*
+const localOnlySecurityHeaders = `/*
   Content-Security-Policy: default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
@@ -47,10 +49,14 @@ interface BuildSeedCard {
   module: string;
 }
 
-function loadDemoSeedModule(): string {
-  const seed = JSON.parse(
+function loadCanonicalSeed(): { cards: BuildSeedCard[] } {
+  return JSON.parse(
     readFileSync(fileURLToPath(new URL("./data/seed-data.json", import.meta.url)), "utf8")
   ) as { cards: BuildSeedCard[] };
+}
+
+function loadDemoSeedModule(): string {
+  const seed = loadCanonicalSeed();
   const researchQuotas = new Map([
     ["general_research", 5],
     ["statistics_methodology", 2],
@@ -78,21 +84,34 @@ function loadDemoSeedModule(): string {
   return `export default ${JSON.stringify(selected)};`;
 }
 
-function previewSecurityHeadersPlugin(): Plugin {
+function loadStandaloneSeedModule(): string {
+  const selected = loadCanonicalSeed().cards.filter((card) => card.active);
+  if (selected.length !== 60) {
+    throw new Error(
+      `Canonical seed produced ${String(selected.length)} active cards; expected 60.`
+    );
+  }
+  return `export default ${JSON.stringify(selected)};`;
+}
+
+function localOnlySecurityHeadersPlugin(): Plugin {
   return {
-    name: "article-english-preview-security-headers",
+    name: "article-english-local-only-security-headers",
     generateBundle() {
       this.emitFile({
         type: "asset",
         fileName: "_headers",
-        source: previewSecurityHeaders
+        source: localOnlySecurityHeaders
       });
     }
   };
 }
 
 function assertViteModeMatchesAppMode(mode: string, appMode: string | undefined): void {
-  if (appMode !== undefined && !["cloud", "demo", "preview"].includes(appMode)) {
+  if (
+    appMode !== undefined &&
+    !["cloud", "demo", "preview", "standalone", "desktop"].includes(appMode)
+  ) {
     throw new Error(`Unsupported VITE_APP_MODE: ${appMode}`);
   }
   if (mode === "preview" && appMode !== "preview") {
@@ -109,11 +128,35 @@ function assertViteModeMatchesAppMode(mode: string, appMode: string | undefined)
   if (appMode === "demo" && mode !== "demo") {
     throw new Error("Vite mode/runtime mismatch: VITE_APP_MODE=demo requires --mode demo.");
   }
+  if (mode === "standalone" && appMode !== "standalone") {
+    throw new Error(
+      "Vite mode/runtime mismatch: --mode standalone requires VITE_APP_MODE=standalone."
+    );
+  }
+  if (appMode === "standalone" && mode !== "standalone") {
+    throw new Error(
+      "Vite mode/runtime mismatch: VITE_APP_MODE=standalone requires --mode standalone."
+    );
+  }
+  if (mode === "desktop" && appMode !== "desktop") {
+    throw new Error("Vite mode/runtime mismatch: --mode desktop requires VITE_APP_MODE=desktop.");
+  }
+  if (appMode === "desktop" && mode !== "desktop") {
+    throw new Error("Vite mode/runtime mismatch: VITE_APP_MODE=desktop requires --mode desktop.");
+  }
 }
 
 export default defineConfig(({ mode }) => {
-  const appMode = loadEnv(mode, projectRoot, "VITE_").VITE_APP_MODE;
+  const environment = loadEnv(mode, projectRoot, "VITE_");
+  const appMode = environment.VITE_APP_MODE;
   assertViteModeMatchesAppMode(mode, appMode);
+  if (
+    mode === "desktop" &&
+    (environment.VITE_SUPABASE_URL !== undefined ||
+      environment.VITE_SUPABASE_PUBLISHABLE_KEY !== undefined)
+  ) {
+    throw new Error("Desktop builds must not include Supabase browser configuration.");
+  }
 
   return {
     plugins: [
@@ -126,7 +169,16 @@ export default defineConfig(({ mode }) => {
           return id === resolvedDemoSeedModuleId ? loadDemoSeedModule() : null;
         }
       },
-      ...(mode === "preview" ? [previewSecurityHeadersPlugin()] : []),
+      {
+        name: "article-english-standalone-seed",
+        resolveId(id: string) {
+          return id === standaloneSeedModuleId ? resolvedStandaloneSeedModuleId : null;
+        },
+        load(id: string) {
+          return id === resolvedStandaloneSeedModuleId ? loadStandaloneSeedModule() : null;
+        }
+      },
+      ...(mode === "preview" || mode === "standalone" ? [localOnlySecurityHeadersPlugin()] : []),
       ...(mode === "performance" || mode === "cloud-performance"
         ? [
             {
@@ -146,12 +198,13 @@ export default defineConfig(({ mode }) => {
         : []),
       react(),
       VitePWA({
+        disable: mode === "desktop",
         registerType: "prompt",
         injectRegister: null,
         includeAssets: ["icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"],
         manifest: {
-          name: mode === "preview" ? "Article English Preview" : "Article English",
-          short_name: mode === "preview" ? "English Preview" : "English",
+          name: mode === "preview" ? "wordeasy Preview" : "wordeasy",
+          short_name: mode === "preview" ? "wordeasy Preview" : "wordeasy",
           description:
             mode === "preview"
               ? "Local-data preview of context-first Research English and Medical English learning."
@@ -198,6 +251,17 @@ export default defineConfig(({ mode }) => {
         "npm:ts-fsrs@5.4.1": "ts-fsrs"
       }
     },
+    server:
+      mode === "desktop"
+        ? {
+            host: "127.0.0.1",
+            port: 1420,
+            strictPort: true,
+            watch: {
+              ignored: ["**/src-tauri/**"]
+            }
+          }
+        : undefined,
     define:
       mode === "cloud-performance"
         ? {

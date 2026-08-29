@@ -23,7 +23,7 @@ test("runs the explicit local-data preview without fake cloud sync and survives 
   await page.getByRole("link", { name: /Continue New/u }).click();
   await page.getByRole("button", { name: /Reveal answer/u }).click();
   await page.getByRole("button", { name: /^Good/u }).click();
-  await page.getByRole("link", { name: "Article English home" }).click();
+  await page.getByRole("link", { name: "wordeasy home" }).click();
 
   const research = page.getByRole("article", { name: "Research English" });
   await expect(research.getByText("1 / 10")).toBeVisible();

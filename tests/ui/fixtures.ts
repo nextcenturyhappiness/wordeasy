@@ -124,6 +124,7 @@ export function createRepository(overrides: Partial<LearningRepository> = {}): L
         cards: [researchCard, secondResearchCard]
       })
     ),
+    prefetchToday: vi.fn<LearningRepository["prefetchToday"]>(() => Promise.resolve()),
     rateCard: vi.fn<LearningRepository["rateCard"]>((input) =>
       Promise.resolve({
         eventId: `event-${input.presentationActionId}`,

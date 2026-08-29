@@ -2,25 +2,26 @@
 
 ## 1. 产品定义
 
-项目暂定名：
+产品名：
 
 ```text
-Article English
+wordeasy
 ```
 
 短名称：
 
 ```text
-English
+wordeasy
 ```
 
 这是一个个人长期使用的跨平台英语学习 App，主要运行于：
 
-- macOS Chrome 安装型 PWA；
 - Android Chrome 安装型 PWA；
+- macOS 个人版 `.app` / `.dmg`（Tauri 2 包装同一套 PWA 前端）；
+- macOS Chrome 安装型 PWA；
 - 普通 HTTPS 网页。
 
-使用同一套代码维护，不开发两个原生项目，不要求上架 Mac App Store 或 Google Play。
+使用同一套 React + TypeScript 前端和学习内核维护。macOS 外壳不得形成第二套产品代码，Android 不开发独立原生项目；本次不要求上架 Mac App Store 或 Google Play。
 
 ---
 
@@ -392,6 +393,7 @@ Streak 不使用设备临时时区作为唯一依据。
 28. 30 张 Medical seed cards。
 29. JSON / CSV 内容导入格式。
 30. RLS、migrations、测试和 README。
+31. macOS Apple Silicon 个人版 `.app` / `.dmg`，复用同一套 PWA 前端和完整 60-card 本地内容。
 
 ### SCOPE-002 · Deferred · 本次不得实现
 
@@ -411,8 +413,9 @@ Streak 不使用设备临时时区作为唯一依据。
 - 多角色权限；
 - 成就和积分；
 - 推送通知；
-- 原生 App 包装；
-- App Store / Google Play 发布。
+- Android APK / AAB 原生包装；
+- Mac App Store / Google Play 发布；
+- 面向第三方分发的 Developer ID 签名和 Apple 公证。
 
 不得创建空页面、假按钮或 “Coming soon” 导航。
 

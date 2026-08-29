@@ -221,7 +221,7 @@ maskable icon
 
 ```text
 Android Chrome
-macOS Chrome
+macOS Chrome（兼容安装目标）
 ```
 
 Android 安装后从主屏幕图标直接进入 App。
@@ -255,6 +255,40 @@ Service Worker 缓存：
 - 不清空 IndexedDB；
 - 不造成白屏；
 - 允许用户在安全时机应用更新。
+
+### DESKTOP-001 · P0 · 单前端双交付
+
+macOS 个人版必须由 Tauri 2 包装现有 React / Vite PWA 前端，不得复制页面、学习逻辑、内容模型或 IndexedDB repository。Android 继续使用 installable PWA。
+
+### DESKTOP-002 · P0 · 个人版安装产物
+
+本次生成 Apple Silicon `arm64` 的 `.app` 和 `.dmg`，应用 identifier 固定为：
+
+```text
+com.nextcenturyhappiness.wordeasy
+```
+
+个人版允许 ad-hoc 签名；不得把未执行的 Developer ID 签名或 Apple 公证声称为通过。
+
+### DESKTOP-003 · P0 · 桌面安全边界
+
+桌面 build 必须：
+
+- 将全部前端资源打入应用，不依赖 Preview、Cloudflare 或 Supabase 才能启动；
+- 不生成或注册 Service Worker、Web Manifest、Workbox 或 Cloudflare `_headers`；
+- 使用严格 CSP、零应用 capability 和远程导航拒绝；
+- 不启用 shell、文件系统、HTTP、dialog、updater 等 Tauri plugin；
+- 不包含 Supabase 配置、`service_role` secret 或远程 API 请求。
+
+### DESKTOP-004 · P0 · 本地数据边界
+
+macOS 个人版使用稳定独立的 WebView / IndexedDB identity 和完整 60-card canonical 内容。评分必须先本地持久化，退出并重开后保留。
+
+在 Supabase 尚未接入前：
+
+- Mac DMG、Android PWA、旧 Preview 的进度彼此独立；
+- 不得伪造跨设备同步、备份或账号恢复；
+- 界面必须明确数据仅保存在当前设备。
 
 ---
 

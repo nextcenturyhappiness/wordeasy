@@ -79,6 +79,11 @@ class AnonymousLearningRepository implements LearningRepository {
     return Promise.reject(new Error("Sign in before opening a learning queue."));
   }
 
+  prefetchToday(module: ModuleSlug): Promise<never> {
+    void module;
+    return Promise.reject(new Error("Sign in before prefetching a learning module."));
+  }
+
   rateCard(input: RateCardInput): Promise<never> {
     void input;
     return Promise.reject(new Error("Sign in before rating a learning card."));

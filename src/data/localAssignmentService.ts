@@ -6,10 +6,12 @@ import {
   type ResearchSelectionResult
 } from "../domain/assignment";
 import type { DomainModuleSlug } from "../domain/learning";
+import { studyDateFor } from "../domain/time";
 import type { LearningDatabase } from "../db/learningDatabase";
 import type {
   CachedAssignmentSetRow,
   CachedDailyAssignmentRow,
+  CachedDailyReviewAssignmentRow,
   DailySummaryRow
 } from "../db/records";
 
@@ -50,6 +52,141 @@ export class LocalAssignmentService {
 
   async ensureMedicalNew(studyDate: string, createdAt: string): Promise<EnsureAssignmentResult> {
     return this.ensureNew("medical_english", studyDate, createdAt, selectMedicalAssignment);
+  }
+
+  async ensureProvisionalNewSummary(
+    module: DomainModuleSlug,
+    studyDate: string,
+    catalogSize: number,
+    dailyQuota: number,
+    createdAt: string
+  ): Promise<void> {
+    await this.database.transaction(
+      "rw",
+      this.database.cached_daily_assignments,
+      this.database.cached_assignment_sets,
+      this.database.daily_summary,
+      async () => {
+        const summaryKey: [string, DomainModuleSlug, string] = [this.userId, module, studyDate];
+        const summary =
+          (await this.database.daily_summary.get(summaryKey)) ??
+          emptySummary(this.userId, module, studyDate, createdAt);
+        const existingSet = await this.database.cached_assignment_sets.get([
+          this.userId,
+          module,
+          studyDate,
+          "new"
+        ]);
+        if (existingSet !== undefined) {
+          const assignedToday = await this.database.cached_daily_assignments
+            .where("[userId+module+studyDate]")
+            .equals([this.userId, module, studyDate])
+            .count();
+          await this.database.daily_summary.put({
+            ...summary,
+            newTotal: existingSet.status === "ready" ? assignedToday : 0,
+            updatedAt: createdAt
+          });
+          return;
+        }
+
+        const assignedBeforeToday = await this.database.cached_daily_assignments
+          .where("[userId+module]")
+          .equals([this.userId, module])
+          .count();
+        const remaining = Math.max(0, catalogSize - assignedBeforeToday);
+        await this.database.daily_summary.put({
+          ...summary,
+          newTotal: remaining >= dailyQuota ? dailyQuota : 0,
+          updatedAt: createdAt
+        });
+      }
+    );
+  }
+
+  async ensureDueReviewSet(
+    module: DomainModuleSlug,
+    studyDate: string,
+    timezone: string,
+    createdAt: string
+  ): Promise<CachedDailyReviewAssignmentRow[]> {
+    return this.database.transaction(
+      "rw",
+      this.database.cached_daily_assignments,
+      this.database.cached_daily_review_assignments,
+      this.database.cached_assignment_sets,
+      this.database.local_review_states,
+      this.database.daily_summary,
+      async () => {
+        const setKey: [string, DomainModuleSlug, string, "review"] = [
+          this.userId,
+          module,
+          studyDate,
+          "review"
+        ];
+        const existingSet = await this.database.cached_assignment_sets.get(setKey);
+        if (existingSet !== undefined) {
+          const existingAssignments = await this.database.cached_daily_review_assignments
+            .where("[userId+module+studyDate]")
+            .equals([this.userId, module, studyDate])
+            .sortBy("position");
+          await this.#updateReviewTotal(module, studyDate, existingAssignments.length, createdAt);
+          return existingAssignments;
+        }
+
+        const currentNewCardIds = new Set(
+          (
+            await this.database.cached_daily_assignments
+              .where("[userId+module+studyDate]")
+              .equals([this.userId, module, studyDate])
+              .toArray()
+          ).map((assignment) => assignment.cardId)
+        );
+        const eligibleStates = (
+          await this.database.local_review_states
+            .where("[userId+module+dueAt]")
+            .between([this.userId, module, ""], [this.userId, module, "\uffff"], true, true)
+            .toArray()
+        )
+          .filter(
+            (state) =>
+              state.dueAt !== null &&
+              studyDateFor(new Date(state.dueAt), timezone) <= studyDate &&
+              !currentNewCardIds.has(state.cardId)
+          )
+          .sort(
+            (left, right) =>
+              (left.dueAt ?? "").localeCompare(right.dueAt ?? "") ||
+              left.cardId.localeCompare(right.cardId)
+          );
+        const assignments = eligibleStates.map(
+          (state, position) =>
+            ({
+              userId: this.userId,
+              module,
+              studyDate,
+              cardId: state.cardId,
+              position,
+              completedAt: null,
+              createdAt
+            }) satisfies CachedDailyReviewAssignmentRow
+        );
+        if (assignments.length > 0) {
+          await this.database.cached_daily_review_assignments.bulkAdd(assignments);
+        }
+        await this.database.cached_assignment_sets.add({
+          userId: this.userId,
+          module,
+          studyDate,
+          queue: "review",
+          status: "ready",
+          shortage: null,
+          createdAt
+        });
+        await this.#updateReviewTotal(module, studyDate, assignments.length, createdAt);
+        return assignments;
+      }
+    );
   }
 
   private async ensureNew(
@@ -200,5 +337,18 @@ export class LocalAssignmentService {
         }
       }
     );
+  }
+
+  async #updateReviewTotal(
+    module: DomainModuleSlug,
+    studyDate: string,
+    reviewTotal: number,
+    updatedAt: string
+  ): Promise<void> {
+    const summaryKey: [string, DomainModuleSlug, string] = [this.userId, module, studyDate];
+    const summary =
+      (await this.database.daily_summary.get(summaryKey)) ??
+      emptySummary(this.userId, module, studyDate, updatedAt);
+    await this.database.daily_summary.put({ ...summary, reviewTotal, updatedAt });
   }
 }

@@ -174,7 +174,7 @@ export function LoginPage() {
   return (
     <section className="login-page auth-layout">
       <header className="auth-heading">
-        <p className="eyebrow">Article English</p>
+        <p className="eyebrow">wordeasy</p>
         <h1>{step === "email" ? "Sign in with email" : "Enter your six-digit code"}</h1>
         <p className="muted-copy">
           One account keeps Research English and Medical English progress isolated and available

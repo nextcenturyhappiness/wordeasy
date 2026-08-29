@@ -6,8 +6,13 @@ declare module "virtual:article-english-demo-seed" {
   export default cards;
 }
 
+declare module "virtual:article-english-standalone-seed" {
+  const cards: unknown[];
+  export default cards;
+}
+
 interface ImportMetaEnv {
-  readonly VITE_APP_MODE?: "demo" | "preview" | "cloud";
+  readonly VITE_APP_MODE?: "demo" | "preview" | "standalone" | "desktop" | "cloud";
   readonly VITE_SUPABASE_URL?: string;
   readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string;
 }

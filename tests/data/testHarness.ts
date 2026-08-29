@@ -1,5 +1,6 @@
 import Dexie from "dexie";
 
+import { DEMO_CARDS } from "../../src/data/demo/demoCards";
 import { DemoLearningRepository } from "../../src/data/demoLearningRepository";
 import { LearningDatabase } from "../../src/db/learningDatabase";
 import { FsrsSchedulerAdapter } from "../../src/scheduler/fsrsScheduler";
@@ -36,6 +37,7 @@ export async function createRepositoryHarness(options?: {
     deviceId: options?.deviceId ?? `device-${userId}`,
     scheduler: new FsrsSchedulerAdapter(),
     syncState,
+    cards: DEMO_CARDS,
     now: () => new Date(options?.now ?? FIXED_NOW),
     eventIdFactory: () => {
       eventSequence += 1;

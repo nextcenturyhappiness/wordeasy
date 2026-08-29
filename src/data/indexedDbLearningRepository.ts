@@ -46,7 +46,8 @@ export interface IndexedDbLearningRepositoryOptions {
   deviceId: string;
   scheduler: ReviewScheduler | (() => Promise<ReviewScheduler>);
   syncState: PendingSyncCountPort;
-  bootstrap?: (context: IndexedDbBootstrapContext) => Promise<void>;
+  dailyBootstrap?: (context: IndexedDbBootstrapContext) => Promise<void>;
+  deferredBootstrap?: (context: IndexedDbBootstrapContext) => Promise<void>;
   now?: () => Date;
   eventIdFactory?: () => string;
 }
@@ -135,10 +136,13 @@ export class IndexedDbLearningRepository implements LearningRepository {
   readonly #deviceId: string;
   readonly #schedulerLoader: () => Promise<ReviewScheduler>;
   readonly #syncState: PendingSyncCountPort;
-  readonly #bootstrap: ((context: IndexedDbBootstrapContext) => Promise<void>) | undefined;
+  readonly #dailyBootstrap: ((context: IndexedDbBootstrapContext) => Promise<void>) | undefined;
+  readonly #deferredBootstrap: ((context: IndexedDbBootstrapContext) => Promise<void>) | undefined;
   readonly #now: () => Date;
   readonly #eventIdFactory: () => string;
   #initialization: Promise<void> | null = null;
+  readonly #dailyBootstraps = new Map<string, Promise<void>>();
+  readonly #deferredBootstraps = new Map<string, Promise<void>>();
   #scheduler: Promise<ReviewScheduler> | null = null;
 
   constructor(options: IndexedDbLearningRepositoryOptions) {
@@ -152,7 +156,8 @@ export class IndexedDbLearningRepository implements LearningRepository {
         ? options.scheduler
         : () => Promise.resolve(options.scheduler as ReviewScheduler);
     this.#syncState = options.syncState;
-    this.#bootstrap = options.bootstrap;
+    this.#dailyBootstrap = options.dailyBootstrap;
+    this.#deferredBootstrap = options.deferredBootstrap;
     this.#now = options.now ?? (() => new Date());
     this.#eventIdFactory = options.eventIdFactory ?? defaultEventIdFactory;
   }
@@ -211,13 +216,17 @@ export class IndexedDbLearningRepository implements LearningRepository {
 
     const profile = await this.#requireProfile();
     const studyDate = studyDateFor(this.#now(), profile.timezone);
-    await this.#bootstrap?.({
+    const context = {
       database: this.#database,
       userId: this.#userId,
       studyDate,
       initializedAt
-    });
-    await this.#refreshSummaryMaterializations(studyDate, initializedAt);
+    };
+    if (this.#dailyBootstrap === undefined) {
+      await this.#refreshSummaryMaterializations(studyDate, initializedAt);
+    } else {
+      await this.#ensureDailyBootstrap(context);
+    }
     this.#syncState.setPendingCount(await this.#pendingOutboxCount());
   }
 
@@ -266,11 +275,18 @@ export class IndexedDbLearningRepository implements LearningRepository {
   }
 
   async getCachedHome(): Promise<HomeSnapshot | null> {
+    await this.initialize();
     const profile = await this.#database.local_profile.get(this.#userId);
     if (profile === undefined) {
       return null;
     }
     const studyDate = studyDateFor(this.#now(), profile.timezone);
+    await this.#ensureDailyBootstrap({
+      database: this.#database,
+      userId: this.#userId,
+      studyDate,
+      initializedAt: this.#now().toISOString()
+    });
     const [research, medical] = await Promise.all([
       this.#database.daily_summary.get([this.#userId, "research_english", studyDate]),
       this.#database.daily_summary.get([this.#userId, "medical_english", studyDate])
@@ -293,6 +309,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
   }
 
   async getToday(module: ModuleSlug): Promise<TodaySnapshot> {
+    await this.#ensureDeferredBootstrap();
     const profile = await this.#requireProfile();
     const studyDate = studyDateFor(this.#now(), profile.timezone);
     const summary = await this.#database.daily_summary.get([this.#userId, module, studyDate]);
@@ -318,6 +335,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
   }
 
   async getStudyQueue(module: ModuleSlug, queue: "new" | "review"): Promise<StudyQueueSnapshot> {
+    await this.#ensureDeferredBootstrap();
     const profile = await this.#requireProfile();
     const studyDate = studyDateFor(this.#now(), profile.timezone);
     const assignments =
@@ -349,7 +367,12 @@ export class IndexedDbLearningRepository implements LearningRepository {
     return { module, queue, studyDate, cards: resolvedCards };
   }
 
+  async prefetchToday(module: ModuleSlug): Promise<void> {
+    await Promise.all([this.getStudyQueue(module, "new"), this.getStudyQueue(module, "review")]);
+  }
+
   async rateCard(input: RateCardInput): Promise<RateCardResult> {
+    await this.#ensureDeferredBootstrap();
     if (input.presentationActionId.trim().length === 0) {
       throw new Error("presentationActionId is required.");
     }
@@ -538,6 +561,65 @@ export class IndexedDbLearningRepository implements LearningRepository {
   #loadScheduler(): Promise<ReviewScheduler> {
     this.#scheduler ??= this.#schedulerLoader();
     return this.#scheduler;
+  }
+
+  async #ensureDailyBootstrap(context: IndexedDbBootstrapContext): Promise<void> {
+    if (this.#dailyBootstrap === undefined) {
+      return;
+    }
+    let bootstrap = this.#dailyBootstraps.get(context.studyDate);
+    if (bootstrap === undefined) {
+      bootstrap = (async () => {
+        await this.#dailyBootstrap?.(context);
+        await this.#refreshSummaryMaterializations(context.studyDate, context.initializedAt);
+      })();
+      this.#dailyBootstraps.set(context.studyDate, bootstrap);
+    }
+    try {
+      await bootstrap;
+    } catch (error: unknown) {
+      if (this.#dailyBootstraps.get(context.studyDate) === bootstrap) {
+        this.#dailyBootstraps.delete(context.studyDate);
+      }
+      throw error;
+    }
+  }
+
+  async #ensureDeferredBootstrap(): Promise<void> {
+    if (this.#deferredBootstrap === undefined) {
+      return;
+    }
+    await this.initialize();
+    const profile = await this.#requireProfile();
+    const studyDate = studyDateFor(this.#now(), profile.timezone);
+    await this.#ensureDailyBootstrap({
+      database: this.#database,
+      userId: this.#userId,
+      studyDate,
+      initializedAt: this.#now().toISOString()
+    });
+    let bootstrap = this.#deferredBootstraps.get(studyDate);
+    if (bootstrap === undefined) {
+      const initializedAt = this.#now().toISOString();
+      bootstrap = (async () => {
+        await this.#deferredBootstrap?.({
+          database: this.#database,
+          userId: this.#userId,
+          studyDate,
+          initializedAt
+        });
+        await this.#refreshSummaryMaterializations(studyDate, initializedAt);
+      })();
+      this.#deferredBootstraps.set(studyDate, bootstrap);
+    }
+    try {
+      await bootstrap;
+    } catch (error: unknown) {
+      if (this.#deferredBootstraps.get(studyDate) === bootstrap) {
+        this.#deferredBootstraps.delete(studyDate);
+      }
+      throw error;
+    }
   }
 
   async #requireSummary(module: ModuleSlug, studyDate: string): Promise<DailySummaryRow> {
