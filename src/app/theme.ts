@@ -3,8 +3,8 @@ import type { ThemePreference } from "../application/contracts";
 export const themeStorageKey = "article-english:theme";
 
 const themeColors = {
-  light: "#173f35",
-  dark: "#121714"
+  light: "#f5f6f8",
+  dark: "#0c0e12"
 } as const;
 
 function prefersDark(): boolean {

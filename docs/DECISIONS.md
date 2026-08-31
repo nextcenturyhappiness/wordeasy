@@ -212,6 +212,18 @@ Alternatives rejected: 全局字符串替换并创建新本地数据空间；为
 Consequences: 源码中为兼容性保留的历史内部 key 或测试 hook 不是对外品牌；删除或迁移它们需要单独的版本化数据迁移。历史 Cloudflare URL 仍含 `preview`，但当前安装 manifest、UI 和正式产物名均为 `wordeasy`。
 Tests/docs affected: manifest/build assertions, AppShell/E2E brand assertions, Tauri artifact verification, `README.md`, `docs/01_PRODUCT_CORE.md`, `docs/TRACEABILITY.md`, `docs/RELEASE_VERIFICATION.md`.
 
+### DEC-029 · 视觉系统改为现代产品界面
+
+Date: 2026-08-31
+Status: Accepted
+Related requirements: UI-004, UI-013, UI-014, PERF-001, A11Y-001
+Context: 产品所有者明确要求去掉当前奶油底 + 墨绿强调 + Georgia 语境句的教材/学术期刊观感，把 wordeasy 重绘为现代、干净的学习产品界面。UI-004 原本参考 Notion / Linear / 阅读器，但实现落成了期刊风。
+Decision: 使用 CSS tokens + 全局样式完成视觉重构，不引入设计系统包。浅色近白中性表面、深色近黑石板、单一锐利靛蓝点缀；Context Card 作为视觉中心（词 + 语境义 + 句子），减少卡片 chrome 与灰盒堆叠。继续使用系统/UI 字体栈，不把远程字体作为首屏依赖。不改学习行为、调度、同步、鉴权、卡片内容或信息架构。PWA `theme_color` / `background_color` 与 canvas 对齐。
+Reason: 所有者指定的产品方向，同时仍满足 UI-004 的克制阅读定位和 PERF-001 / UI-014 的技术约束。
+Alternatives rejected: 保留墨绿教材调色只微调间距；引入 UI framework 或远程字体；把词库检索、统计看板等 Deferred 功能塞进这次视觉改版。
+Consequences: 旧奶油/墨绿 token 不再使用。Light/Dark 都按产品界面而非期刊风验收。图标源 SVG 随品牌色更新，已安装 PWA 的旧图标缓存需等资源更新。
+Tests/docs affected: `src/styles/tokens.css`, `src/styles/global.css`, theme/PWA colors, Context Card 表现层 class，`docs/01_PRODUCT_CORE.md` UI-004, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text
