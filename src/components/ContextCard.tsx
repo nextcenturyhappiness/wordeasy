@@ -63,7 +63,11 @@ function SourceDetails({ card }: { card: ContextCardView }) {
 
 export function ContextCard({ card, revealed, answerRef }: ContextCardProps) {
   return (
-    <article className="context-card" aria-labelledby="context-question">
+    <article
+      className="context-card"
+      data-revealed={revealed ? "true" : "false"}
+      aria-labelledby="context-question"
+    >
       <header className="context-card__header">
         <p className="card-meta">
           <span>{card.partOfSpeech}</span>
@@ -85,7 +89,7 @@ export function ContextCard({ card, revealed, answerRef }: ContextCardProps) {
           tabIndex={-1}
           aria-label="Answer"
         >
-          <div className="answer-section">
+          <div className="answer-section answer-section--primary">
             <h2>Meaning in this context</h2>
             <p>{card.meaningEn}</p>
           </div>

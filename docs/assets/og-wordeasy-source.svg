@@ -1,18 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
   <title id="title">wordeasy</title>
   <desc id="description">Research and Medical English in context</desc>
-  <rect width="1200" height="630" fill="#f6f3ec" />
-  <rect x="24" y="24" width="1152" height="582" rx="10" fill="none" stroke="#173f35" stroke-width="3" />
-  <path d="M760 98h300M760 142h300M760 186h210" stroke="#7f9a91" stroke-width="3" stroke-linecap="round" />
-  <path d="M760 226h156" stroke="#f4c95d" stroke-width="18" stroke-linecap="round" />
-  <circle cx="1050" cy="226" r="13" fill="#f6f3ec" stroke="#173f35" stroke-width="3" />
-  <text x="84" y="310" fill="#173f35" font-family="Georgia, 'Times New Roman', serif" font-size="150" font-weight="700" letter-spacing="-5">wordeasy</text>
-  <text x="90" y="394" fill="#222b28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="42">Research + Medical English in context</text>
+  <rect width="1200" height="630" fill="#f5f6f8" />
+  <rect x="24" y="24" width="1152" height="582" rx="16" fill="none" stroke="#e2e5eb" stroke-width="2" />
+  <path d="M760 98h300M760 142h300M760 186h210" stroke="#c5cad3" stroke-width="3" stroke-linecap="round" />
+  <path d="M760 226h156" stroke="#2553e8" stroke-width="18" stroke-linecap="round" />
+  <circle cx="1050" cy="226" r="13" fill="#f5f6f8" stroke="#2553e8" stroke-width="3" />
+  <text x="84" y="310" fill="#111318" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="150" font-weight="700" letter-spacing="-6">wordeasy</text>
+  <text x="90" y="394" fill="#5c6370" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="42">Research + Medical English in context</text>
   <g transform="translate(855 350)">
-    <path d="M0 28c0-16 12-28 28-28h80c26 0 48 16 57 39 9-23 31-39 57-39h80c16 0 28 12 28 28v164c0 16-12 28-28 28h-72c-27 0-51 12-65 32-14-20-38-32-65-32H28c-16 0-28-12-28-28V28Z" fill="#173f35" />
-    <path d="M165 48v156" stroke="#f6f3ec" stroke-width="8" stroke-linecap="round" />
-    <path d="M45 66h76M45 108h76M45 150h76M209 66h76M209 108h76" stroke="#f6f3ec" stroke-width="8" stroke-linecap="round" />
-    <path d="M209 150h76" stroke="#f4c95d" stroke-width="12" stroke-linecap="round" />
+    <path d="M0 28c0-16 12-28 28-28h80c26 0 48 16 57 39 9-23 31-39 57-39h80c16 0 28 12 28 28v164c0 16-12 28-28 28h-72c-27 0-51 12-65 32-14-20-38-32-65-32H28c-16 0-28-12-28-28V28Z" fill="#2553e8" />
+    <path d="M165 48v156" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
+    <path d="M45 66h76M45 108h76M45 150h76M209 66h76M209 108h76" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
+    <path d="M209 150h76" stroke="#7b93ff" stroke-width="12" stroke-linecap="round" />
   </g>
-  <text x="90" y="542" fill="#5a6d66" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="26" letter-spacing="2">CONTEXT FIRST · LOCAL FIRST</text>
+  <text x="90" y="542" fill="#5c6370" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="26" letter-spacing="2">CONTEXT FIRST · LOCAL FIRST</text>
 </svg>
