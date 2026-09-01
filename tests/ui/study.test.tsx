@@ -222,11 +222,16 @@ describe("StudyPage", () => {
       fireEvent.keyDown(window, { key: " ", code: "Space" });
 
       expect(await screen.findByText(researchCard.meaningEn)).toBeInTheDocument();
+      expect(screen.queryByText(/what does the highlighted word mean/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/what does the missing word mean/i)).not.toBeInTheDocument();
       const anchor = document.getElementById("context-sentence-anchor");
       expect(anchor).toHaveTextContent(researchCard.contextSentence);
+      expect(anchor).toHaveTextContent(researchCard.ipa);
+      expect(anchor).toHaveTextContent(researchCard.partOfSpeech);
       expect(screen.getByText(researchCard.targetText, { selector: "mark" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "适用范围" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "句子来源" })).toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: "IPA / part of speech" })).not.toBeInTheDocument();
 
       await waitFor(() => {
         expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", inline: "nearest" });

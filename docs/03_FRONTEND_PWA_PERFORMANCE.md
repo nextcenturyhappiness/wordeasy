@@ -99,23 +99,24 @@ Total today
 正面显示：
 
 - context sentence，其中 target text 先隐藏为空白/下划线；
-- 语境提问；
+- 语境提问（关于 missing word，不是 highlighted word）；
 - 可选 IPA 和词性。
 
-Reveal 后再高亮 target text，并展开背面。正面不显示中文答案或释义。Reveal 后语境原句（含高亮 target）必须立刻可见，不得被背面信息挤出视口顶部；评分按钮可以在折页下方。
+Reveal 后再高亮 target text，并展开背面。正面不显示中文答案或释义。Reveal 后语境原句（含高亮 target）必须立刻可见，不得被背面信息挤出视口顶部；评分按钮可以在折页下方。Reveal 后不再显示正面那句语境提问。
 
 ### UI-009 · P0 · 背面
 
-背面按稳定层级显示：
+Reveal 后 sticky 语境原句区域显示 IPA，可与词性同一行（`/…/ · verb`）。背面释义堆叠按稳定层级显示：
 
 1. Meaning in this context；
 2. Plain-English paraphrase；
 3. 中文释义；
 4. 完整句子翻译；
 5. Common collocations；
-6. IPA / part of speech；
-7. 适用范围；
-8. 句子来源。
+6. 适用范围；
+7. 句子来源。
+
+不要在堆叠中重复 IPA / part of speech 区块。
 
 ### UI-010 · P0 · 评分防重复
 
