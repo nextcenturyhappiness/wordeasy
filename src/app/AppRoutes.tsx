@@ -54,7 +54,7 @@ export function AppRoutes({
               <Route index element={<HomePage />} />
               <Route path="today/:module" element={<TodayPage />} />
               <Route path="study/:module" element={<StudyPage />} />
-              <Route path="settings" element={<SettingsPage gateway={settingsGateway} />} />
+              <Route path="settings" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<NotFoundRoute />} />
           </>

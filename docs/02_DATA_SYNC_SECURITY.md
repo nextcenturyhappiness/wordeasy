@@ -224,14 +224,14 @@ user_settings
 
 ### ASSIGN-001 · P0 · 固定 study_date
 
-`study_date` 使用 profile 中保存的 IANA timezone，例如：
+`study_date` 使用计算机当前 IANA timezone，例如：
 
 ```text
 America/Los_Angeles
 Asia/Shanghai
 ```
 
-不得仅使用设备当前 UTC 日期。
+客户端把该时区写穿到 `profiles.timezone`，供服务端 assignment RPC 校验。不得仅使用设备当前 UTC 日期，也不得由 Settings 手工覆盖。
 
 ### ASSIGN-002 · P0 · 幂等
 

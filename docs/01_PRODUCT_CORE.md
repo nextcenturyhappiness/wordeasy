@@ -237,7 +237,7 @@ Offline
 - 社交动态；
 - 复杂图表。
 
-问候语根据 profile timezone 本地计算，不等待网络。Next Session 选择规则见 DEC-032。
+问候语根据计算机当前 IANA timezone 本地计算，不等待网络。Next Session 选择规则见 DEC-032。
 
 ### UI-015 · P1 · 首页个人词库搜索
 
@@ -337,9 +337,9 @@ Space = Reveal
 
 ### CORE-009 · P0 · Streak
 
-一个 profile timezone 下的 `study_date` 内，只要完成至少一张新卡或 Review 卡，就计为一个学习日。
+一个计算机当前 IANA timezone 下的 `study_date` 内，只要完成至少一张新卡或 Review 卡，就计为一个学习日。
 
-Streak 不使用设备临时时区作为唯一依据。
+时区来自操作系统解析的 IANA 标识（通常是 `Intl.DateTimeFormat().resolvedOptions().timeZone`）；无法解析时回退 UTC。Settings 不再提供时区编辑器，也不得用用户手填覆盖。`profiles.timezone` 若仍存在，只作为该 OS 时区的写穿副本，供服务端 daily assignment RPC 校验。
 
 ---
 

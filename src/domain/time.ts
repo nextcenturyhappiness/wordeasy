@@ -1,11 +1,43 @@
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+export const FALLBACK_SYSTEM_TIMEZONE = "UTC";
+
+type SystemTimezoneResolver = () => string | undefined;
+
+let systemTimezoneResolver: SystemTimezoneResolver | null = null;
+
 export function assertIanaTimezone(timezone: string): void {
   try {
     new Intl.DateTimeFormat("en", { timeZone: timezone }).format(new Date(0));
   } catch {
     throw new Error(`Invalid IANA timezone: ${timezone}`);
   }
+}
+
+function readOsIanaTimezone(): string | undefined {
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return typeof timezone === "string" ? timezone : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function setSystemTimezoneResolver(resolver: SystemTimezoneResolver | null): void {
+  systemTimezoneResolver = resolver;
+}
+
+export function systemIanaTimezone(): string {
+  const candidate = (systemTimezoneResolver ?? readOsIanaTimezone)()?.trim();
+  if (candidate !== undefined && candidate.length > 0) {
+    try {
+      assertIanaTimezone(candidate);
+      return candidate;
+    } catch {
+      // Invalid OS/Intl values fall back to UTC instead of blocking study dates.
+    }
+  }
+  return FALLBACK_SYSTEM_TIMEZONE;
 }
 
 export function studyDateFor(now: Date, timezone: string): string {

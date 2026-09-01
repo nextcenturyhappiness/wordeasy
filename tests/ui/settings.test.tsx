@@ -10,28 +10,50 @@ import { SettingsPage } from "../../src/routes/settings/SettingsPage";
 import { createAuthGateway, createSettingsGateway } from "../auth/fixtures";
 import { renderWithAuthenticatedApp } from "./fixtures";
 
-function SettingsRoutes({ gateway }: { gateway: SettingsGateway }) {
+function SettingsRoutes() {
   return (
     <Routes>
-      <Route path="/settings" element={<SettingsPage gateway={gateway} />} />
+      <Route path="/settings" element={<SettingsPage />} />
       <Route path="/login" element={<h1>Signed-out login</h1>} />
     </Routes>
   );
 }
 
+function expectNoTimezoneEditor(): void {
+  expect(screen.queryByRole("heading", { name: "Study timezone" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("textbox", { name: "IANA timezone" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Save timezone" })).not.toBeInTheDocument();
+  expect(screen.queryByText(/example:\s*asia\/shanghai/i)).not.toBeInTheDocument();
+  expect(
+    screen.queryByText(/determines the date of future daily assignments/i)
+  ).not.toBeInTheDocument();
+}
+
 describe("SettingsPage", () => {
+  it("does not show a study timezone editor", async () => {
+    const settingsGateway = createSettingsGateway();
+    renderWithAuthenticatedApp(<SettingsRoutes />, {
+      settingsGateway,
+      initialEntries: ["/settings"]
+    });
+
+    expect(await screen.findByRole("heading", { name: "Settings" })).toBeInTheDocument();
+    expectNoTimezoneEditor();
+    expect(settingsGateway.getTimezone).not.toHaveBeenCalled();
+    expect(settingsGateway.setTimezone).not.toHaveBeenCalled();
+  });
+
   it("applies and persists manual Light/Dark/System preferences", async () => {
     const user = userEvent.setup();
     const settingsGateway = createSettingsGateway();
-    renderWithAuthenticatedApp(<SettingsRoutes gateway={settingsGateway} />, {
+    renderWithAuthenticatedApp(<SettingsRoutes />, {
       settingsGateway,
       initialTheme: "system",
       initialEntries: ["/settings"]
     });
 
-    expect(await screen.findByRole("textbox", { name: "IANA timezone" })).toHaveValue(
-      "Asia/Shanghai"
-    );
+    expect(await screen.findByRole("heading", { name: "Settings" })).toBeInTheDocument();
+    expectNoTimezoneEditor();
     await user.click(screen.getByRole("radio", { name: "Dark" }));
     await waitFor(() => {
       expect(settingsGateway.setTheme).toHaveBeenCalledWith("dark");
@@ -52,6 +74,7 @@ describe("SettingsPage", () => {
     });
     expect(document.documentElement.dataset.theme).toBe("system");
     expect(document.documentElement.style.colorScheme).toBe("light dark");
+    expect(settingsGateway.setTimezone).not.toHaveBeenCalled();
   });
 
   it("rolls back the visible theme and reports a persistence error", async () => {
@@ -61,13 +84,13 @@ describe("SettingsPage", () => {
         Promise.reject(new Error("Local theme storage is unavailable."))
       )
     });
-    renderWithAuthenticatedApp(<SettingsRoutes gateway={settingsGateway} />, {
+    renderWithAuthenticatedApp(<SettingsRoutes />, {
       settingsGateway,
       initialTheme: "light",
       initialEntries: ["/settings"]
     });
 
-    await screen.findByRole("textbox", { name: "IANA timezone" });
+    await screen.findByRole("heading", { name: "Settings" });
     await user.click(screen.getByRole("radio", { name: "Dark" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -78,41 +101,18 @@ describe("SettingsPage", () => {
     expect(localStorage.getItem(themeStorageKey)).toBe("light");
   });
 
-  it("validates and saves an IANA timezone without changing existing assignments", async () => {
-    const user = userEvent.setup();
-    const settingsGateway = createSettingsGateway();
-    renderWithAuthenticatedApp(<SettingsRoutes gateway={settingsGateway} />, {
-      settingsGateway,
-      initialEntries: ["/settings"]
-    });
-
-    const timezone = await screen.findByRole("textbox", { name: "IANA timezone" });
-    await user.clear(timezone);
-    await user.type(timezone, "not/a-zone");
-    await user.click(screen.getByRole("button", { name: "Save timezone" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("valid IANA timezone");
-    expect(settingsGateway.setTimezone).not.toHaveBeenCalled();
-
-    await user.clear(timezone);
-    await user.type(timezone, "America/New_York");
-    await user.click(screen.getByRole("button", { name: "Save timezone" }));
-    await waitFor(() => {
-      expect(settingsGateway.setTimezone).toHaveBeenCalledWith("America/New_York");
-    });
-    expect(screen.getByText(/existing daily assignments stay unchanged/i)).toBeInTheDocument();
-  });
-
   it("signs out while explicitly preserving cached data and unsynced outbox", async () => {
     const user = userEvent.setup();
     const authGateway = createAuthGateway();
     const settingsGateway = createSettingsGateway();
-    renderWithAuthenticatedApp(<SettingsRoutes gateway={settingsGateway} />, {
+    renderWithAuthenticatedApp(<SettingsRoutes />, {
       authGateway,
       settingsGateway,
       initialEntries: ["/settings"]
     });
 
-    await screen.findByRole("textbox", { name: "IANA timezone" });
+    await screen.findByRole("heading", { name: "Settings" });
+    expectNoTimezoneEditor();
     expect(
       screen.getByText(/does not delete.*cached data or unsynced outbox/i)
     ).toBeInTheDocument();
@@ -124,11 +124,12 @@ describe("SettingsPage", () => {
 
   it("has no automatically detectable accessibility violations", async () => {
     const settingsGateway = createSettingsGateway();
-    const { container } = renderWithAuthenticatedApp(<SettingsRoutes gateway={settingsGateway} />, {
+    const { container } = renderWithAuthenticatedApp(<SettingsRoutes />, {
       settingsGateway,
       initialEntries: ["/settings"]
     });
-    await screen.findByRole("textbox", { name: "IANA timezone" });
+    await screen.findByRole("heading", { name: "Settings" });
+    expectNoTimezoneEditor();
 
     const result = await axe.run(container, {
       rules: { "color-contrast": { enabled: false } }

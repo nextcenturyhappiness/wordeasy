@@ -1,7 +1,7 @@
 import { DemoSessionAdapter } from "../../auth/demoSession";
 import { LearningDatabase } from "../../db/learningDatabase";
 import type { NormalizedContextCard } from "../../domain/learning";
-import { assertIanaTimezone } from "../../domain/time";
+import { assertIanaTimezone, systemIanaTimezone } from "../../domain/time";
 import { LocalSyncStateStore } from "../../sync/localSyncState";
 import { DemoLearningRepository } from "../demoLearningRepository";
 import { DemoSettingsGateway } from "../demo/demoSettingsGateway";
@@ -26,18 +26,20 @@ interface PersonalRuntimeIdentity extends LocalRuntimeIdentityBase {
 
 type LocalRuntimeIdentity = DemoRuntimeIdentity | PersonalRuntimeIdentity;
 
-function browserTimezone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-}
-
 export async function createLocalRuntime(
   config: LocalRuntimeConfig,
   identity: LocalRuntimeIdentity
 ): Promise<LearningRuntime> {
   const userId = config.userId ?? identity.userId;
   const email = config.email ?? identity.email;
-  const timezone = config.timezone ?? browserTimezone();
-  assertIanaTimezone(timezone);
+  const resolveTimezone =
+    config.timezone === undefined
+      ? systemIanaTimezone
+      : () => {
+          assertIanaTimezone(config.timezone as string);
+          return config.timezone as string;
+        };
+  const timezone = resolveTimezone();
   const databaseName = config.databaseName ?? `wordeasy:${identity.namespace}:${userId}`;
   const deviceId = config.deviceId ?? `${identity.namespace}-device:${userId}`;
   const database = new LearningDatabase(databaseName);
@@ -47,6 +49,7 @@ export async function createLocalRuntime(
     userId,
     email,
     timezone,
+    resolveTimezone,
     deviceId,
     scheduler: async () => {
       const { FsrsSchedulerAdapter } = await import("../../scheduler/fsrsScheduler");

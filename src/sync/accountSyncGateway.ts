@@ -112,11 +112,11 @@ export class AccountSyncGateway implements SyncGateway {
 
     this.#setState({ status: "syncing", pendingCount });
     try {
+      const preferences = await this.settings.syncRemote();
       const beforeAssignments = await this.coordinator.sync();
       if (beforeAssignments.status !== "synced") {
         return this.#setState(beforeAssignments);
       }
-      const preferences = await this.settings.syncRemote();
       const studyDate = studyDateFor(this.#now(), preferences.timezone);
       await Promise.all(LEARNING_MODULES.map((module) => this.dayCache.refresh(module, studyDate)));
       const afterAssignments = await this.coordinator.sync();

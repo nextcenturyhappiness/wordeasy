@@ -12,7 +12,7 @@
 /settings
 ```
 
-Settings 只包含 MVP 必需设置，例如主题、时区和登出，不创建 Deferred 功能入口。
+Settings 只包含 MVP 必需设置，例如主题和登出，不创建 Deferred 功能入口。学习日时区由操作系统 IANA 标识自动决定，Settings 不再编辑。
 
 ---
 

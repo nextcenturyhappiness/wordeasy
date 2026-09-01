@@ -65,14 +65,14 @@ docs/                 requirements, protocol, evidence, reviews
 
 ### 3.2 Routes and loading
 
-| Route                              | Loading | Scope                                                       |
-| ---------------------------------- | ------- | ----------------------------------------------------------- |
-| `/`                                | eager   | Local-first Home, two module summaries, streak, sync state  |
-| `/login`                           | lazy    | Email → six-digit OTP, resend, restore/expired/error states |
-| `/today/:module`                   | lazy    | Separate New, Review, Total, shortage/offline states        |
-| `/study/:module?queue=new\|review` | lazy    | Context-first prompt/reveal/rating flow                     |
-| `/settings`                        | lazy    | Theme, IANA timezone, manual sync, sign out only            |
-| `*`                                | lazy    | Minimal not-found page without fake navigation              |
+| Route                              | Loading | Scope                                                        |
+| ---------------------------------- | ------- | ------------------------------------------------------------ |
+| `/`                                | eager   | Local-first Home, two module summaries, streak, sync state   |
+| `/login`                           | lazy    | Email → six-digit OTP, resend, restore/expired/error states  |
+| `/today/:module`                   | lazy    | Separate New, Review, Total, shortage/offline states         |
+| `/study/:module?queue=new\|review` | lazy    | Context-first prompt/reveal/rating flow                      |
+| `/settings`                        | lazy    | Theme, manual sync, sign out only; study timezone is OS IANA |
+| `*`                                | lazy    | Minimal not-found page without fake navigation               |
 
 Canonical domain module IDs are `research_english` and `medical_english`; route aliases are `research` and `medical` and are validated centrally.
 
@@ -86,7 +86,7 @@ Root owns and freezes `src/application/contracts.ts` before parallel implementat
 - `AssignmentGateway`: ensure/pull stable New and Review assignments.
 - `ReviewScheduler`: `preview` and `rate` using project-domain types.
 - `SyncGateway`: push batch, pull cursor, reconciliation bundle, reconciliation commit.
-- `SettingsGateway`: system/light/dark theme and IANA timezone.
+- `SettingsGateway`: system/light/dark theme; timezone get/set remains for OS write-through, not a Settings editor.
 
 Every production adapter binds `user_id` from the active session; UI inputs never provide an authoritative user ID.
 
@@ -160,7 +160,7 @@ The UI advances only after this local transaction commits; remote sync is never 
 
 ### 3.6 Assignment and progress
 
-- `study_date` is derived from the saved IANA profile timezone.
+- `study_date` is derived from the computer's current IANA timezone; the profile field is a write-through copy.
 - Research is exactly `5 general_research + 2 statistics_methodology + 3 bioinformatics`.
 - Medical is exactly 10 with deterministic rolling category balance.
 - A quota shortage returns a stable structured all-or-nothing shortage result; it never substitutes a category or repeats a prior new card.

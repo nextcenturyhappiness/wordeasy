@@ -1,5 +1,5 @@
 import type { SettingsGateway, ThemePreference } from "../../application/contracts";
-import { assertIanaTimezone } from "../../domain/time";
+import { assertIanaTimezone, systemIanaTimezone } from "../../domain/time";
 import type { LearningDatabase } from "../../db/learningDatabase";
 import { IndexedDbSettingsGateway } from "../indexedDbSettingsGateway";
 import type { CloudRpcClient } from "./rpcClient";
@@ -9,6 +9,11 @@ const PENDING_PREFERENCES_KEY = "pending-account-preferences-v1";
 export interface AccountPreferences {
   timezone: string;
   theme: ThemePreference;
+}
+
+export interface AccountCloudSettingsGatewayOptions {
+  now?: () => Date;
+  resolveTimezone?: () => string;
 }
 
 function parsePreferences(value: unknown, expectedUserId: string): AccountPreferences {
@@ -33,17 +38,21 @@ function parsePreferences(value: unknown, expectedUserId: string): AccountPrefer
 
 export class AccountCloudSettingsGateway implements SettingsGateway {
   readonly #local: IndexedDbSettingsGateway;
+  readonly #now: () => Date;
+  readonly #resolveTimezone: () => string;
 
   constructor(
     private readonly database: LearningDatabase,
     readonly userId: string,
     private readonly rpc: CloudRpcClient,
-    private readonly now: () => Date = () => new Date()
+    options: AccountCloudSettingsGatewayOptions = {}
   ) {
     if (userId.trim().length === 0) {
       throw new Error("Cloud settings require an account userId.");
     }
     this.#local = new IndexedDbSettingsGateway(database, userId);
+    this.#now = options.now ?? (() => new Date());
+    this.#resolveTimezone = options.resolveTimezone ?? systemIanaTimezone;
   }
 
   getTheme(): Promise<ThemePreference> {
@@ -65,17 +74,30 @@ export class AccountCloudSettingsGateway implements SettingsGateway {
   }
 
   async syncRemote(): Promise<AccountPreferences> {
+    const osTimezone = this.#resolveTimezone();
+    assertIanaTimezone(osTimezone);
     const local = await this.#readLocal();
+    if (local.timezone !== osTimezone) {
+      await this.setTimezone(osTimezone);
+    }
+    const aligned = await this.#readLocal();
     const pending = await this.database.sync_metadata.get([this.userId, PENDING_PREFERENCES_KEY]);
-    const payload = await this.rpc.call(
+    let payload = await this.rpc.call(
       pending === undefined ? "ensure_account_preferences" : "set_account_preferences",
       {
-        p_timezone: local.timezone,
-        p_theme: local.theme
+        p_timezone: aligned.timezone,
+        p_theme: aligned.theme
       }
     );
-    const remote = parsePreferences(payload, this.userId);
-    const updatedAt = this.now().toISOString();
+    let remote = parsePreferences(payload, this.userId);
+    if (remote.timezone !== osTimezone) {
+      payload = await this.rpc.call("set_account_preferences", {
+        p_timezone: osTimezone,
+        p_theme: remote.theme
+      });
+      remote = parsePreferences(payload, this.userId);
+    }
+    const updatedAt = this.#now().toISOString();
 
     await this.database.transaction(
       "rw",
@@ -87,11 +109,11 @@ export class AccountCloudSettingsGateway implements SettingsGateway {
         if (profile === undefined) {
           throw new Error(`No local profile exists for ${this.userId}.`);
         }
-        await this.database.local_profile.put({ ...profile, timezone: remote.timezone, updatedAt });
+        await this.database.local_profile.put({ ...profile, timezone: osTimezone, updatedAt });
         await this.database.local_settings.put({
           userId: this.userId,
           key: "timezone",
-          value: remote.timezone,
+          value: osTimezone,
           updatedAt
         });
         await this.database.local_settings.put({
@@ -103,7 +125,7 @@ export class AccountCloudSettingsGateway implements SettingsGateway {
         await this.database.sync_metadata.delete([this.userId, PENDING_PREFERENCES_KEY]);
       }
     );
-    return remote;
+    return { timezone: osTimezone, theme: remote.theme };
   }
 
   async #readLocal(): Promise<AccountPreferences> {
@@ -113,7 +135,7 @@ export class AccountCloudSettingsGateway implements SettingsGateway {
 
   async #markPending(): Promise<void> {
     const local = await this.#readLocal();
-    const updatedAt = this.now().toISOString();
+    const updatedAt = this.#now().toISOString();
     await this.database.sync_metadata.put({
       userId: this.userId,
       key: PENDING_PREFERENCES_KEY,
