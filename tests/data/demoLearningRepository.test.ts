@@ -249,6 +249,26 @@ describe("DemoLearningRepository", () => {
     reopenedDatabase.close();
   });
 
+  it("searches cached Context Cards locally and ranks a learned sense first", async () => {
+    const { repository } = await harness();
+    const card = requireCard((await repository.getStudyQueue("research_english", "new")).cards[0]);
+    await repository.rateCard(ratingInput(card.cardId, "lexicon-learned"));
+
+    const byGloss = await repository.searchLocalCards(card.meaningZh.slice(0, 2));
+    expect(byGloss.length).toBeGreaterThan(0);
+    expect(byGloss[0]).toMatchObject({
+      cardId: card.cardId,
+      lemma: card.lemma,
+      learned: true,
+      module: "research_english"
+    });
+    expect(byGloss.some((hit) => hit.contextSentence === card.contextSentence)).toBe(true);
+
+    const byLemma = await repository.searchLocalCards(card.lemma);
+    expect(byLemma[0]?.lemma).toBe(card.lemma);
+    expect(await repository.searchLocalCards("not-a-local-context-card")).toEqual([]);
+  });
+
   it("keeps module progress isolated and reads Home without review-event history", async () => {
     const { database, repository } = await harness();
     const medicalBefore = await repository.getToday("medical_english");

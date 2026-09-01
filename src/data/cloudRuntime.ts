@@ -1,6 +1,8 @@
 import type {
   AuthGateway,
+  ContextCardView,
   LearningRepository,
+  LexiconSearchHit,
   ModuleSlug,
   QueueKind,
   RateCardInput,
@@ -82,6 +84,17 @@ class AnonymousLearningRepository implements LearningRepository {
   prefetchToday(module: ModuleSlug): Promise<never> {
     void module;
     return Promise.reject(new Error("Sign in before prefetching a learning module."));
+  }
+
+  peekNextSessionCard(module: ModuleSlug, queue: QueueKind): Promise<ContextCardView | null> {
+    void module;
+    void queue;
+    return Promise.resolve(null);
+  }
+
+  searchLocalCards(query: string): Promise<LexiconSearchHit[]> {
+    void query;
+    return Promise.resolve([]);
   }
 
   rateCard(input: RateCardInput): Promise<never> {

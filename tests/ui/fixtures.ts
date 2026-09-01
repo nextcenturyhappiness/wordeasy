@@ -15,6 +15,7 @@ import type {
   ThemePreference,
   TodaySnapshot
 } from "../../src/application/contracts";
+import { searchLocalLexicon } from "../../src/domain/lexiconSearch";
 import type { AuthGateway } from "../../src/application/contracts";
 import { AuthSessionProvider } from "../../src/app/AuthSessionProvider";
 import { LearningAppProvider } from "../../src/app/LearningAppProvider";
@@ -67,6 +68,34 @@ export const secondResearchCard: ContextCardView = {
   collocations: ["robust association", "robust estimate"]
 };
 
+export const medicalCard: ContextCardView = {
+  cardId: "card-medical-1",
+  wordSenseId: "sense-palpable",
+  module: "medical_english",
+  category: "signs",
+  lemma: "palpable",
+  displayForm: "palpable",
+  partOfSpeech: "adjective",
+  ipa: "/ˈpælpəbəl/",
+  contextSentence: "A firm, non-tender mass was palpable in the right upper quadrant.",
+  targetText: "palpable",
+  meaningEn: "able to be felt during physical examination",
+  meaningZh: "可触及的",
+  usageNote: "Used for findings detected by palpation.",
+  plainEnglishParaphrase: "The examiner could feel a firm mass in the right upper abdomen.",
+  sentenceTranslationZh: "右上腹可触及一个质硬、无压痛的肿块。",
+  collocations: ["palpable mass", "palpable lymph nodes"],
+  source: {
+    type: "original_example",
+    title: null,
+    url: null,
+    doi: null,
+    pmid: null
+  }
+};
+
+const searchableCards = [researchCard, secondResearchCard, medicalCard];
+
 export function buildHomeSnapshot(overrides: Partial<HomeSnapshot> = {}): HomeSnapshot {
   return {
     userId: "demo-user",
@@ -116,13 +145,21 @@ export function createRepository(overrides: Partial<LearningRepository> = {}): L
     getToday: vi.fn<LearningRepository["getToday"]>((module) =>
       Promise.resolve(buildTodaySnapshot(module))
     ),
-    getStudyQueue: vi.fn<LearningRepository["getStudyQueue"]>(() =>
+    getStudyQueue: vi.fn<LearningRepository["getStudyQueue"]>((module, queue) =>
       Promise.resolve({
-        module: "research_english",
-        queue: "new",
+        module,
+        queue,
         studyDate: "2026-08-26",
-        cards: [researchCard, secondResearchCard]
+        cards: module === "medical_english" ? [medicalCard] : [researchCard, secondResearchCard]
       })
+    ),
+    peekNextSessionCard: vi.fn<LearningRepository["peekNextSessionCard"]>((module) =>
+      Promise.resolve(module === "medical_english" ? medicalCard : researchCard)
+    ),
+    searchLocalCards: vi.fn<LearningRepository["searchLocalCards"]>((query) =>
+      Promise.resolve(
+        searchLocalLexicon(searchableCards, new Set([researchCard.wordSenseId]), query)
+      )
     ),
     prefetchToday: vi.fn<LearningRepository["prefetchToday"]>(() => Promise.resolve()),
     rateCard: vi.fn<LearningRepository["rateCard"]>((input) =>

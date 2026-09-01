@@ -85,10 +85,22 @@ export type SyncState =
   | { status: "pending"; pendingCount: number }
   | { status: "failed"; pendingCount: number; message: string };
 
+export interface LexiconSearchHit {
+  cardId: string;
+  module: ModuleSlug;
+  lemma: string;
+  meaningEn: string;
+  meaningZh: string;
+  contextSentence: string;
+  learned: boolean;
+}
+
 export interface LearningQueries {
   getCachedHome(): Promise<HomeSnapshot | null>;
   getToday(module: ModuleSlug): Promise<TodaySnapshot>;
   getStudyQueue(module: ModuleSlug, queue: QueueKind): Promise<StudyQueueSnapshot>;
+  peekNextSessionCard(module: ModuleSlug, queue: QueueKind): Promise<ContextCardView | null>;
+  searchLocalCards(query: string): Promise<LexiconSearchHit[]>;
   prefetchToday(module: ModuleSlug): Promise<void>;
 }
 

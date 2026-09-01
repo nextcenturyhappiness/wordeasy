@@ -78,7 +78,7 @@ describe("StudyPage", () => {
       initialEntries: ["/study/research?queue=new"]
     });
 
-    expect(await screen.findByText(/what does the highlighted word mean/i)).toBeInTheDocument();
+    expect(await screen.findByText(/what does the missing word mean/i)).toBeInTheDocument();
     expect(screen.queryByText(researchCard.meaningEn)).not.toBeInTheDocument();
 
     const input = document.createElement("input");
@@ -111,7 +111,7 @@ describe("StudyPage", () => {
       initialEntries: ["/study/research?queue=new"]
     });
 
-    await screen.findByText(/what does the highlighted word mean/i);
+    await screen.findByText(/what does the missing word mean/i);
     await user.click(screen.getByRole("button", { name: /reveal answer/i }));
     const good = screen.getByRole("button", { name: /good/i });
     await user.dblClick(good);
@@ -130,10 +130,13 @@ describe("StudyPage", () => {
 
     resolveRate?.(savedResult(secondResearchCard.cardId));
     await waitFor(() => {
-      expect(
-        screen.getByText(secondResearchCard.targetText, { selector: "mark" })
-      ).toBeInTheDocument();
+      expect(screen.getByText(/the association remained/i)).toBeInTheDocument();
     });
+    expect(document.querySelector(".context-blank")).toHaveAttribute(
+      "aria-label",
+      "hidden target word"
+    );
+    expect(screen.queryByText(secondResearchCard.targetText)).not.toBeInTheDocument();
     expect(screen.queryByText(researchCard.meaningEn)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /reveal answer/i })).toBeEnabled();
   });
@@ -153,7 +156,7 @@ describe("StudyPage", () => {
       initialEntries: ["/study/research?queue=new"]
     });
 
-    await screen.findByText(/what does the highlighted word mean/i);
+    await screen.findByText(/what does the missing word mean/i);
     fireEvent.keyDown(window, { key: " ", code: "Space" });
     await screen.findByText(researchCard.meaningEn);
     fireEvent.keyDown(window, { key: "3" });
@@ -178,7 +181,7 @@ describe("StudyPage", () => {
       initialEntries: ["/study/research?queue=new"]
     });
 
-    await screen.findByText(/what does the highlighted word mean/i);
+    await screen.findByText(/what does the missing word mean/i);
     await user.click(screen.getByRole("button", { name: /reveal answer/i }));
     await user.click(screen.getByRole("button", { name: /good/i }));
 

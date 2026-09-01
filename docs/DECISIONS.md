@@ -46,7 +46,7 @@ MVP 使用系统字体栈。
 
 ### DEC-011 · MVP 范围控制
 
-不实现 Add Word、搜索、收藏、统计、AI、全文导入、Anki 和社交功能，也不创建占位入口。
+不实现 Add Word、独立全局搜索页、收藏、统计、AI、全文导入、Anki 和社交功能，也不创建占位入口。首页本地 Context Card 检索由 DEC-032 授权，不恢复公共词典或 Add Word。
 
 ### DEC-012 · Public content / private progress
 
@@ -247,6 +247,22 @@ Reason: 所有者指定的 UI 要求。云端能力和 local-first 已由 runtim
 Alternatives rejected: 保留横幅但缩短文案；把同一句话改放到 Settings；为桌面增加 updater。
 Consequences: DEC-030 中“界面常驻说明这是个人 Mac 版、与浏览器同一云端账户，进度先保存在本机”的条款由本决策取代。Preview 与 standalone 的 local-only notice 仍保留。
 Tests/docs affected: `src/main.tsx`, `tests/ui/app-shell.test.tsx`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
+
+### DEC-032 · Home 为单一 Next Session + 本地 Context Card 检索
+
+Date: 2026-09-01
+Status: Accepted
+Related requirements: UI-001, UI-006, UI-015, CORE-005, SCOPE-002, PERF-003/005; DEC-011
+Context: Home 原先并排两个同等 Continue，下方留下大块空白；写作时也没有办法检索自己学过的 Context Card。SCOPE-002 / DEC-011 将“Vocabulary 全局搜索”列为 Deferred，但所有者明确要求在本 PR 于首页加入个人词库检索，并把 Home 收成一个 Next Session，而不是 Anki 统计看板或 Duolingo 游戏化。
+Decision:
+
+1. Home 只有一个主 CTA：Start next session。选择规则：取 New 剩余 + Review 剩余最多的模块；并列时取 Research English；该模块若仍有 Review 则先走 Review，否则走 New。按钮直接进入对应 Study 队列。模块 Continue 保留为次级入口，继续通往 Today，模块进度彼此隔离。
+2. 主 CTA 旁展示下一张到期 Context Card 的原句。句子只来自本地 assignment + `cached_cards` 的 peek，不触发 deferred catalog 加载，也不编造例句。无到期工作时显示平静空状态，而不是空白区域。
+3. Home 顶部增加 Google 移动端风格的胶囊搜索框，只检索当前账户 IndexedDB 中的 Context Cards（中文释义、lemma、语境句、搭配）。已学/已复习 sense 优先，但仍搜索本地词库。空查询不打开独立搜索页；无匹配只显示「还没有学过相关的词」。禁止公共词典、翻译 API、编造释义、Add Word、新的 Search 导航。
+4. SCOPE-002 的“Vocabulary 全局搜索页”和 Add Word 仍 Deferred。本决策只授权首页内的本地 Context Card 检索。
+   Reason: 写作中需要的是自己学过的语境，而不是另一本词典；开始学习只需要一个下一步，而不是两个同等英雄按钮。
+   Alternatives rejected: 两个并列 Continue 保持英雄位；新的 Search 主导航；远程词典/AI 释义；把完整词库打入 Home bundle；XP / 排行榜 / 每日目标镀铬。
+   Consequences: UI-001 线框改为单一 Next Session；DEC-011 的“不实现搜索”收窄为不实现独立全局搜索。Home 首次绘制仍只读本地 summary。
 
 ## 新决策模板
 

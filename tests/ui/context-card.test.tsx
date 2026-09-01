@@ -9,8 +9,13 @@ describe("ContextCard", () => {
   it("implements the context-first front without leaking any answer", () => {
     const { container } = render(<ContextCard card={researchCard} revealed={false} />);
 
-    expect(screen.getByText(/what does the highlighted word mean/i)).toBeInTheDocument();
-    expect(container.querySelector("mark")).toHaveTextContent(researchCard.targetText);
+    expect(screen.getByText(/what does the missing word mean/i)).toBeInTheDocument();
+    expect(container.querySelector("mark")).toBeNull();
+    expect(container.querySelector(".context-blank")).toHaveAttribute(
+      "aria-label",
+      "hidden target word"
+    );
+    expect(screen.queryByText(researchCard.targetText)).not.toBeInTheDocument();
     expect(screen.queryByText(researchCard.meaningEn)).not.toBeInTheDocument();
     expect(screen.queryByText(researchCard.plainEnglishParaphrase)).not.toBeInTheDocument();
     expect(screen.queryByText(researchCard.meaningZh)).not.toBeInTheDocument();

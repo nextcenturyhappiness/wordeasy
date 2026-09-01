@@ -19,9 +19,9 @@ export function ModuleSummaryCard({ summary }: ModuleSummaryCardProps) {
   const route = getModuleRoute(summary.module);
 
   return (
-    <article className="module-card" aria-labelledby={`${route}-module-title`}>
+    <article className="module-card module-card--compact" aria-labelledby={`${route}-module-title`}>
       <div>
-        <p className="eyebrow">Learning module</p>
+        <p className="eyebrow">Module</p>
         <h2 id={`${route}-module-title`}>{moduleName}</h2>
       </div>
       <p className="module-card__progress">
@@ -34,7 +34,7 @@ export function ModuleSummaryCard({ summary }: ModuleSummaryCardProps) {
         {summary.wordsLearned} {summary.wordsLearned === 1 ? "word" : "words"} learned
       </p>
       <Link
-        className="button button--primary"
+        className="button button--secondary"
         to={`/today/${route}`}
         onFocus={warmTodayRoute}
         onPointerEnter={warmTodayRoute}

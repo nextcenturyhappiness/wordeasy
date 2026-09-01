@@ -59,10 +59,11 @@ Review state 绑定到具体 card，而不是只绑定到单词拼写。
 
 卡片正面展示：
 
-- 一至两个科研或医学语境句子；
-- 高亮目标词；
+- 一至两个科研或医学语境句子，目标词先隐藏为空白；
 - “这个词在当前语境中是什么意思？”；
 - 可选 IPA、词性、模块和分类。
+
+Reveal 后再高亮目标词。
 
 正面不得展示：
 
@@ -198,20 +199,22 @@ Medical English 每天分配 10 个新词。
 
 ### UI-001 · P0 · 简单首页
 
-首页保持简单，参考：
+首页保持简单。主操作是一个 Next Session，而不是两个并列的 Continue。模块入口仍在，但降为次级摘要。参考：
 
 ```text
+[ 用中文搜学过的词 ]
+
 Good morning
 
-Research English
-6 / 10 today
-128 words learned
-[ Continue ]
+Start the next card
+Research English · Review
+The association was substantially attenuated after adjustment for age and BMI.
+[ Start next session ]
 
-Medical English
-3 / 10 today
-74 words learned
-[ Continue ]
+Research English    Medical English
+6 / 10 new today    3 / 10 new today
+128 words learned   74 words learned
+[ Continue ]        [ Continue ]
 
 Streak: 12 days
 ```
@@ -234,7 +237,17 @@ Offline
 - 社交动态；
 - 复杂图表。
 
-问候语根据 profile timezone 本地计算，不等待网络。
+问候语根据 profile timezone 本地计算，不等待网络。Next Session 选择规则见 DEC-032。
+
+### UI-015 · P1 · 首页个人词库搜索
+
+首页顶部提供一个紧凑的胶囊搜索框，检索当前设备 IndexedDB 中的 Context Cards。
+
+匹配字段：中文释义、英文 lemma / display form、语境句、搭配。已学/已复习卡片优先，但仍搜索本地词库，避免第一天搜索为空。
+
+空查询只显示搜索框，不打开独立搜索页。无匹配时显示诚实空文案，不得回退到公共词典、翻译器或编造释义。不新增 Search 主导航。
+
+---
 
 ---
 
@@ -399,7 +412,7 @@ Streak 不使用设备临时时区作为唯一依据。
 ### SCOPE-002 · Deferred · 本次不得实现
 
 - Add Word；
-- Vocabulary 全局搜索；
+- Vocabulary 全局搜索页 / 独立 Search 导航（首页本地 Context Card 检索由 DEC-032 授权，不属于本条）；
 - 收藏；
 - 统计图表；
 - AI 自动生成；

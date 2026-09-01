@@ -2,6 +2,7 @@ import type {
   ContextCardView,
   HomeSnapshot,
   LearningRepository,
+  LexiconSearchHit,
   ModuleSlug,
   ModuleSummary,
   RateCardInput,
@@ -10,6 +11,7 @@ import type {
   StudyQueueSnapshot,
   TodaySnapshot
 } from "../application/contracts";
+import { searchLocalLexicon } from "../domain/lexiconSearch";
 import { calculateStreak, studyDateFor } from "../domain/time";
 import type { LearningDatabase } from "../db/learningDatabase";
 import { openLearningDatabase } from "../db/learningDatabase";
@@ -369,6 +371,57 @@ export class IndexedDbLearningRepository implements LearningRepository {
 
   async prefetchToday(module: ModuleSlug): Promise<void> {
     await Promise.all([this.getStudyQueue(module, "new"), this.getStudyQueue(module, "review")]);
+  }
+
+  async peekNextSessionCard(
+    module: ModuleSlug,
+    queue: "new" | "review"
+  ): Promise<ContextCardView | null> {
+    await this.initialize();
+    const profile = await this.#database.local_profile.get(this.#userId);
+    if (profile === undefined) {
+      return null;
+    }
+    const studyDate = studyDateFor(this.#now(), profile.timezone);
+    const assignments =
+      queue === "new"
+        ? await this.#database.cached_daily_assignments
+            .where("[userId+module+studyDate]")
+            .equals([this.#userId, module, studyDate])
+            .sortBy("position")
+        : await this.#database.cached_daily_review_assignments
+            .where("[userId+module+studyDate]")
+            .equals([this.#userId, module, studyDate])
+            .sortBy("position");
+    const nextAssignment = assignments.find((assignment) => assignment.completedAt === null);
+    if (nextAssignment === undefined) {
+      return null;
+    }
+    const card = await this.#database.cached_cards.get([this.#userId, nextAssignment.cardId]);
+    return card === undefined ? null : toContextCardView(card);
+  }
+
+  async searchLocalCards(query: string): Promise<LexiconSearchHit[]> {
+    if (query.trim().length === 0) {
+      return [];
+    }
+    await this.#ensureDeferredBootstrap();
+    const [cards, researchLearned, medicalLearned] = await Promise.all([
+      this.#database.cached_cards.where("userId").equals(this.#userId).toArray(),
+      this.#database.learned_word_senses
+        .where("[userId+module]")
+        .equals([this.#userId, "research_english"])
+        .toArray(),
+      this.#database.learned_word_senses
+        .where("[userId+module]")
+        .equals([this.#userId, "medical_english"])
+        .toArray()
+    ]);
+    return searchLocalLexicon(
+      cards,
+      new Set([...researchLearned, ...medicalLearned].map((row) => row.wordSenseId)),
+      query
+    );
   }
 
   async rateCard(input: RateCardInput): Promise<RateCardResult> {
