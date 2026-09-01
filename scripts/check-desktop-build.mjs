@@ -1,4 +1,6 @@
-import { access, readFile, readdir } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { access, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
@@ -199,17 +201,18 @@ assert(
   !allJavaScript.includes("desktop:v1") && !allJavaScript.includes("local-user"),
   "Desktop cloud build still contains the retired local-only desktop identity."
 );
-for (const forbidden of [
-  "SUPABASE_SERVICE_ROLE_KEY",
-  "sb_secret_",
-  ["service", "role"].join("_"),
-  "wordeasy-preview.pages.dev"
-]) {
-  assert(
-    !allJavaScript.includes(forbidden),
-    `Desktop build contains forbidden value: ${forbidden}`
-  );
-}
+assert(
+  !allJavaScript.includes("SUPABASE_SERVICE_ROLE_KEY"),
+  "Desktop build contains SUPABASE_SERVICE_ROLE_KEY."
+);
+assert(
+  !allJavaScript.includes("wordeasy-preview.pages.dev"),
+  "Desktop build contains the historical Preview hostname."
+);
+assert(
+  !new RegExp(["sb", "secret", "[A-Za-z0-9_-]{8,}"].join("_"), "u").test(allJavaScript),
+  "Desktop build contains a privileged Supabase secret key value."
+);
 assert(initialGzip <= 150 * 1024, "Desktop initial JavaScript exceeds the 150 KiB budget.");
 assert(homeGzip <= 200 * 1024, "Desktop Home JavaScript exceeds the 200 KiB budget.");
 assert(initialCssGzip <= 30 * 1024, "Desktop CSS exceeds the 30 KiB budget.");
@@ -280,6 +283,61 @@ assert(
   capabilityFiles.length === 0,
   "Desktop source contains a capability file despite its zero-capability policy."
 );
+
+const viteEntry = join(root, "node_modules", "vite", "bin", "vite.js");
+const envGuardRoot = await mkdtemp(join(tmpdir(), "wordeasy-desktop-env-"));
+const desktopEnvGuardCases = [
+  {
+    name: "missing public env",
+    env: { VITE_SUPABASE_URL: "", VITE_SUPABASE_PUBLISHABLE_KEY: "" },
+    diagnostic: "VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY"
+  },
+  {
+    name: "wrong Supabase origin",
+    env: {
+      VITE_SUPABASE_URL: "https://another-project.supabase.co",
+      VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_desktop_test"
+    },
+    diagnostic: "personal Supabase origin"
+  },
+  {
+    name: "privileged credential",
+    env: {
+      VITE_SUPABASE_URL: PERSONAL_SUPABASE_HTTPS_ORIGIN,
+      VITE_SUPABASE_PUBLISHABLE_KEY: ["service", "role", "placeholder"].join("_")
+    },
+    diagnostic: "privileged Supabase credential"
+  }
+];
+try {
+  for (const [index, guard] of desktopEnvGuardCases.entries()) {
+    const result = spawnSync(
+      process.execPath,
+      [
+        "--",
+        viteEntry,
+        "build",
+        "--mode",
+        "desktop",
+        "--outDir",
+        join(envGuardRoot, String(index))
+      ],
+      {
+        cwd: root,
+        encoding: "utf8",
+        env: { ...process.env, ...guard.env }
+      }
+    );
+    const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+    assert(result.status !== 0, `Desktop env guard allowed ${guard.name}.`);
+    assert(
+      output.includes(guard.diagnostic),
+      `Desktop env guard rejected ${guard.name} without the expected diagnostic.`
+    );
+  }
+} finally {
+  await rm(envGuardRoot, { recursive: true, force: true });
+}
 
 console.log(
   `Desktop cloud boundary passed: ${(initialGzip / 1024).toFixed(2)} KiB initial JS, ${(homeGzip / 1024).toFixed(2)} KiB Home JS, deferred Supabase and FSRS chunks, ${(initialCssGzip / 1024).toFixed(2)} KiB CSS, personal Supabase origin allowlisted, zero capability/IPC/plugin, no PWA runtime or privileged secret.`

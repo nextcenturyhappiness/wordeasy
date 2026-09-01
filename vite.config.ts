@@ -6,7 +6,7 @@ import { loadEnv, type Plugin } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
 import { VitePWA } from "vite-plugin-pwa";
 
-import { resolveDesktopCloudPublicEnv } from "./src/desktop/personalSupabaseOrigin";
+import { resolveDesktopCloudPublicEnv } from "./src/desktop/personalSupabaseOrigin.ts";
 
 const demoSeedModuleId = "virtual:article-english-demo-seed";
 const resolvedDemoSeedModuleId = `\0${demoSeedModuleId}`;
@@ -154,14 +154,21 @@ function loadDesktopCloudEnvironment(mode: string): Record<string, string> {
     return modeEnvironment;
   }
   const productionEnvironment = loadEnv("production", projectRoot, "VITE_");
-  return {
+  const merged: Record<string, string> = {
     ...productionEnvironment,
-    ...modeEnvironment,
-    VITE_SUPABASE_URL: modeEnvironment.VITE_SUPABASE_URL ?? productionEnvironment.VITE_SUPABASE_URL,
-    VITE_SUPABASE_PUBLISHABLE_KEY:
-      modeEnvironment.VITE_SUPABASE_PUBLISHABLE_KEY ??
-      productionEnvironment.VITE_SUPABASE_PUBLISHABLE_KEY
+    ...modeEnvironment
   };
+  const url = modeEnvironment.VITE_SUPABASE_URL ?? productionEnvironment.VITE_SUPABASE_URL;
+  const publishableKey =
+    modeEnvironment.VITE_SUPABASE_PUBLISHABLE_KEY ??
+    productionEnvironment.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (url !== undefined) {
+    merged.VITE_SUPABASE_URL = url;
+  }
+  if (publishableKey !== undefined) {
+    merged.VITE_SUPABASE_PUBLISHABLE_KEY = publishableKey;
+  }
+  return merged;
 }
 
 export default defineConfig(({ mode }) => {

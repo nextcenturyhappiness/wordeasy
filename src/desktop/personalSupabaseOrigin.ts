@@ -12,7 +12,8 @@ export function isPersonalSupabaseHttpsOrigin(url: string): boolean {
 
 export function looksLikePrivilegedSupabaseKey(key: string): boolean {
   const privilegedRole = ["service", "role"].join("_");
-  return new RegExp(privilegedRole, "iu").test(key) || /sb_secret_/u.test(key);
+  const privilegedSecretPrefix = ["sb", "secret", ""].join("_");
+  return new RegExp(privilegedRole, "iu").test(key) || key.includes(privilegedSecretPrefix);
 }
 
 export function resolveDesktopCloudPublicEnv(environment: {

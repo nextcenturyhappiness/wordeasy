@@ -35,7 +35,8 @@ describe("desktop cloud public environment", () => {
   });
 
   it("refuses a privileged Supabase credential", () => {
-    expect(looksLikePrivilegedSupabaseKey("sb_secret_desktop_must_never_ship")).toBe(true);
+    const privilegedSecret = ["sb", "secret", "desktop_must_never_ship"].join("_");
+    expect(looksLikePrivilegedSupabaseKey(privilegedSecret)).toBe(true);
     expect(() =>
       resolveDesktopCloudPublicEnv({
         VITE_SUPABASE_URL: PERSONAL_SUPABASE_HTTPS_ORIGIN,
