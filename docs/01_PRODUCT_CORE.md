@@ -86,7 +86,7 @@ Common collocations
 句子来源
 ```
 
-Reveal 后 IPA 与词性固定在 sticky 语境原句区域，写成 `/…/ · verb` 这一行，不在释义堆叠里再重复一块。正面既有的 IPA/词性展示保持不变。
+Reveal 后 IPA 与词性固定在 sticky 语境原句区域，写成 `/…/ · verb` 这一行，不在释义堆叠里再重复一块。正面既有的 IPA/词性展示保持不变。Reveal 后该 IPA 行可点按，用本机 `speechSynthesis` 朗读 lemma（`en-US`），不得朗读 IPA 字符串；正面与 Reveal 本身不得自动播放。
 
 中文用于辅助理解，但不能成为唯一学习内容。
 

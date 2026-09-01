@@ -37,9 +37,18 @@ bundle size check
 - 正面显示 context；
 - target text 被高亮；
 - 正面无中文答案；
-- reveal 后背面信息完整，但不重复正面语境提问；IPA 出现在 sticky 原句区域；
+- reveal 后背面信息完整，但不重复正面语境提问；IPA 出现在 sticky 原句区域，该行可点按朗读 lemma 而非 IPA 字符串；
+- 正面 cloze 与 Reveal 本身不自动朗读；
 - reveal 后语境原句（或高亮 target）仍在文档中，并以稳定顶部锚点保持在首屏，不得滚向评分按钮；
 - Review state 绑定 card，不只绑定 lemma。
+
+### TEST-043 · Revealed IPA system TTS
+
+验证：
+
+- Reveal 后 IPA 行是按钮；
+- 点击调用可 mock 的 `speak(lemma)`，参数是英文词而不是 IPA；
+- 未揭示正面没有该按钮，也不调用 speak。
 
 ### TEST-003 · Research 5 + 2 + 3
 

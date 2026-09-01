@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { LearningRepository, RateCardResult } from "../../src/application/contracts";
 import { StudyPage } from "../../src/routes/study/StudyPage";
+import * as systemTts from "../../src/speech/systemTts";
 import {
   buildHomeSnapshot,
   createRepository,
@@ -253,6 +254,35 @@ describe("StudyPage", () => {
         Object.defineProperty(HTMLElement.prototype, "scrollIntoView", originalScrollIntoView);
       }
       focus.mockRestore();
+    }
+  });
+
+  it("does not auto-speak on the cloze front or when revealing", async () => {
+    const user = userEvent.setup();
+    const speak = vi.spyOn(systemTts, "speakEnglishWord").mockReturnValue({ ok: true });
+    try {
+      const repository = createRepository();
+      renderWithLearningApp(<StudyRoute />, {
+        repository,
+        initialEntries: ["/study/research?queue=new"]
+      });
+
+      await screen.findByText(/what does the missing word mean/i);
+      expect(speak).not.toHaveBeenCalled();
+      expect(
+        screen.queryByRole("button", { name: `Speak ${researchCard.lemma}` })
+      ).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: /reveal answer/i }));
+      expect(await screen.findByText(researchCard.meaningEn)).toBeInTheDocument();
+      expect(speak).not.toHaveBeenCalled();
+
+      await user.click(screen.getByRole("button", { name: `Speak ${researchCard.lemma}` }));
+      expect(speak).toHaveBeenCalledTimes(1);
+      expect(speak).toHaveBeenCalledWith(researchCard.lemma);
+      expect(speak).not.toHaveBeenCalledWith(researchCard.ipa);
+    } finally {
+      speak.mockRestore();
     }
   });
 });

@@ -106,7 +106,7 @@ Reveal 后再高亮 target text，并展开背面。正面不显示中文答案�
 
 ### UI-009 · P0 · 背面
 
-Reveal 后 sticky 语境原句区域显示 IPA，可与词性同一行（`/…/ · verb`）。背面释义堆叠按稳定层级显示：
+Reveal 后 sticky 语境原句区域显示 IPA，可与词性同一行（`/…/ · verb`）。该行在 Reveal 后是可点按的朗读控件：点击用本机系统 TTS 朗读 lemma（lemma 为空时回退 displayForm），不得把 IPA 符号送进 TTS。背面释义堆叠按稳定层级显示：
 
 1. Meaning in this context；
 2. Plain-English paraphrase；
@@ -117,6 +117,10 @@ Reveal 后 sticky 语境原句区域显示 IPA，可与词性同一行（`/…/ 
 7. 句子来源。
 
 不要在堆叠中重复 IPA / part of speech 区块。
+
+### UI-016 · P1 · Reveal 后 IPA tap-to-speak
+
+Reveal 后 sticky 原句下的 IPA 行是按钮。点击/轻触使用 `window.speechSynthesis` / `SpeechSynthesisUtterance` 朗读 **lemma**（lemma 为空时回退 displayForm），语言 `en-US`；若浏览器列出本地 English voice 则优先使用。必须由用户手势触发。正在朗读时再次点击先 `cancel()` 再重新 `speak()`。缺少 `speechSynthesis` 或 `speak()` 失败时不得崩溃，可静默或显示一行诚实提示。不得上传音频、拉取词典 MP3、或把 wav/mp3 写入仓库。未揭示 cloze 正面不得因此新泄露 IPA，也不得自动播放。
 
 ### UI-010 · P0 · 评分防重复
 

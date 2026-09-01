@@ -326,6 +326,26 @@ Alternatives rejected: 保留提问只改文案；把 IPA 留在下方释义层�
 Consequences: CORE-004 / UI-009 的稳定层级不再把 IPA 当作第 6 层独立标题。
 Tests/docs affected: `ContextCard`, UI/E2E tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
 
+### DEC-037 · Reveal 后 IPA 用系统 TTS 朗读 lemma
+
+Date: 2026-09-01
+Status: Accepted
+Related requirements: CORE-004, UI-008, UI-009, UI-016, TEST-002, A11Y-001; DEC-036
+Context: 所有者要在 Reveal 后点 IPA 听单词读音，但明确只要电脑系统语音。禁止把录音上传 GitHub/Supabase，禁止拉词典 MP3，禁止把 wav/mp3 放进仓库。
+Decision:
+
+1. Reveal 后 sticky 原句下的 `/…/ · verb` 行是按钮。点击用 `window.speechSynthesis` 朗读 **lemma**（与 IPA 对应的词典形）；lemma 为空时才用 displayForm。语言固定 `en-US`。若 `getVoices()` 列出 `localService` 的 English voice，优先 `en-US` 本地声。
+2. 只在用户点击/轻触时朗读（满足 WKWebView / Chrome 手势要求）。正在朗读时再次点击：先 `cancel()` 再重新 `speak()`。
+3. `speechSynthesis` 缺失或 `speak()` 抛错时不崩溃；显示一行 “Speech is not available on this device.” 或 “Speech could not start.”。异步 `utterance.onerror` 静默。
+4. 正面 cloze 的既有 IPA 仍是静态文本，不因此新泄露字段，也不自动播放。Reveal 本身不朗读。
+5. 不引入 Forvo / Cambridge / ElevenLabs，不新增 Tauri speech plugin。若日后证明本项目 WebView 的 Web Speech 不可用，再另开决策。
+6. 视觉：指针、小型本地 SVG 喇叭；不是大块主按钮。适用范围、句子来源、sticky 原句布局不变。
+
+Reason: 系统 TTS 满足“听这个词”而不引入远程音频供应链或仓库体积。
+Alternatives rejected: 预录 MP3；词典 CDN；把 IPA 符号送进 TTS；Reveal 自动播放；en-GB；为 TTS 改 FSRS/Home/Search/时区。
+Consequences: UI-016 记录该交互。朗读内容是 lemma，不是句子里的 displayForm，也不是 IPA。
+Tests/docs affected: `src/speech/systemTts.ts`, `ContextCard`, unit/UI tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text

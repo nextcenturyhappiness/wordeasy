@@ -704,9 +704,47 @@ p {
   line-height: 1.35;
 }
 
-.context-card__pronunciation span:last-child {
+.context-card__part-of-speech {
   color: var(--color-text-muted);
   font-size: 0.92em;
+  font-weight: 500;
+}
+
+.ipa-speak-block {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+}
+
+.ipa-speak {
+  min-height: 2.25rem;
+  margin: 0;
+  padding: 0.15rem 0.2rem 0.15rem 0;
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ipa-speak:hover,
+.ipa-speak:focus-visible {
+  color: var(--color-text);
+}
+
+.ipa-speak__mark {
+  display: inline-flex;
+  color: var(--color-text-muted);
+}
+
+.ipa-speak:hover .ipa-speak__mark,
+.ipa-speak:focus-visible .ipa-speak__mark {
+  color: var(--color-accent);
+}
+
+.ipa-speak__error {
+  color: var(--color-error);
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
