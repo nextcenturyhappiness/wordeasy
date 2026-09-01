@@ -8,7 +8,7 @@ interface ContextCardProps {
   answerRef?: RefObject<HTMLElement | null>;
 }
 
-function HighlightedContext({ card }: { card: ContextCardView }) {
+function HighlightedContext({ card, revealed }: { card: ContextCardView; revealed: boolean }) {
   const { contextSentence, targetText } = card;
   const parts: Array<{ text: string; highlighted: boolean }> = [];
   let cursor = 0;
@@ -32,7 +32,17 @@ function HighlightedContext({ card }: { card: ContextCardView }) {
     <p className="context-sentence">
       {parts.map((part, index) => (
         <Fragment key={`${String(index)}-${part.text}`}>
-          {part.highlighted ? <mark>{part.text}</mark> : part.text}
+          {part.highlighted ? (
+            revealed ? (
+              <mark>{part.text}</mark>
+            ) : (
+              <span className="context-blank" aria-label="hidden target word">
+                <span aria-hidden="true">{"\u00a0".repeat(Math.max(part.text.length, 4))}</span>
+              </span>
+            )
+          ) : (
+            part.text
+          )}
         </Fragment>
       ))}
     </p>
@@ -76,9 +86,11 @@ export function ContextCard({ card, revealed, answerRef }: ContextCardProps) {
         </p>
       </header>
 
-      <HighlightedContext card={card} />
+      <HighlightedContext card={card} revealed={revealed} />
       <h1 className="context-question" id="context-question">
-        What does the highlighted word mean in this context?
+        {revealed
+          ? "What does the highlighted word mean in this context?"
+          : "What does the missing word mean in this context?"}
       </h1>
 
       {revealed ? (

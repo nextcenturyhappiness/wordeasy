@@ -1,9 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
+import type { ContextCardView } from "../../application/contracts";
 import { ModuleSummaryCard } from "../../components/ModuleSummaryCard";
+import { NextSessionCard } from "../../components/NextSessionCard";
+import { LexiconSearch } from "../../components/LexiconSearch";
 import { SyncStatus } from "../../components/SyncStatus";
 import { useLearningApp } from "../../app/LearningAppContext";
 import { prefetchHomeLearning, scheduleIdlePrefetch } from "../../app/homePrefetch";
+import { selectNextSession } from "../../app/nextSession";
 import { markPerformanceAfterPaint, measurePerformance } from "../../application/performance";
 
 function greetingFor(timeZone: string): string {
@@ -33,21 +37,52 @@ function greetingFor(timeZone: string): string {
 
 export function HomePage() {
   const { home, repository, syncState, syncNow } = useLearningApp();
+  const [nextCard, setNextCard] = useState<ContextCardView | null>(null);
 
   useEffect(() => {
     if (home.status !== "ready") {
       return;
     }
 
+    const snapshot = home.snapshot;
     let active = true;
     let cancelIdlePrefetch: () => void = () => undefined;
+
+    async function peekNextCard() {
+      const target = selectNextSession(snapshot);
+      if (target === null) {
+        if (active) {
+          setNextCard(null);
+        }
+        return;
+      }
+
+      try {
+        const card = await repository.peekNextSessionCard(target.module, target.queue);
+        if (active) {
+          setNextCard(card);
+        }
+      } catch {
+        if (active) {
+          setNextCard(null);
+        }
+      }
+    }
+
+    void peekNextCard();
+
     const cancelAfterPaint = markPerformanceAfterPaint("cached-home-ready", () => {
       measurePerformance("app-shell-to-cached-home", "app-shell-visible", "cached-home-ready");
-      if (active) {
-        cancelIdlePrefetch = scheduleIdlePrefetch(() => {
-          void prefetchHomeLearning(repository, home.snapshot);
-        });
+      if (!active) {
+        return;
       }
+      cancelIdlePrefetch = scheduleIdlePrefetch(() => {
+        void prefetchHomeLearning(repository, snapshot).then(() => {
+          if (active) {
+            void peekNextCard();
+          }
+        });
+      });
     });
 
     return () => {
@@ -93,9 +128,12 @@ export function HomePage() {
   }
 
   const { snapshot } = home;
+  const nextSession = selectNextSession(snapshot);
 
   return (
     <section className="home-page">
+      <LexiconSearch repository={repository} />
+
       <header className="home-heading">
         <div>
           <p className="eyebrow">{snapshot.studyDate}</p>
@@ -103,6 +141,8 @@ export function HomePage() {
         </div>
         <SyncStatus state={syncState} onSync={triggerSync} />
       </header>
+
+      <NextSessionCard target={nextSession} nextCard={nextCard} />
 
       <div className="module-grid">
         <ModuleSummaryCard summary={snapshot.modules.research_english} />

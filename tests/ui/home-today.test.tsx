@@ -86,7 +86,7 @@ describe("Home and Today", () => {
     expect(getStudyQueue).not.toHaveBeenCalled();
   });
 
-  it("shows the passed local Home snapshot with two isolated module summaries", () => {
+  it("shows the passed local Home snapshot with one next session and compact module summaries", async () => {
     const getCachedHome = vi.fn<LearningRepository["getCachedHome"]>(() =>
       Promise.resolve(buildHomeSnapshot())
     );
@@ -95,6 +95,19 @@ describe("Home and Today", () => {
       getCachedHome
     });
     renderWithLearningApp(<HomePage />, { repository });
+
+    expect(
+      screen.getByRole("search", { name: "Search learned Context Cards" })
+    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("用中文搜学过的词")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Start the next card" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Start next session" })).toHaveAttribute(
+      "href",
+      "/study/research?queue=review"
+    );
+    expect(screen.getByRole("link", { name: "Continue Research English" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Continue Medical English" })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /continue/i })).toHaveLength(2);
 
     const research = screen.getByRole("article", { name: "Research English" });
     const medical = screen.getByRole("article", { name: "Medical English" });
@@ -108,6 +121,66 @@ describe("Home and Today", () => {
     );
     expect(screen.getByRole("status")).toHaveTextContent("Synced");
     expect(getCachedHome).not.toHaveBeenCalled();
+    expect(
+      await screen.findByText(
+        "The association was substantially attenuated after adjustment for age and BMI."
+      )
+    ).toBeInTheDocument();
+  });
+
+  it("searches local Context Cards by Chinese gloss and English lemma", async () => {
+    const user = userEvent.setup();
+    const repository = createRepository();
+    renderWithLearningApp(<HomePage />, { repository });
+
+    const field = screen.getByPlaceholderText("用中文搜学过的词");
+    await user.type(field, "减弱");
+
+    expect(await screen.findByText("attenuate")).toBeInTheDocument();
+    expect(screen.getByText("减弱；降低")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "The association was substantially attenuated after adjustment for age and BMI."
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText("还没有学过相关的词")).not.toBeInTheDocument();
+    expect(repository.searchLocalCards).toHaveBeenCalled();
+
+    await user.clear(field);
+    await user.type(field, "xyz-not-a-learned-word");
+    expect(await screen.findByText("还没有学过相关的词")).toBeInTheDocument();
+    expect(screen.queryByText("attenuate")).not.toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    expect(field).toHaveValue("");
+    expect(screen.queryByText("还没有学过相关的词")).not.toBeInTheDocument();
+    expect(document.activeElement).not.toBe(field);
+  });
+
+  it("shows a calm empty-study state when nothing is due", () => {
+    renderWithLearningApp(<HomePage />, {
+      initialHome: buildHomeSnapshot({
+        modules: {
+          research_english: {
+            module: "research_english",
+            new: { completed: 10, total: 10 },
+            review: { completed: 18, total: 18 },
+            wordsLearned: 128
+          },
+          medical_english: {
+            module: "medical_english",
+            new: { completed: 10, total: 10 },
+            review: { completed: 4, total: 4 },
+            wordsLearned: 74
+          }
+        }
+      })
+    });
+
+    expect(screen.getByRole("heading", { name: "Nothing is due right now." })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Start next session" })).not.toBeInTheDocument();
+    expect(screen.getByRole("article", { name: "Research English" })).toBeInTheDocument();
+    expect(screen.getByRole("article", { name: "Medical English" })).toBeInTheDocument();
   });
 
   it("waits until after Home paint and browser idle before prefetching the likely module", () => {

@@ -1,28 +1,9 @@
 import type { HomeSnapshot, LearningRepository, ModuleSlug } from "../application/contracts";
+import { selectNextSession } from "./nextSession";
 import { preloadStudyRoute, preloadTodayRoute } from "./lazyRoutes";
 
-const MODULE_PREFETCH_ORDER: readonly ModuleSlug[] = ["research_english", "medical_english"];
-
-function remaining(completed: number, total: number): number {
-  return Math.max(total - completed, 0);
-}
-
 export function selectHomePrefetchModule(snapshot: HomeSnapshot): ModuleSlug | null {
-  let selected: ModuleSlug | null = null;
-  let selectedRemaining = 0;
-
-  for (const module of MODULE_PREFETCH_ORDER) {
-    const summary = snapshot.modules[module];
-    const moduleRemaining =
-      remaining(summary.new.completed, summary.new.total) +
-      remaining(summary.review.completed, summary.review.total);
-    if (moduleRemaining > selectedRemaining) {
-      selected = module;
-      selectedRemaining = moduleRemaining;
-    }
-  }
-
-  return selected;
+  return selectNextSession(snapshot)?.module ?? null;
 }
 
 export async function prefetchHomeLearning(

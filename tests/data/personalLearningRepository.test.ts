@@ -138,6 +138,7 @@ describe("PersonalLearningRepository", () => {
         medical_english: { new: { completed: 0, total: 10 }, review: { completed: 0, total: 0 } }
       }
     });
+    expect(await repository.peekNextSessionCard("research_english", "new")).toBeNull();
     expect(loadCards).not.toHaveBeenCalled();
     expect(loadScheduler).not.toHaveBeenCalled();
   });
