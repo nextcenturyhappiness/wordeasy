@@ -231,7 +231,9 @@ describe("StudyPage", () => {
       expect(screen.getByText(researchCard.targetText, { selector: "mark" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "适用范围" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "句子来源" })).toBeInTheDocument();
-      expect(screen.queryByRole("heading", { name: "IPA / part of speech" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("heading", { name: "IPA / part of speech" })
+      ).not.toBeInTheDocument();
 
       await waitFor(() => {
         expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", inline: "nearest" });
