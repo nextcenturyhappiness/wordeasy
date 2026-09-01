@@ -72,6 +72,7 @@ export function StudyPage() {
   const presentationActionIdRef = useRef(crypto.randomUUID());
   const answerRef = useRef<HTMLElement | null>(null);
   const questionRef = useRef<HTMLDivElement | null>(null);
+  const sentenceAnchorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setPwaUpdateSafety(phase !== "committing");
@@ -151,7 +152,15 @@ export function StudyPage() {
 
     setPhase("revealed");
     setAnnouncement("Answer revealed. Choose Again, Hard, Good, or Easy.");
-    requestAnimationFrame(() => answerRef.current?.focus());
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "revealed") {
+      return;
+    }
+
+    sentenceAnchorRef.current?.scrollIntoView({ block: "start", inline: "nearest" });
+    answerRef.current?.focus({ preventScroll: true });
   }, [phase]);
 
   const rate = useCallback(
@@ -348,7 +357,12 @@ export function StudyPage() {
       </header>
 
       <div ref={questionRef} tabIndex={-1}>
-        <ContextCard card={card} revealed={revealed} answerRef={answerRef} />
+        <ContextCard
+          card={card}
+          revealed={revealed}
+          answerRef={answerRef}
+          sentenceAnchorRef={sentenceAnchorRef}
+        />
       </div>
 
       {saveError === null ? null : (

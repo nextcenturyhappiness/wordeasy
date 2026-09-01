@@ -6,6 +6,7 @@ interface ContextCardProps {
   card: ContextCardView;
   revealed: boolean;
   answerRef?: RefObject<HTMLElement | null>;
+  sentenceAnchorRef?: RefObject<HTMLDivElement | null>;
 }
 
 function HighlightedContext({ card, revealed }: { card: ContextCardView; revealed: boolean }) {
@@ -53,7 +54,7 @@ function SourceDetails({ card }: { card: ContextCardView }) {
   const { source } = card;
 
   if (source.type === "original_example") {
-    return <p>Original example written for this learning set.</p>;
+    return <p>为本词表撰写的例句</p>;
   }
 
   return (
@@ -71,7 +72,7 @@ function SourceDetails({ card }: { card: ContextCardView }) {
   );
 }
 
-export function ContextCard({ card, revealed, answerRef }: ContextCardProps) {
+export function ContextCard({ card, revealed, answerRef, sentenceAnchorRef }: ContextCardProps) {
   return (
     <article
       className="context-card"
@@ -86,7 +87,9 @@ export function ContextCard({ card, revealed, answerRef }: ContextCardProps) {
         </p>
       </header>
 
-      <HighlightedContext card={card} revealed={revealed} />
+      <div className="context-card__prompt" id="context-sentence-anchor" ref={sentenceAnchorRef}>
+        <HighlightedContext card={card} revealed={revealed} />
+      </div>
       <h1 className="context-question" id="context-question">
         {revealed
           ? "What does the highlighted word mean in this context?"
@@ -131,12 +134,12 @@ export function ContextCard({ card, revealed, answerRef }: ContextCardProps) {
               {card.ipa} · {card.partOfSpeech}
             </p>
           </div>
-          <div className="answer-section">
-            <h2>Usage note</h2>
+          <div className="answer-section" lang="zh-CN">
+            <h2>适用范围</h2>
             <p>{card.usageNote}</p>
           </div>
-          <div className="answer-section">
-            <h2>Source</h2>
+          <div className="answer-section" lang="zh-CN">
+            <h2>句子来源</h2>
             <SourceDetails card={card} />
           </div>
         </section>

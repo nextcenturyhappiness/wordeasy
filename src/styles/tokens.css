@@ -35,6 +35,7 @@
   --space-6: 2rem;
   --space-7: 3rem;
   --content-width: 44rem;
+  --app-header-offset: calc(3.5rem + env(safe-area-inset-top, 0px));
 }
 
 :root[data-theme="dark"] {

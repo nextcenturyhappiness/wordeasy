@@ -292,6 +292,23 @@ Alternatives rejected: 改成英文 placeholder；重绘标记；把满幅方块
 Consequences: UI-001 线框不再写 placeholder 文案。Windows/Linux 与 PWA any-purpose 图标跟随同一 padded master。
 Tests/docs affected: `LexiconSearch`, Home UI tests, `docs/01_PRODUCT_CORE.md`, `docs/TRACEABILITY.md`, `public/icons/icon-source.svg`, `src-tauri/icons/**`, PWA 192/512 PNGs.
 
+### DEC-035 · Reveal 后语境原句钉在首屏；适用范围与句子来源用中文
+
+Date: 2026-09-01
+Status: Accepted
+Related requirements: CORE-004, UI-008, UI-009, CONTENT-007, TEST-002; DEC-002
+Context: Mac 学习窗在 Reveal 后背面堆叠过高，`focus()` 把答案区滚进视口，语境原句（含高亮 target）被切到窗口上方。USAGE NOTE 是抽象英文，SOURCE 看不出是例句来源。所有者写科研/医学英文，需要知道这个词有多硬才用得诚实。
+Decision:
+
+1. Reveal 后把语境原句滚到学习窗顶部并 sticky 钉住；不得滚向释义或评分行。正面 cloze、背面高亮（UI-008）不变。评分按钮可以在折页下方。
+2. 背面第 7 层标题固定为「适用范围」；`usage_note` 对全部 60 张 seed 卡改为一两句中文使用强度说明，不改 lemma、sense、例句、搭配、IPA 或 FSRS。
+3. 背面第 8 层标题为「句子来源」；`original_example` 显示「为本词表撰写的例句」。不编造 DOI 或其他引用。
+
+Reason: 语境原句是 Context Card 的锚；用法说明要能指导写作，来源标题要名副其实。
+Alternatives rejected: 自动滚到评分按钮；藏起原句；标题用「什么时候能用」「使用强度」或 USAGE NOTE。
+Consequences: CORE-004 / UI-009 层级标题改为中文两项；CONTENT-007 覆盖 usage_note。本地 seed JSON 与生成的 SQL migration 必须同步。
+Tests/docs affected: `ContextCard`, `StudyPage`, seed JSON/SQL, content validator, UI/content tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text

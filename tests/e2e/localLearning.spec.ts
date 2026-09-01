@@ -18,7 +18,7 @@ test("persists a Context Card rating locally across reload", async ({ page }) =>
   await page.getByRole("link", { name: /Continue Research English/u }).click();
   await page.getByRole("link", { name: /Continue New/u }).click();
 
-  await expect(page.getByText(/what does the highlighted word mean/iu)).toBeVisible();
+  await expect(page.getByText(/what does the missing word mean/iu)).toBeVisible();
   await expect(page.getByRole("group", { name: "How well did you remember?" })).toHaveCount(0);
   await page.getByRole("button", { name: /Reveal answer/u }).click();
   await expect(page.getByRole("group", { name: "How well did you remember?" })).toBeVisible();
@@ -51,6 +51,29 @@ test("persists Medical progress without changing Research progress", async ({ pa
   const researchCard = page.getByRole("article", { name: "Research English" });
   await expect(medicalCard.getByText("1 / 10")).toBeVisible();
   await expect(researchCard.getByText("0 / 10")).toBeVisible();
+});
+
+test("keeps the revealed context sentence in view at desktop size", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/study/research?queue=new");
+
+  await expect(page.getByText(/what does the missing word mean/iu)).toBeVisible();
+  await expect(page.locator("mark")).toHaveCount(0);
+  await page.getByRole("button", { name: /Reveal answer/u }).click();
+
+  const sentence = page.locator("#context-sentence-anchor");
+  await expect(sentence).toBeInViewport();
+  await expect(page.locator("mark")).toBeInViewport();
+  await expect(page.getByRole("heading", { name: "适用范围" })).toBeAttached();
+  await expect(page.getByRole("heading", { name: "句子来源" })).toBeAttached();
+  await expect(page.getByText("为本词表撰写的例句")).toBeAttached();
+
+  await page.getByRole("heading", { name: "句子来源" }).evaluate((element) => {
+    element.scrollIntoView({ block: "center" });
+  });
+  await expect(sentence).toBeInViewport();
+  await expect(page.locator("mark")).toBeInViewport();
+  await expect(page.getByRole("heading", { name: "句子来源" })).toBeInViewport();
 });
 
 test("keeps primary study actions usable at 320 CSS pixels", async ({ page }) => {

@@ -36,8 +36,8 @@ describe("ContextCard", () => {
       "完整句子翻译",
       "Common collocations",
       "IPA / part of speech",
-      "Usage note",
-      "Source"
+      "适用范围",
+      "句子来源"
     ]);
     expect(screen.getByText(researchCard.meaningEn)).toBeInTheDocument();
     expect(screen.getByText(researchCard.plainEnglishParaphrase)).toBeInTheDocument();
@@ -45,7 +45,12 @@ describe("ContextCard", () => {
     expect(
       screen.getByText(researchCard.sentenceTranslationZh).closest('[lang="zh-CN"]')
     ).not.toBeNull();
-    expect(screen.getByText("Original example written for this learning set.")).toBeInTheDocument();
+    expect(screen.getByText(researchCard.usageNote).closest('[lang="zh-CN"]')).not.toBeNull();
+    expect(screen.getByText("为本词表撰写的例句")).toBeInTheDocument();
+    expect(document.getElementById("context-sentence-anchor")).toHaveTextContent(
+      researchCard.contextSentence
+    );
+    expect(screen.getByText(researchCard.targetText, { selector: "mark" })).toBeInTheDocument();
   });
 
   it("has no automatically detectable accessibility violations when revealed", async () => {

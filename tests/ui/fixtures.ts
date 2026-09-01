@@ -37,7 +37,8 @@ export const researchCard: ContextCardView = {
   targetText: "attenuated",
   meaningEn: "to make an effect, association, or signal weaker",
   meaningZh: "减弱；降低",
-  usageNote: "Common in Results and Discussion when an effect becomes smaller after adjustment.",
+  usageNote:
+    "只有效应、关联或信号确实变弱时才能用，比 reduce 更强调“被压小”。不要写成已经消失或被消除。",
   plainEnglishParaphrase: "Adjusting for age and BMI made the observed association weaker.",
   sentenceTranslationZh: "调整年龄和 BMI 后，该关联明显减弱。",
   collocations: ["attenuate the association", "attenuate an effect"],
@@ -62,7 +63,7 @@ export const secondResearchCard: ContextCardView = {
   targetText: "robust",
   meaningEn: "remaining reliable despite changes in analysis",
   meaningZh: "稳健的；可靠的",
-  usageNote: "Used when results remain consistent under alternative assumptions.",
+  usageNote: "换样本、换模型后结果仍站得住才能叫 robust。一次分析好看不够。",
   plainEnglishParaphrase: "The result stayed reliable when the analysis was changed.",
   sentenceTranslationZh: "在每项敏感性分析中，该关联仍然稳健。",
   collocations: ["robust association", "robust estimate"]
@@ -81,7 +82,7 @@ export const medicalCard: ContextCardView = {
   targetText: "palpable",
   meaningEn: "able to be felt during physical examination",
   meaningZh: "可触及的",
-  usageNote: "Used for findings detected by palpation.",
+  usageNote: "检查者用手摸到的体征，比 visible 更强调触诊。只看见摸不到就别写 palpable。",
   plainEnglishParaphrase: "The examiner could feel a firm mass in the right upper abdomen.",
   sentenceTranslationZh: "右上腹可触及一个质硬、无压痛的肿块。",
   collocations: ["palpable mass", "palpable lymph nodes"],
