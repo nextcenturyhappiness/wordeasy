@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { ContextCard } from "../../src/components/ContextCard";
-import { SPEECH_UNAVAILABLE_MESSAGE } from "../../src/speech/systemTts";
+import { SPEECH_UNAVAILABLE_MESSAGE, type SpeakWordResult } from "../../src/speech/systemTts";
 import { researchCard } from "./fixtures";
 
 describe("ContextCard", () => {
@@ -31,7 +31,7 @@ describe("ContextCard", () => {
   });
 
   it("does not auto-speak on the cloze front", () => {
-    const speakWord = vi.fn(() => ({ ok: true as const }));
+    const speakWord = vi.fn<(word: string) => SpeakWordResult>(() => ({ ok: true }));
     render(<ContextCard card={researchCard} revealed={false} speakWord={speakWord} />);
 
     expect(speakWord).not.toHaveBeenCalled();
@@ -79,7 +79,7 @@ describe("ContextCard", () => {
 
   it("speaks the lemma, not the IPA, when the revealed IPA line is clicked", async () => {
     const user = userEvent.setup();
-    const speakWord = vi.fn(() => ({ ok: true as const }));
+    const speakWord = vi.fn<(word: string) => SpeakWordResult>(() => ({ ok: true }));
     render(<ContextCard card={researchCard} revealed speakWord={speakWord} />);
 
     expect(speakWord).not.toHaveBeenCalled();

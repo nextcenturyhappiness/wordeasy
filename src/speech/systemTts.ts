@@ -27,12 +27,11 @@ export function pickLocalEnglishVoice(
 }
 
 function getSpeechSynthesis(): SpeechSynthesis | null {
-  if (typeof window === "undefined") {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) {
     return null;
   }
 
-  const synthesis = window.speechSynthesis;
-  return synthesis === undefined ? null : synthesis;
+  return window.speechSynthesis;
 }
 
 export function cancelEnglishSpeech(): void {
@@ -49,12 +48,11 @@ export function cancelEnglishSpeech(): void {
 }
 
 function getSpeechUtteranceCtor(): typeof SpeechSynthesisUtterance | null {
-  if (typeof window === "undefined") {
+  if (typeof window === "undefined" || !("SpeechSynthesisUtterance" in window)) {
     return null;
   }
 
-  const Ctor = window.SpeechSynthesisUtterance;
-  return typeof Ctor === "function" ? Ctor : null;
+  return window.SpeechSynthesisUtterance;
 }
 
 export function speakEnglishWord(word: string): SpeakWordResult {
