@@ -93,12 +93,6 @@ async function renderRuntime(
               "Personal edition · Progress is stored only on this device. Cloud backup and cross-device sync are not connected."
           }
         : {})}
-      {...(import.meta.env.VITE_APP_MODE === "desktop"
-        ? {
-            environmentNotice:
-              "Personal Mac edition · Same cloud account as the browser. Progress is saved on this Mac first; sync happens in the background and never blocks learning."
-          }
-        : {})}
     />
   );
 

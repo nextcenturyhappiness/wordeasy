@@ -284,7 +284,7 @@ com.nextcenturyhappiness.wordeasy
 
 macOS 个人版使用与 `npm run dev:cloud` 相同的云端学习 runtime：WebView 内 Email OTP，账户与浏览器同一 Supabase 项目。评分必须先写入 IndexedDB，再异步同步；同步失败不得阻塞学习。同一天 assignment 保持稳定。
 
-界面必须说明：这是个人 Mac 版，使用与浏览器相同的云端账户与自动同步；进度先保存在本机，同步失败不会打断学习。不得把尚未接入同一账户的 Android standalone PWA 描述为已同步。
+桌面使用与浏览器相同的云端账户，并保持 local-first；不得显示常驻 environment / deployment banner 来重复说明这些边界。不得把尚未接入同一账户的 Android standalone PWA 描述为已同步。
 
 ---
 
