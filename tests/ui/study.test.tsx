@@ -130,10 +130,13 @@ describe("StudyPage", () => {
 
     resolveRate?.(savedResult(secondResearchCard.cardId));
     await waitFor(() => {
-      expect(
-        screen.getByText(secondResearchCard.targetText, { selector: "mark" })
-      ).toBeInTheDocument();
+      expect(screen.getByText(/the association remained/i)).toBeInTheDocument();
     });
+    expect(document.querySelector(".context-blank")).toHaveAttribute(
+      "aria-label",
+      "hidden target word"
+    );
+    expect(screen.queryByText(secondResearchCard.targetText)).not.toBeInTheDocument();
     expect(screen.queryByText(researchCard.meaningEn)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /reveal answer/i })).toBeEnabled();
   });

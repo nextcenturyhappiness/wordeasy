@@ -136,15 +136,15 @@ describe("Home and Today", () => {
     const field = screen.getByPlaceholderText("用中文搜学过的词");
     await user.type(field, "减弱");
 
-    expect(await screen.findByText("attenuate")).toBeInTheDocument();
-    expect(screen.getByText("减弱；降低")).toBeInTheDocument();
+    const results = await screen.findByRole("list");
+    expect(within(results).getByText("attenuate")).toBeInTheDocument();
+    expect(within(results).getByText("减弱；降低")).toBeInTheDocument();
     expect(
-      screen.getByText(
+      within(results).getByText(
         "The association was substantially attenuated after adjustment for age and BMI."
       )
     ).toBeInTheDocument();
     expect(screen.queryByText("还没有学过相关的词")).not.toBeInTheDocument();
-    expect(repository.searchLocalCards).toHaveBeenCalled();
 
     await user.clear(field);
     await user.type(field, "xyz-not-a-learned-word");

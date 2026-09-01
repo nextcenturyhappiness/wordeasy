@@ -26,13 +26,11 @@ export function LexiconSearch({ repository }: LexiconSearchProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<LexiconSearchHit[]>([]);
-  const [searched, setSearched] = useState(false);
+  const [resultQuery, setResultQuery] = useState("");
 
   useEffect(() => {
     const trimmed = query.trim();
     if (trimmed.length === 0) {
-      setHits([]);
-      setSearched(false);
       return;
     }
 
@@ -41,7 +39,7 @@ export function LexiconSearch({ repository }: LexiconSearchProps) {
       void repository.searchLocalCards(trimmed).then((results) => {
         if (active) {
           setHits(results);
-          setSearched(true);
+          setResultQuery(trimmed);
         }
       });
     }, 80);
@@ -69,7 +67,8 @@ export function LexiconSearch({ repository }: LexiconSearchProps) {
     };
   }, []);
 
-  const showResults = query.trim().length > 0 && searched;
+  const trimmedQuery = query.trim();
+  const showResults = trimmedQuery.length > 0 && resultQuery === trimmedQuery;
 
   return (
     <search className="lexicon-search" role="search" aria-label="Search learned Context Cards">
@@ -108,8 +107,7 @@ export function LexiconSearch({ repository }: LexiconSearchProps) {
             if (event.key === "Escape") {
               event.preventDefault();
               setQuery("");
-              setHits([]);
-              setSearched(false);
+              setResultQuery("");
               inputRef.current?.blur();
             }
           }}
