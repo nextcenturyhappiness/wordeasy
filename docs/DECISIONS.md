@@ -309,6 +309,23 @@ Alternatives rejected: 自动滚到评分按钮；藏起原句；标题用「什
 Consequences: CORE-004 / UI-009 层级标题改为中文两项；CONTENT-007 覆盖 usage_note。本地 seed JSON 与生成的 SQL migration 必须同步。
 Tests/docs affected: `ContextCard`, `StudyPage`, seed JSON/SQL, content validator, UI/content tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
 
+### DEC-036 · Reveal 后去掉语境提问，把 IPA 放到 sticky 原句区
+
+Date: 2026-09-01
+Status: Accepted
+Related requirements: CORE-003, CORE-004, UI-008, UI-009, TEST-002; DEC-035
+Context: Reveal 后学习窗仍显示 “What does the highlighted word mean in this context?”。所有者已经在看释义页，这句提问多余。音标有助于记忆，应出现在仍钉在首屏的原句附近。
+Decision:
+
+1. 正面 cloze 仍问 “What does the missing word mean in this context?”。既有正面 IPA/词性保持原样，不新增会泄露答案的字段。
+2. Reveal 后不再显示 “What does the highlighted word mean…” 或等价提问。该位置改为 sticky 语境原句下的 IPA；词性可同行，写成 `/…/ · verb`。
+3. 背面释义堆叠不再重复 IPA / part of speech 区块。Meaning、paraphrase、中文释义、完整句子翻译、collocations、适用范围、句子来源保留。DEC-035 的 sticky 原句、适用范围与句子来源标题不变。
+
+Reason: 提问只服务于未揭示的 cloze；揭示后首屏应留给句子和读音。
+Alternatives rejected: 保留提问只改文案；把 IPA 留在下方释义层；正面新藏 IPA。
+Consequences: CORE-004 / UI-009 的稳定层级不再把 IPA 当作第 6 层独立标题。
+Tests/docs affected: `ContextCard`, UI/E2E tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text

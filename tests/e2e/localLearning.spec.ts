@@ -58,12 +58,18 @@ test("keeps the revealed context sentence in view at desktop size", async ({ pag
   await page.goto("/study/research?queue=new");
 
   await expect(page.getByText(/what does the missing word mean/iu)).toBeVisible();
+  await expect(page.getByText(/what does the highlighted word mean/iu)).toHaveCount(0);
   await expect(page.locator("mark")).toHaveCount(0);
   await page.getByRole("button", { name: /Reveal answer/u }).click();
 
   const sentence = page.locator("#context-sentence-anchor");
   await expect(sentence).toBeInViewport();
   await expect(page.locator("mark")).toBeInViewport();
+  await expect(sentence.locator(".context-card__pronunciation")).toBeInViewport();
+  await expect(sentence.locator(".context-card__pronunciation")).toHaveText(/\/.+\//u);
+  await expect(page.getByText(/what does the highlighted word mean/iu)).toHaveCount(0);
+  await expect(page.getByText(/what does the missing word mean/iu)).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "IPA / part of speech" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "适用范围" })).toBeAttached();
   await expect(page.getByRole("heading", { name: "句子来源" })).toBeAttached();
   await expect(page.getByText("为本词表撰写的例句")).toBeAttached();

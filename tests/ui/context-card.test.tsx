@@ -10,6 +10,7 @@ describe("ContextCard", () => {
     const { container } = render(<ContextCard card={researchCard} revealed={false} />);
 
     expect(screen.getByText(/what does the missing word mean/i)).toBeInTheDocument();
+    expect(screen.queryByText(/what does the highlighted word mean/i)).not.toBeInTheDocument();
     expect(container.querySelector("mark")).toBeNull();
     expect(container.querySelector(".context-blank")).toHaveAttribute(
       "aria-label",
@@ -20,6 +21,10 @@ describe("ContextCard", () => {
     expect(screen.queryByText(researchCard.plainEnglishParaphrase)).not.toBeInTheDocument();
     expect(screen.queryByText(researchCard.meaningZh)).not.toBeInTheDocument();
     expect(screen.queryByText(researchCard.sentenceTranslationZh)).not.toBeInTheDocument();
+    expect(screen.getByText(researchCard.ipa)).toBeInTheDocument();
+    expect(document.getElementById("context-sentence-anchor")).not.toHaveTextContent(
+      researchCard.ipa
+    );
   });
 
   it("reveals every required answer layer in a stable order", () => {
@@ -35,10 +40,12 @@ describe("ContextCard", () => {
       "中文释义",
       "完整句子翻译",
       "Common collocations",
-      "IPA / part of speech",
       "适用范围",
       "句子来源"
     ]);
+    expect(screen.queryByText(/what does the highlighted word mean/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/what does the missing word mean/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "IPA / part of speech" })).not.toBeInTheDocument();
     expect(screen.getByText(researchCard.meaningEn)).toBeInTheDocument();
     expect(screen.getByText(researchCard.plainEnglishParaphrase)).toBeInTheDocument();
     expect(screen.getByText(researchCard.meaningZh).closest('[lang="zh-CN"]')).not.toBeNull();
@@ -47,9 +54,12 @@ describe("ContextCard", () => {
     ).not.toBeNull();
     expect(screen.getByText(researchCard.usageNote).closest('[lang="zh-CN"]')).not.toBeNull();
     expect(screen.getByText("为本词表撰写的例句")).toBeInTheDocument();
-    expect(document.getElementById("context-sentence-anchor")).toHaveTextContent(
-      researchCard.contextSentence
-    );
+    const sentenceAnchor = document.getElementById("context-sentence-anchor");
+    expect(sentenceAnchor).toHaveTextContent(researchCard.contextSentence);
+    const pronunciation = sentenceAnchor?.querySelector(".context-card__pronunciation");
+    expect(pronunciation).toHaveTextContent(researchCard.ipa);
+    expect(pronunciation).toHaveTextContent(researchCard.partOfSpeech);
+    expect(screen.getAllByText(researchCard.ipa)).toHaveLength(1);
     expect(screen.getByText(researchCard.targetText, { selector: "mark" })).toBeInTheDocument();
   });
 

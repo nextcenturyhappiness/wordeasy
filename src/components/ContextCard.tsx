@@ -79,21 +79,28 @@ export function ContextCard({ card, revealed, answerRef, sentenceAnchorRef }: Co
       data-revealed={revealed ? "true" : "false"}
       aria-labelledby="context-question"
     >
-      <header className="context-card__header">
-        <p className="card-meta">
-          <span>{card.partOfSpeech}</span>
-          <span aria-hidden="true">·</span>
-          <span>{card.ipa}</span>
-        </p>
-      </header>
+      {revealed ? null : (
+        <header className="context-card__header">
+          <p className="card-meta">
+            <span>{card.partOfSpeech}</span>
+            <span aria-hidden="true">·</span>
+            <span>{card.ipa}</span>
+          </p>
+        </header>
+      )}
 
       <div className="context-card__prompt" id="context-sentence-anchor" ref={sentenceAnchorRef}>
         <HighlightedContext card={card} revealed={revealed} />
+        {revealed ? (
+          <p className="card-meta context-card__pronunciation">
+            <span>{card.ipa}</span>
+            <span aria-hidden="true">·</span>
+            <span>{card.partOfSpeech}</span>
+          </p>
+        ) : null}
       </div>
-      <h1 className="context-question" id="context-question">
-        {revealed
-          ? "What does the highlighted word mean in this context?"
-          : "What does the missing word mean in this context?"}
+      <h1 className={revealed ? "sr-only" : "context-question"} id="context-question">
+        {revealed ? card.lemma : "What does the missing word mean in this context?"}
       </h1>
 
       {revealed ? (
@@ -127,12 +134,6 @@ export function ContextCard({ card, revealed, answerRef, sentenceAnchorRef }: Co
                 <li key={collocation}>{collocation}</li>
               ))}
             </ul>
-          </div>
-          <div className="answer-section">
-            <h2>IPA / part of speech</h2>
-            <p>
-              {card.ipa} · {card.partOfSpeech}
-            </p>
           </div>
           <div className="answer-section" lang="zh-CN">
             <h2>适用范围</h2>
