@@ -407,15 +407,15 @@ Cloudflare Pages 上的 Preview 或正式 standalone PWA 发布前后必须保�
 
 必须分别记录自动证据与真实运行证据：
 
-1. `dist-desktop` 不包含 Service Worker、Manifest、Workbox、Cloudflare `_headers`、Supabase 配置或 privileged secret；
-2. 完整 60-card 内容位于 deferred desktop chunk，不进入首屏 JavaScript；
-3. `cargo fmt --check`、Clippy `-D warnings`、Cargo tests 和 release build 通过；
+1. `dist-desktop` 不包含 Service Worker、Manifest、Workbox、Cloudflare `_headers` 或 privileged secret；公开客户端只允许本项目 `VITE_SUPABASE_URL` 与 publishable key，且 key 不得写入 git；
+2. 完整 60-card 词库不得进入首屏或 Home 可达 JavaScript；catalog 由云端学习 runtime 在登录后同步，不得再打入 desktop seed chunk；
+3. `cargo fmt --check`、Clippy `-D warnings`、Cargo tests（含本项目 Supabase origin 放行与其他远程拒绝）通过；
 4. `.app` 与 `.dmg` 均实际生成，主二进制为 `arm64`，identifier 为 `com.nextcenturyhappiness.wordeasy`；
 5. ad-hoc `codesign --verify --deep --strict` 与 `hdiutil verify` 通过；
 6. DMG 实际挂载，挂载卷内包含应用和 Applications 安装入口；
-7. 应用在完全不依赖 Supabase / Cloudflare 的情况下启动 Home，可进入 Research / Medical、Reveal 和评分；
-8. 评分后完全退出并重开，进度和 60-card catalog 仍保留；
-9. 远程导航测试拒绝非本地 URL，Tauri capability / plugin 清单保持最小；
+7. 应用以云端 runtime 启动：未登录时 WebView 内 Email OTP；已有本地 Session 时先显示缓存 Home，不得等待 Supabase 网络；
+8. 评分先写入 IndexedDB；同步失败不阻塞学习；退出并重开后本地进度仍保留；
+9. CSP / 导航仅放行本地 WebView origin 与本项目 Supabase `https` / `wss` origin；Tauri capability / plugin 清单保持最小，无 shell/fs/http/dialog/updater；
 10. 明确记录 Developer ID 签名、Apple 公证和第三方 Mac 分发未验证，不得把 ad-hoc 签名等同于公证。
 
 TEST-042 通过不能替代 TEST-027 的真实 Android Chrome PWA 安装验收。

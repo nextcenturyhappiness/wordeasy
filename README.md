@@ -17,7 +17,7 @@ The repository is a release candidate with two formal personal distribution targ
 - an installable Android/macOS Chrome PWA built with `standalone` mode;
 - an Apple Silicon personal macOS `.app` / `.dmg` built with Tauri 2.
 
-Both formal local targets use the complete 60-card catalog, keep progress on that device, and make no Supabase request. The older private, 20-card Preview remains deployment history rather than the current product delivery. Local automated checks exercise the formal PWA, desktop boundary, demo learning flow, cloud adapters, sync failure and conflict handling, PWA offline launch, cached offline learning, bundle budgets, and startup under delayed or failed Supabase requests. The following still require an external environment and are intentionally not reported as passed:
+The standalone PWA keeps the complete 60-card catalog on that device and makes no Supabase request. The personal macOS App uses the same cloud login and background sync as `npm run dev:cloud`, while still saving ratings in IndexedDB first. The older private, 20-card Preview remains deployment history rather than the current product delivery. Local automated checks exercise the formal PWA, desktop cloud boundary, demo learning flow, cloud adapters, sync failure and conflict handling, PWA offline launch, cached offline learning, bundle budgets, and startup under delayed or failed Supabase requests. The following still require an external environment and are intentionally not reported as passed:
 
 - real Supabase migration, RLS, RPC, Edge Function, OTP, and two-client checks;
 - physical Android Chrome and macOS Chrome PWA installation;
@@ -58,7 +58,7 @@ npm run dev:demo
 
 The demo is explicit and uses its own IndexedDB namespace. It derives a controlled 20-card browser subset from the canonical dataset at build time: Research 5 + 2 + 3 and Medical 10. The full 60-card dataset is never imported by browser source.
 
-For cloud mode, copy `.env.example` to `.env.local` and set only the public browser values:
+For cloud mode or the personal Mac app, copy `.env.example` to `.env.local` and set only the public browser values:
 
 ```dotenv
 VITE_APP_MODE=cloud
@@ -72,7 +72,7 @@ Then run:
 npm run dev:cloud
 ```
 
-Production does not silently fall back to demo when configuration is absent.
+The desktop Vite mode reads the same `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from `.env` / `.env.local` / `.env.production` / CI secrets. Do not put those values in the committed `.env.desktop` file. Production and desktop packaging do not silently fall back to demo when configuration is absent.
 
 ## Run the formal personal PWA
 
@@ -110,7 +110,9 @@ src-tauri/target/aarch64-apple-darwin/release/bundle/macos/wordeasy.app
 src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/wordeasy_0.1.0_aarch64.dmg
 ```
 
-The desktop build embeds the same frontend and the complete 60-card deferred catalog, but deliberately includes no Service Worker, Web Manifest, Cloudflare header file, Supabase configuration, Tauri IPC command, or plugin capability. Its stable identifier is `com.nextcenturyhappiness.wordeasy`.
+The desktop build embeds the same frontend and the same cloud learning runtime as `npm run dev:cloud`: Email OTP in the webview, IndexedDB-first ratings, and background sync that never blocks learning. It still includes no Service Worker, Web Manifest, Cloudflare header file, Tauri IPC command, or plugin capability. CSP and navigation allow only this project's Supabase origin (`https` and `wss`) in addition to the local WebView origin. Its stable identifier is `com.nextcenturyhappiness.wordeasy`.
+
+On Apple Silicon, `npm run desktop:build` requires the same public Supabase env as the cloud web build. Do not hardcode a publishable key in git, and never configure `SUPABASE_SERVICE_ROLE_KEY` for the client.
 
 This is an ad-hoc-signed personal build, not a Developer ID signed/notarized public release. It is intended for the Mac that built it. Third-party distribution without Gatekeeper warnings requires a paid Apple Developer identity and notarization. IndexedDB is not encrypted by the app; macOS login security and FileVault protect data at rest.
 

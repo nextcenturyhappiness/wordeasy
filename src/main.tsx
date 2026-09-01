@@ -93,10 +93,10 @@ async function renderRuntime(
               "Personal edition · Progress is stored only on this device. Cloud backup and cross-device sync are not connected."
           }
         : {})}
-      {...(runtime.mode === "desktop"
+      {...(import.meta.env.VITE_APP_MODE === "desktop"
         ? {
             environmentNotice:
-              "Personal Mac edition · Progress is stored only on this Mac. Cloud backup and Android sync are not connected."
+              "Personal Mac edition · Same cloud account as the browser. Progress is saved on this Mac first; sync happens in the background and never blocks learning."
           }
         : {})}
     />
@@ -128,8 +128,7 @@ async function bootstrap(): Promise<void> {
     if (
       import.meta.env.VITE_APP_MODE === "demo" ||
       import.meta.env.VITE_APP_MODE === "preview" ||
-      import.meta.env.VITE_APP_MODE === "standalone" ||
-      import.meta.env.VITE_APP_MODE === "desktop"
+      import.meta.env.VITE_APP_MODE === "standalone"
     ) {
       const generation = ++runtimeGeneration;
       const runtime = await createLearningRuntime({ mode: import.meta.env.VITE_APP_MODE });

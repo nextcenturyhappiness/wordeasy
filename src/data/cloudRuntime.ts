@@ -129,7 +129,7 @@ function requiredPublicEnvironment(): { url: string; publishableKey: string } {
     publishableKey.length === 0
   ) {
     throw new RuntimeConfigurationError(
-      "VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are required in cloud mode."
+      "VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are required in cloud and desktop packaging."
     );
   }
   return { url, publishableKey };

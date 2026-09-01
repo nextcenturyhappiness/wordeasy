@@ -1,6 +1,12 @@
-import { access, readFile, readdir } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { access, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
+
+const PERSONAL_SUPABASE_HTTPS_ORIGIN = "https://kksllqgtjtfxfnknlrfn.supabase.co";
+const PERSONAL_SUPABASE_WSS_ORIGIN = "wss://kksllqgtjtfxfnknlrfn.supabase.co";
+const PERSONAL_SUPABASE_HOST = "kksllqgtjtfxfnknlrfn.supabase.co";
 
 const root = new URL("..", import.meta.url).pathname;
 const output = join(root, "dist-desktop");
@@ -118,15 +124,15 @@ const initialGzip = (
 const initialCssGzip = (
   await Promise.all(initialStyles.map((path) => gzipSize(assetPath(path))))
 ).reduce((total, size) => total + size, 0);
-const desktopRuntimeFiles = [...javascriptByName]
-  .filter(([, source]) => source.includes("desktop:v1") && source.includes("local-user"))
+const cloudRuntimeFiles = [...javascriptByName]
+  .filter(([name]) => /^cloudRuntime-[^/]+\.js$/u.test(name))
   .map(([name]) => name);
 assert(
-  desktopRuntimeFiles.length === 1,
-  `Expected one desktop local runtime chunk; found ${String(desktopRuntimeFiles.length)}.`
+  cloudRuntimeFiles.length === 1,
+  `Expected one desktop cloud runtime chunk; found ${String(cloudRuntimeFiles.length)}.`
 );
 const homeFiles = staticReachableJavaScript(
-  [...initialFiles, ...desktopRuntimeFiles],
+  [...initialFiles, ...cloudRuntimeFiles],
   javascriptByName
 );
 const homeJavaScript = sourcesFor(homeFiles, javascriptByName);
@@ -140,6 +146,9 @@ const activeCardIds = canonicalSeed.cards.filter((card) => card.active).map((car
 const cardCatalogFiles = filesContainingEvery(javascriptByName, activeCardIds);
 const fsrsMarkers = ["ts-fsrs@5.4.1/default-v1", "wordeasy-fsrs-card-v1"];
 const fsrsFiles = filesContainingEvery(javascriptByName, fsrsMarkers);
+const deferredSupabaseFiles = [...javascriptByName]
+  .filter(([name]) => /^supabaseRemote-[^/]+\.js$/u.test(name))
+  .map(([name]) => name);
 
 for (const forbiddenFile of ["manifest.webmanifest", "sw.js", "_headers"]) {
   assert(!(await exists(join(output, forbiddenFile))), `Desktop build contains ${forbiddenFile}.`);
@@ -153,24 +162,16 @@ assert(
   !/navigator\.serviceWorker|registerSW|virtual:pwa-register/u.test(allJavaScript),
   "Desktop JavaScript contains Service Worker registration code."
 );
-assert(activeCardIds.length === 60, "Canonical desktop catalog must contain 60 active cards.");
+assert(activeCardIds.length === 60, "Canonical catalog must contain 60 active cards.");
 assert(
-  cardCatalogFiles.length === 1,
-  `Expected one dedicated desktop 60-card chunk; found ${String(cardCatalogFiles.length)}.`
+  cardCatalogFiles.length === 0,
+  "Desktop cloud build must not embed the canonical 60-card catalog."
 );
-const cardCatalogFile = cardCatalogFiles[0];
-assert(cardCatalogFile !== undefined, "Desktop 60-card chunk could not be identified.");
 assert(
-  [...javascriptByName].every(
-    ([name, source]) =>
-      name === cardCatalogFile || activeCardIds.every((cardId) => !source.includes(cardId))
+  [...javascriptByName].every(([, source]) =>
+    activeCardIds.every((cardId) => !source.includes(cardId))
   ),
-  "Desktop card IDs escaped their dedicated deferred catalog chunk."
-);
-assert(
-  !homeFiles.has(cardCatalogFile) &&
-    activeCardIds.every((cardId) => !homeJavaScript.includes(cardId)),
-  "Desktop initial + Home reachable JavaScript contains canonical vocabulary data."
+  "Desktop JavaScript contains canonical vocabulary data."
 );
 assert(
   fsrsFiles.length === 1,
@@ -179,23 +180,39 @@ assert(
 const fsrsFile = fsrsFiles[0];
 assert(fsrsFile !== undefined, "Desktop FSRS chunk could not be identified.");
 assert(
-  fsrsFile !== cardCatalogFile,
-  "Desktop FSRS and canonical vocabulary must be separate deferred chunks."
-);
-assert(
   !homeFiles.has(fsrsFile) && fsrsMarkers.every((marker) => !homeJavaScript.includes(marker)),
   "Desktop initial + Home reachable JavaScript contains the FSRS implementation."
 );
 assert(
-  allJavaScript.includes("desktop:v1") && allJavaScript.includes("local-user"),
-  "Desktop build does not contain its stable personal-data identity."
+  deferredSupabaseFiles.length === 1,
+  `Expected one deferred Supabase runtime chunk; found ${String(deferredSupabaseFiles.length)}.`
 );
-for (const forbidden of ["SUPABASE_SERVICE_ROLE_KEY", "sb_secret_", "wordeasy-preview.pages.dev"]) {
-  assert(
-    !allJavaScript.includes(forbidden),
-    `Desktop build contains forbidden value: ${forbidden}`
-  );
-}
+const deferredSupabaseFile = deferredSupabaseFiles[0];
+assert(deferredSupabaseFile !== undefined, "Desktop Supabase chunk could not be identified.");
+assert(
+  !homeFiles.has(deferredSupabaseFile),
+  "Desktop Home JavaScript statically includes the deferred Supabase runtime."
+);
+assert(
+  allJavaScript.includes(PERSONAL_SUPABASE_HTTPS_ORIGIN),
+  "Desktop build does not contain the personal Supabase HTTPS origin."
+);
+assert(
+  !allJavaScript.includes("desktop:v1") && !allJavaScript.includes("local-user"),
+  "Desktop cloud build still contains the retired local-only desktop identity."
+);
+assert(
+  !allJavaScript.includes("SUPABASE_SERVICE_ROLE_KEY"),
+  "Desktop build contains SUPABASE_SERVICE_ROLE_KEY."
+);
+assert(
+  !allJavaScript.includes("wordeasy-preview.pages.dev"),
+  "Desktop build contains the historical Preview hostname."
+);
+assert(
+  !new RegExp(["sb", "secret", "[A-Za-z0-9_-]{8,}"].join("_"), "u").test(allJavaScript),
+  "Desktop build contains a privileged Supabase secret key value."
+);
 assert(initialGzip <= 150 * 1024, "Desktop initial JavaScript exceeds the 150 KiB budget.");
 assert(homeGzip <= 200 * 1024, "Desktop Home JavaScript exceeds the 200 KiB budget.");
 assert(initialCssGzip <= 30 * 1024, "Desktop CSS exceeds the 30 KiB budget.");
@@ -232,7 +249,7 @@ assert(
 for (const directive of [
   "default-src 'none'",
   "script-src 'self'",
-  "connect-src 'self'",
+  `connect-src 'self' ${PERSONAL_SUPABASE_HTTPS_ORIGIN} ${PERSONAL_SUPABASE_WSS_ORIGIN}`,
   "worker-src 'none'",
   "manifest-src 'none'",
   "frame-ancestors 'none'"
@@ -252,6 +269,8 @@ assert(
 assert(
   tauriSource.includes('new("navigation-guard")') &&
     tauriSource.includes(".on_navigation") &&
+    tauriSource.includes("navigation_is_allowed") &&
+    tauriSource.includes(PERSONAL_SUPABASE_HOST) &&
     !tauriSource.includes("invoke_handler") &&
     !tauriSource.includes("#[tauri::command]"),
   "Desktop Rust boundary lacks its navigation guard or exposes an IPC command."
@@ -265,6 +284,61 @@ assert(
   "Desktop source contains a capability file despite its zero-capability policy."
 );
 
+const viteEntry = join(root, "node_modules", "vite", "bin", "vite.js");
+const envGuardRoot = await mkdtemp(join(tmpdir(), "wordeasy-desktop-env-"));
+const desktopEnvGuardCases = [
+  {
+    name: "missing public env",
+    env: { VITE_SUPABASE_URL: "", VITE_SUPABASE_PUBLISHABLE_KEY: "" },
+    diagnostic: "VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY"
+  },
+  {
+    name: "wrong Supabase origin",
+    env: {
+      VITE_SUPABASE_URL: "https://another-project.supabase.co",
+      VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_desktop_test"
+    },
+    diagnostic: "personal Supabase origin"
+  },
+  {
+    name: "privileged credential",
+    env: {
+      VITE_SUPABASE_URL: PERSONAL_SUPABASE_HTTPS_ORIGIN,
+      VITE_SUPABASE_PUBLISHABLE_KEY: ["service", "role", "placeholder"].join("_")
+    },
+    diagnostic: "privileged Supabase credential"
+  }
+];
+try {
+  for (const [index, guard] of desktopEnvGuardCases.entries()) {
+    const result = spawnSync(
+      process.execPath,
+      [
+        "--",
+        viteEntry,
+        "build",
+        "--mode",
+        "desktop",
+        "--outDir",
+        join(envGuardRoot, String(index))
+      ],
+      {
+        cwd: root,
+        encoding: "utf8",
+        env: { ...process.env, ...guard.env }
+      }
+    );
+    const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+    assert(result.status !== 0, `Desktop env guard allowed ${guard.name}.`);
+    assert(
+      output.includes(guard.diagnostic),
+      `Desktop env guard rejected ${guard.name} without the expected diagnostic.`
+    );
+  }
+} finally {
+  await rm(envGuardRoot, { recursive: true, force: true });
+}
+
 console.log(
-  `Desktop boundary passed: ${(initialGzip / 1024).toFixed(2)} KiB initial JS, ${(homeGzip / 1024).toFixed(2)} KiB Home JS, dedicated deferred 60-card and FSRS chunks, ${(initialCssGzip / 1024).toFixed(2)} KiB CSS, zero capability/IPC/network plugin, no PWA runtime or privileged secret.`
+  `Desktop cloud boundary passed: ${(initialGzip / 1024).toFixed(2)} KiB initial JS, ${(homeGzip / 1024).toFixed(2)} KiB Home JS, deferred Supabase and FSRS chunks, ${(initialCssGzip / 1024).toFixed(2)} KiB CSS, personal Supabase origin allowlisted, zero capability/IPC/plugin, no PWA runtime or privileged secret.`
 );

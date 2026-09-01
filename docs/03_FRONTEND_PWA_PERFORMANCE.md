@@ -274,21 +274,17 @@ com.nextcenturyhappiness.wordeasy
 
 桌面 build 必须：
 
-- 将全部前端资源打入应用，不依赖 Preview、Cloudflare 或 Supabase 才能启动；
+- 将全部前端资源打入应用，启动不依赖 Preview 或 Cloudflare；首次界面不得等待 Supabase 网络请求；
 - 不生成或注册 Service Worker、Web Manifest、Workbox 或 Cloudflare `_headers`；
-- 使用严格 CSP、零应用 capability 和远程导航拒绝；
+- 使用严格 CSP、零应用 capability；远程导航默认拒绝，仅放行本地 WebView origin 与本项目 Supabase origin（`https` 与 `wss`，供 Auth / RPC / `review-sync` Edge Function）；
 - 不启用 shell、文件系统、HTTP、dialog、updater 等 Tauri plugin；
-- 不包含 Supabase 配置、`service_role` secret 或远程 API 请求。
+- 客户端只读取 `VITE_SUPABASE_URL` 与 `VITE_SUPABASE_PUBLISHABLE_KEY`，读取方式与 cloud web build 相同（本地 `.env` / CI secrets）；不得把 publishable key 写入 git，不得包含或读取 `service_role`。
 
-### DESKTOP-004 · P0 · 本地数据边界
+### DESKTOP-004 · P0 · 本地优先的云端学习边界
 
-macOS 个人版使用稳定独立的 WebView / IndexedDB identity 和完整 60-card canonical 内容。评分必须先本地持久化，退出并重开后保留。
+macOS 个人版使用与 `npm run dev:cloud` 相同的云端学习 runtime：WebView 内 Email OTP，账户与浏览器同一 Supabase 项目。评分必须先写入 IndexedDB，再异步同步；同步失败不得阻塞学习。同一天 assignment 保持稳定。
 
-在 Supabase 尚未接入前：
-
-- Mac DMG、Android PWA、旧 Preview 的进度彼此独立；
-- 不得伪造跨设备同步、备份或账号恢复；
-- 界面必须明确数据仅保存在当前设备。
+界面必须说明：这是个人 Mac 版，使用与浏览器相同的云端账户与自动同步；进度先保存在本机，同步失败不会打断学习。不得把尚未接入同一账户的 Android standalone PWA 描述为已同步。
 
 ---
 
