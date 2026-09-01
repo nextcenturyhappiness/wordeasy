@@ -6,7 +6,7 @@ interface ContextCardProps {
   card: ContextCardView;
   revealed: boolean;
   answerRef?: RefObject<HTMLElement | null>;
-  sentenceAnchorRef?: RefObject<HTMLElement | null>;
+  sentenceAnchorRef?: RefObject<HTMLDivElement | null>;
 }
 
 function HighlightedContext({ card, revealed }: { card: ContextCardView; revealed: boolean }) {

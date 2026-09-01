@@ -199,8 +199,15 @@ describe("StudyPage", () => {
 
   it("keeps the context sentence as the reveal scroll anchor", async () => {
     const scrollIntoView = vi.fn();
-    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
-    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    const originalScrollIntoView = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      "scrollIntoView"
+    );
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+      writable: true
+    });
     const focus = vi.spyOn(HTMLElement.prototype, "focus");
 
     try {
@@ -233,7 +240,11 @@ describe("StudyPage", () => {
         expect(focus).toHaveBeenCalledWith({ preventScroll: true });
       });
     } finally {
-      HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+      if (originalScrollIntoView === undefined) {
+        Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+      } else {
+        Object.defineProperty(HTMLElement.prototype, "scrollIntoView", originalScrollIntoView);
+      }
       focus.mockRestore();
     }
   });

@@ -72,7 +72,7 @@ export function StudyPage() {
   const presentationActionIdRef = useRef(crypto.randomUUID());
   const answerRef = useRef<HTMLElement | null>(null);
   const questionRef = useRef<HTMLDivElement | null>(null);
-  const sentenceAnchorRef = useRef<HTMLElement | null>(null);
+  const sentenceAnchorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setPwaUpdateSafety(phase !== "committing");
