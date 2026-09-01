@@ -32,29 +32,20 @@ describe("AppShell deployment notice", () => {
     expect(screen.queryByRole("link", { name: "Sign in" })).not.toBeInTheDocument();
   });
 
-  it("describes the formal personal edition without presenting it as a preview", () => {
+  it("omits a persistent environment banner when desktop provides no notice", () => {
     render(
       <MemoryRouter>
         <Routes>
-          <Route
-            element={
-              <AppShell
-                authenticationEnabled={false}
-                environmentNotice="Personal Mac edition · Same cloud account as the browser. Progress is saved on this Mac first; sync happens in the background and never blocks learning."
-              />
-            }
-          >
+          <Route element={<AppShell authenticationEnabled={false} />}>
             <Route index element={<h1>Personal home</h1>} />
           </Route>
         </Routes>
       </MemoryRouter>
     );
 
-    const notice = screen.getByRole("status", { name: "Deployment status" });
-    expect(notice).toHaveTextContent("Personal Mac edition");
-    expect(notice).toHaveTextContent("Same cloud account as the browser");
-    expect(notice).toHaveTextContent("never blocks learning");
-    expect(notice).not.toHaveTextContent("Preview");
-    expect(notice).not.toHaveTextContent("stored only on this Mac");
+    expect(screen.queryByRole("status", { name: "Deployment status" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Personal Mac edition/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Same cloud account as the browser/)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "wordeasy home" })).toHaveTextContent("wordeasy");
   });
 });
