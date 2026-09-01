@@ -55,7 +55,7 @@
     "content:seed-sql": "node scripts/generate-seed-sql.mjs",
     "content:seed-sql:check": "node scripts/generate-seed-sql.mjs --check",
     "tauri": "tauri",
-    "desktop:icons": "tauri icon public/icons/icon-source.svg",
+    "desktop:icons": "tauri icon src-tauri/icons/icon-1024.png",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build --target aarch64-apple-darwin --bundles app,dmg",
     "desktop:rust:check": "cargo fmt --manifest-path src-tauri/Cargo.toml --check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && cargo test --manifest-path src-tauri/Cargo.toml"
