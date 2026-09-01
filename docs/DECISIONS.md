@@ -276,6 +276,22 @@ Alternatives rejected: 保留 Settings 时区编辑器；改成只读时区说�
 Consequences: CORE-009 / ASSIGN-001 不再把 Settings 用户输入当作 study_date 来源。云端 profile timezone 以最后一次写穿的设备 OS 时区为准。
 Tests/docs affected: `docs/01_PRODUCT_CORE.md`, `docs/02_DATA_SYNC_SECURITY.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`, Settings UI and study-date tests.
 
+### DEC-034 · Home 搜索无 placeholder；macOS 图标使用 Apple inset
+
+Date: 2026-09-01
+Status: Accepted
+Related requirements: UI-001, UI-015, PWA-001, DESKTOP-002; DEC-032
+Context: Home 胶囊搜索框曾使用 placeholder「用中文搜学过的词」。所有者要求去掉该提示文案，只保留空输入与放大镜。同时 Launchpad 里 wordeasy 图标比系统 App 更大，因为 `icon-source.svg` 的圆角方块铺满整张画布，macOS 不再额外留边。
+Decision:
+
+1. 搜索框使用空 `placeholder=""`，不替换为另一句中文或英文提示。`<search>` / 输入的可访问名称保持 “Search learned Context Cards”。无匹配仍只显示「还没有学过相关的词」。检索范围与 DEC-032 不变。
+2. 应用图标保持现有蓝底圆角方块 + 白书标记。把整枚 glyph 缩放到 1024 画布的 824×824（每边 100px 透明边，约 80.5%），再由此 master 重生成 Tauri `icon.icns` / PNG 与共用同一 source 的 PWA 192/512。maskable 图标仍用满幅安全区稿，不套同一 inset。
+
+Reason: 搜索框不需要教学文案；macOS 槽位会原样显示整张 1024 图，必须在素材里留出系统级透明边。
+Alternatives rejected: 改成英文 placeholder；重绘标记；把满幅方块裁成 squircle；只改 icns 不改 source。
+Consequences: UI-001 线框不再写 placeholder 文案。Windows/Linux 与 PWA any-purpose 图标跟随同一 padded master。
+Tests/docs affected: `LexiconSearch`, Home UI tests, `docs/01_PRODUCT_CORE.md`, `docs/TRACEABILITY.md`, `public/icons/icon-source.svg`, `src-tauri/icons/**`, PWA 192/512 PNGs.
+
 ## 新决策模板
 
 ```text

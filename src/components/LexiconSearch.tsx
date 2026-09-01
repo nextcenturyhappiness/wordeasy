@@ -85,7 +85,7 @@ export function LexiconSearch({ repository }: LexiconSearchProps) {
           </svg>
         </span>
         <label className="sr-only" htmlFor={inputId}>
-          用中文搜学过的词
+          Search learned Context Cards
         </label>
         <input
           ref={inputRef}
@@ -96,7 +96,7 @@ export function LexiconSearch({ repository }: LexiconSearchProps) {
           autoCorrect="off"
           spellCheck={false}
           lang="zh-CN"
-          placeholder="用中文搜学过的词"
+          placeholder=""
           value={query}
           aria-controls={showResults ? listId : undefined}
           aria-expanded={showResults}

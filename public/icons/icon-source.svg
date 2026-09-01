@@ -1,10 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="wordeasy app icon">
-  <rect width="512" height="512" rx="112" fill="#2553e8" />
-  <path
-    d="M112 116c0-15.5 12.5-28 28-28h100c25.4 0 46.6 17.8 52 41.6C297.4 105.8 318.6 88 344 88h28c15.5 0 28 12.5 28 28v272c0 15.5-12.5 28-28 28h-44c-28.5 0-54 12.8-71 33-17-20.2-42.5-33-71-33h-46c-15.5 0-28-12.5-28-28V116Z"
-    fill="#ffffff"
-  />
-  <path d="M256 142v256" stroke="#2553e8" stroke-width="18" stroke-linecap="round" />
-  <path d="M158 180h55M158 230h55M158 280h55M299 180h55M299 230h55" stroke="#2553e8" stroke-width="16" stroke-linecap="round" />
-  <path d="M299 280h55" stroke="#7b93ff" stroke-width="22" stroke-linecap="round" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="wordeasy app icon">
+  <!--
+    Apple-style macOS inset (DEC-034):
+    visible rounded square is 824×824 on a 1024 canvas (100px padding, ~80.5%).
+    The original 512 glyph is scaled by 824/512 and centered; do not clip it.
+  -->
+  <g transform="translate(100 100) scale(1.609375)">
+    <rect width="512" height="512" rx="112" fill="#2553e8" />
+    <path
+      d="M112 116c0-15.5 12.5-28 28-28h100c25.4 0 46.6 17.8 52 41.6C297.4 105.8 318.6 88 344 88h28c15.5 0 28 12.5 28 28v272c0 15.5-12.5 28-28 28h-44c-28.5 0-54 12.8-71 33-17-20.2-42.5-33-71-33h-46c-15.5 0-28-12.5-28-28V116Z"
+      fill="#ffffff"
+    />
+    <path d="M256 142v256" stroke="#2553e8" stroke-width="18" stroke-linecap="round" />
+    <path d="M158 180h55M158 230h55M158 280h55M299 180h55M299 230h55" stroke="#2553e8" stroke-width="16" stroke-linecap="round" />
+    <path d="M299 280h55" stroke="#7b93ff" stroke-width="22" stroke-linecap="round" />
+  </g>
 </svg>

@@ -99,7 +99,12 @@ describe("Home and Today", () => {
     expect(
       screen.getByRole("search", { name: "Search learned Context Cards" })
     ).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("用中文搜学过的词")).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Search learned Context Cards" })).toHaveAttribute(
+      "placeholder",
+      ""
+    );
+    expect(screen.queryByPlaceholderText("用中文搜学过的词")).not.toBeInTheDocument();
+    expect(screen.queryByText("用中文搜学过的词")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Start the next card" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Start next session" })).toHaveAttribute(
       "href",
@@ -133,7 +138,7 @@ describe("Home and Today", () => {
     const repository = createRepository();
     renderWithLearningApp(<HomePage />, { repository });
 
-    const field = screen.getByPlaceholderText("用中文搜学过的词");
+    const field = screen.getByRole("searchbox", { name: "Search learned Context Cards" });
     await user.type(field, "减弱");
 
     const results = await screen.findByRole("list");
