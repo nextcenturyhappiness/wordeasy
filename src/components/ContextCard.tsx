@@ -1,12 +1,19 @@
-import { Fragment, type RefObject } from "react";
+import { Fragment, useEffect, useState, type RefObject } from "react";
 
 import type { ContextCardView } from "../application/contracts";
+import {
+  cancelEnglishSpeech,
+  speakEnglishWord,
+  spokenWordForCard,
+  type SpeakWordResult
+} from "../speech/systemTts";
 
 interface ContextCardProps {
   card: ContextCardView;
   revealed: boolean;
   answerRef?: RefObject<HTMLElement | null>;
   sentenceAnchorRef?: RefObject<HTMLDivElement | null>;
+  speakWord?: (word: string) => SpeakWordResult;
 }
 
 function HighlightedContext({ card, revealed }: { card: ContextCardView; revealed: boolean }) {
@@ -72,7 +79,73 @@ function SourceDetails({ card }: { card: ContextCardView }) {
   );
 }
 
-export function ContextCard({ card, revealed, answerRef, sentenceAnchorRef }: ContextCardProps) {
+function IpaSpeakLine({
+  ipa,
+  partOfSpeech,
+  word,
+  speakWord
+}: {
+  ipa: string;
+  partOfSpeech: string;
+  word: string;
+  speakWord: (word: string) => SpeakWordResult;
+}) {
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="ipa-speak-block">
+      <button
+        type="button"
+        className="card-meta context-card__pronunciation ipa-speak"
+        onClick={() => {
+          const result = speakWord(word);
+          setError(result.ok ? null : result.message);
+        }}
+        aria-label={`Speak ${word}`}
+      >
+        <span>{ipa}</span>
+        <span aria-hidden="true">·</span>
+        <span className="context-card__part-of-speech">{partOfSpeech}</span>
+        <span className="ipa-speak__mark" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+            <path d="M2.6 6.1h2.2L7.6 3.8v8.4L4.8 9.9H2.6V6.1Z" fill="currentColor" />
+            <path
+              d="M9.5 6.05c.72.58.72 3.32 0 3.9"
+              stroke="currentColor"
+              strokeWidth="1.35"
+              strokeLinecap="round"
+            />
+            <path
+              d="M11.15 4.7c1.35 1.12 1.35 5.48 0 6.6"
+              stroke="currentColor"
+              strokeWidth="1.35"
+              strokeLinecap="round"
+            />
+          </svg>
+        </span>
+      </button>
+      {error === null ? null : (
+        <p className="ipa-speak__error" role="status">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function ContextCard({
+  card,
+  revealed,
+  answerRef,
+  sentenceAnchorRef,
+  speakWord = speakEnglishWord
+}: ContextCardProps) {
+  useEffect(() => {
+    return () => {
+      cancelEnglishSpeech();
+    };
+  }, [card.cardId]);
+
   return (
     <article
       className="context-card"
@@ -92,11 +165,12 @@ export function ContextCard({ card, revealed, answerRef, sentenceAnchorRef }: Co
       <div className="context-card__prompt" id="context-sentence-anchor" ref={sentenceAnchorRef}>
         <HighlightedContext card={card} revealed={revealed} />
         {revealed ? (
-          <p className="card-meta context-card__pronunciation">
-            <span>{card.ipa}</span>
-            <span aria-hidden="true">·</span>
-            <span>{card.partOfSpeech}</span>
-          </p>
+          <IpaSpeakLine
+            ipa={card.ipa}
+            partOfSpeech={card.partOfSpeech}
+            word={spokenWordForCard(card)}
+            speakWord={speakWord}
+          />
         ) : null}
       </div>
       <h1 className={revealed ? "sr-only" : "context-question"} id="context-question">

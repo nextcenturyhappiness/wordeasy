@@ -67,6 +67,7 @@ test("keeps the revealed context sentence in view at desktop size", async ({ pag
   await expect(page.locator("mark")).toBeInViewport();
   await expect(sentence.locator(".context-card__pronunciation")).toBeInViewport();
   await expect(sentence.locator(".context-card__pronunciation")).toHaveText(/\/.+\//u);
+  await expect(page.getByRole("button", { name: /^Speak /u })).toBeVisible();
   await expect(page.getByText(/what does the highlighted word mean/iu)).toHaveCount(0);
   await expect(page.getByText(/what does the missing word mean/iu)).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "IPA / part of speech" })).toHaveCount(0);
