@@ -285,7 +285,7 @@ Context: Home 胶囊搜索框曾使用 placeholder「用中文搜学过的词」
 Decision:
 
 1. 搜索框使用空 `placeholder=""`，不替换为另一句中文或英文提示。`<search>` / 输入的可访问名称保持 “Search learned Context Cards”。无匹配仍只显示「还没有学过相关的词」。检索范围与 DEC-032 不变。
-2. 应用图标保持现有蓝底圆角方块 + 白书标记。把整枚 glyph 缩放到 1024 画布的 824×824（每边 100px 透明边，约 80.5%），再由此 master 重生成 Tauri `icon.icns` / PNG 与共用同一 source 的 PWA 192/512。maskable 图标仍用满幅安全区稿，不套同一 inset。
+2. 应用图标把整枚 glyph 缩放到 1024 画布的 824×824（每边 100px 透明边，约 80.5%），再由此 master 重生成 Tauri `icon.icns` / PNG 与共用同一 source 的 PWA 192/512。maskable 图标仍用满幅安全区稿，不套同一 inset。本条锁定的是 inset，不是白书图形；标记由 DEC-038 替换。
 
 Reason: 搜索框不需要教学文案；macOS 槽位会原样显示整张 1024 图，必须在素材里留出系统级透明边。
 Alternatives rejected: 改成英文 placeholder；重绘标记；把满幅方块裁成 squircle；只改 icns 不改 source。
@@ -345,6 +345,24 @@ Reason: 系统 TTS 满足“听这个词”而不引入远程音频供应链或�
 Alternatives rejected: 预录 MP3；词典 CDN；把 IPA 符号送进 TTS；Reveal 自动播放；en-GB；为 TTS 改 FSRS/Home/Search/时区。
 Consequences: UI-016 记录该交互。朗读内容是 lemma，不是句子里的 displayForm，也不是 IPA。
 Tests/docs affected: `src/speech/systemTts.ts`, `ContextCard`, unit/UI tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
+
+### DEC-038 · 应用图标改为倾斜语境卡片标记；继续使用 Apple inset
+
+Date: 2026-09-01
+Status: Accepted
+Related requirements: PWA-001, DESKTOP-002; DEC-034
+Context: 所有者选定新的应用标记：靛蓝色 rounded squircle 上放一张略向逆时针倾斜的白底语境卡片，上下两条浅紫线、中间一条金色高亮条。附件可能是 1536×1024 宽画布，需先裁到 squircle 的正方形。先前 DEC-034 仍使用蓝底白书；若把新图满幅铺进 1024，Launchpad 会再次显得过大。
+Decision:
+
+1. 应用图标标记改为该 context-card 图形。不保留白书，不改成另一种构图，也不把金色高亮改回旧的浅蓝条。
+2. macOS / Tauri / PWA any-purpose 继续使用 DEC-034 inset：1024 透明画布上可见 squircle 为 824×824，每边 100px 透明边（约 80.5%）。squircle 外的四角保持透明。禁止把标记铺满 1024。
+3. 矢量主稿是 `public/icons/icon-source.svg`：该标记是圆角方、倾斜卡片和三条圆头线，适合 SVG 几何还原。栅格主稿 `src-tauri/icons/icon-1024.png` 由该 SVG 导出，再运行 `desktop:icons`（`tauri icon`）生成 `icon.icns` / PNG / `icon.iconset`。PWA 192/512 共用同一 padded source。
+4. maskable PWA 图标仍用满幅靛蓝色安全区稿（`icon-maskable-source.svg`），不套 100px inset。
+
+Reason: 新标记直接表达 Context Card；macOS 槽位仍会原样显示整张 1024 图，透明边必须做在素材里。
+Alternatives rejected: 继续用白书；把附件满幅丢进 1024；只改 icns 不改 source；maskable 也加 inset。
+Consequences: Windows/Linux 与 PWA any-purpose 跟随同一 padded master。下一版 Apple Silicon `.app` 才能在 Launchpad 上确认观感。
+Tests/docs affected: `public/icons/**`, `src-tauri/icons/**`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
 
