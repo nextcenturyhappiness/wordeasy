@@ -14,7 +14,7 @@ import type {
 } from "../application/contracts";
 import { themeStorageKey } from "../app/theme";
 import { BrowserSessionCache, type SessionCache } from "../auth/SupabaseAuthGateway";
-import { assertIanaTimezone } from "../domain/time";
+import { assertIanaTimezone, systemIanaTimezone } from "../domain/time";
 import { LearningDatabase } from "../db/learningDatabase";
 import { LocalSyncStateStore } from "../sync/localSyncState";
 import { AccountCloudSettingsGateway } from "./cloud/accountPreferences";
@@ -31,12 +31,6 @@ import {
 import type { SupabaseRemoteServices } from "./supabaseRemote";
 
 const DEVICE_ID_STORAGE_KEY = "article-english:device-id:v1";
-
-function browserTimezone(): string {
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  assertIanaTimezone(timezone);
-  return timezone;
-}
 
 function cachedTheme(): ThemePreference {
   try {
@@ -105,7 +99,6 @@ class AnonymousLearningRepository implements LearningRepository {
 
 class BrowserFallbackSettingsGateway implements SettingsGateway {
   #theme = cachedTheme();
-  #timezone = browserTimezone();
 
   getTheme(): Promise<ThemePreference> {
     return Promise.resolve(this.#theme);
@@ -122,12 +115,11 @@ class BrowserFallbackSettingsGateway implements SettingsGateway {
   }
 
   getTimezone(): Promise<string> {
-    return Promise.resolve(this.#timezone);
+    return Promise.resolve(systemIanaTimezone());
   }
 
   setTimezone(timezone: string): Promise<void> {
     assertIanaTimezone(timezone);
-    this.#timezone = timezone;
     return Promise.resolve();
   }
 }
@@ -348,7 +340,7 @@ export function createBrowserCloudRuntimeManager(): CloudRuntimeManager {
         database,
         userId,
         email: session.email ?? "",
-        timezone: browserTimezone(),
+        resolveTimezone: systemIanaTimezone,
         deviceId: installationDeviceId(),
         scheduler: async () => {
           const { FsrsSchedulerAdapter } = await import("../scheduler/fsrsScheduler");

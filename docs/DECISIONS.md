@@ -264,6 +264,18 @@ Decision:
    Alternatives rejected: 两个并列 Continue 保持英雄位；新的 Search 主导航；远程词典/AI 释义；把完整词库打入 Home bundle；XP / 排行榜 / 每日目标镀铬。
    Consequences: UI-001 线框改为单一 Next Session；DEC-011 的“不实现搜索”收窄为不实现独立全局搜索。Home 首次绘制仍只读本地 summary。
 
+### DEC-033 · 学习日时区跟随计算机 IANA 时区
+
+Date: 2026-09-01
+Status: Accepted
+Related requirements: CORE-009, ASSIGN-001, UI-013; DEC-017
+Context: Settings 曾提供 “Study timezone” 卡片（IANA 文本框 + Save timezone），用于覆盖 profile timezone。所有者在 Mac 应用中学习，要求删除该编辑器，学习日跟随电脑当前时区。
+Decision: 学习日、Home 问候日期和 streak 使用操作系统解析的 IANA timezone（`Intl.DateTimeFormat().resolvedOptions().timeZone`）；无法解析时回退 UTC。Settings 不再显示或编辑时区，也不替换为另一种时区选择器。`profiles.timezone` 与本地 profile 仍保留，供服务端 daily assignment RPC 与 CORE-009 证据；客户端在后台把 OS 时区写穿上去，与存储值不同时静默同步。启动时的静默检测不是用户发起的时区变更：已物化的当日 assignment 不得因检测而被改写或清空。DEC-017 对已生成 assignment set 的冻结仍然有效。
+Reason: 用户在一台电脑上学习，时区应以该电脑为准，而不是再维护一个可手填的 profile 覆盖。
+Alternatives rejected: 保留 Settings 时区编辑器；改成只读时区说明行；检测后重写当日队列。
+Consequences: CORE-009 / ASSIGN-001 不再把 Settings 用户输入当作 study_date 来源。云端 profile timezone 以最后一次写穿的设备 OS 时区为准。
+Tests/docs affected: `docs/01_PRODUCT_CORE.md`, `docs/02_DATA_SYNC_SECURITY.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`, Settings UI and study-date tests.
+
 ## 新决策模板
 
 ```text

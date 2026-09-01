@@ -137,8 +137,9 @@ Medical 3 / 10
 至少测试：
 
 - 本地午夜前后；
-- UTC 日期不同但 profile study_date 相同；
-- 一个存在 DST 的 IANA timezone。
+- UTC 日期不同但同一 IANA study_date 相同；
+- 一个存在 DST 的 IANA timezone；
+- Settings 没有 Study timezone / IANA timezone / Save timezone 编辑器。
 
 ---
 

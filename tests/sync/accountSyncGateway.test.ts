@@ -154,8 +154,8 @@ describe("account sync gateway", () => {
     );
 
     await expect(gateway.sync()).resolves.toEqual({ status: "pending", pendingCount: 1 });
+    expect(syncSettings).toHaveBeenCalledTimes(1);
     expect(coordinatorSync).toHaveBeenCalledTimes(1);
-    expect(syncSettings).not.toHaveBeenCalled();
     expect(refreshDay).not.toHaveBeenCalled();
   });
 });

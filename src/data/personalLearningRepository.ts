@@ -102,10 +102,6 @@ async function prepareDailyAssignments(
   catalogIsComplete: boolean
 ): Promise<void> {
   const assignments = new LocalAssignmentService(context.database, context.userId);
-  const profile = await context.database.local_profile.get(context.userId);
-  if (profile === undefined) {
-    throw new Error(`No local profile exists for ${context.userId}.`);
-  }
   if (catalogIsComplete) {
     await assignments.ensureResearchNew(context.studyDate, context.initializedAt);
     await assignments.ensureMedicalNew(context.studyDate, context.initializedAt);
@@ -128,13 +124,13 @@ async function prepareDailyAssignments(
   await assignments.ensureDueReviewSet(
     "research_english",
     context.studyDate,
-    profile.timezone,
+    context.timezone,
     context.initializedAt
   );
   await assignments.ensureDueReviewSet(
     "medical_english",
     context.studyDate,
-    profile.timezone,
+    context.timezone,
     context.initializedAt
   );
 }

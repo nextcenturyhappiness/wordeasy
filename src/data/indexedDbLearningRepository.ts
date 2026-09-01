@@ -12,7 +12,7 @@ import type {
   TodaySnapshot
 } from "../application/contracts";
 import { searchLocalLexicon } from "../domain/lexiconSearch";
-import { calculateStreak, studyDateFor } from "../domain/time";
+import { calculateStreak, studyDateFor, systemIanaTimezone } from "../domain/time";
 import type { LearningDatabase } from "../db/learningDatabase";
 import { openLearningDatabase } from "../db/learningDatabase";
 import type {
@@ -37,6 +37,7 @@ export interface IndexedDbBootstrapContext {
   database: LearningDatabase;
   userId: string;
   studyDate: string;
+  timezone: string;
   initializedAt: string;
 }
 
@@ -44,7 +45,8 @@ export interface IndexedDbLearningRepositoryOptions {
   database: LearningDatabase;
   userId: string;
   email: string;
-  timezone: string;
+  timezone?: string;
+  resolveTimezone?: () => string;
   deviceId: string;
   scheduler: ReviewScheduler | (() => Promise<ReviewScheduler>);
   syncState: PendingSyncCountPort;
@@ -134,7 +136,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
   readonly #database: LearningDatabase;
   readonly #userId: string;
   readonly #email: string;
-  readonly #timezone: string;
+  readonly #resolveTimezone: () => string;
   readonly #deviceId: string;
   readonly #schedulerLoader: () => Promise<ReviewScheduler>;
   readonly #syncState: PendingSyncCountPort;
@@ -151,7 +153,8 @@ export class IndexedDbLearningRepository implements LearningRepository {
     this.#database = options.database;
     this.#userId = options.userId;
     this.#email = options.email;
-    this.#timezone = options.timezone;
+    this.#resolveTimezone =
+      options.resolveTimezone ?? (() => options.timezone ?? systemIanaTimezone());
     this.#deviceId = options.deviceId;
     this.#schedulerLoader =
       typeof options.scheduler === "function"
@@ -164,6 +167,24 @@ export class IndexedDbLearningRepository implements LearningRepository {
     this.#eventIdFactory = options.eventIdFactory ?? defaultEventIdFactory;
   }
 
+  #studyTimezone(): string {
+    return this.#resolveTimezone();
+  }
+
+  #studyDate(): string {
+    return studyDateFor(this.#now(), this.#studyTimezone());
+  }
+
+  #bootstrapContext(initializedAt: string): IndexedDbBootstrapContext {
+    return {
+      database: this.#database,
+      userId: this.#userId,
+      studyDate: this.#studyDate(),
+      timezone: this.#studyTimezone(),
+      initializedAt
+    };
+  }
+
   initialize(): Promise<void> {
     this.#initialization ??= this.#initializeOnce();
     return this.#initialization;
@@ -174,16 +195,24 @@ export class IndexedDbLearningRepository implements LearningRepository {
       await openLearningDatabase(this.#database);
     }
     const initializedAt = this.#now().toISOString();
+    const studyTimezone = this.#studyTimezone();
     await this.#database.transaction(
       "rw",
       [this.#database.local_profile, this.#database.local_settings, this.#database.sync_metadata],
       async () => {
-        if ((await this.#database.local_profile.get(this.#userId)) === undefined) {
+        const existingProfile = await this.#database.local_profile.get(this.#userId);
+        if (existingProfile === undefined) {
           await this.#database.local_profile.add({
             userId: this.#userId,
             email: this.#email,
-            timezone: this.#timezone,
+            timezone: studyTimezone,
             createdAt: initializedAt,
+            updatedAt: initializedAt
+          });
+        } else if (existingProfile.timezone !== studyTimezone) {
+          await this.#database.local_profile.put({
+            ...existingProfile,
+            timezone: studyTimezone,
             updatedAt: initializedAt
           });
         }
@@ -195,12 +224,18 @@ export class IndexedDbLearningRepository implements LearningRepository {
             updatedAt: initializedAt
           });
         }
-        if ((await this.#database.local_settings.get([this.#userId, "timezone"])) === undefined) {
-          const profile = await this.#requireProfile();
+        const timezoneSetting = await this.#database.local_settings.get([this.#userId, "timezone"]);
+        if (timezoneSetting === undefined) {
           await this.#database.local_settings.add({
             userId: this.#userId,
             key: "timezone",
-            value: profile.timezone,
+            value: studyTimezone,
+            updatedAt: initializedAt
+          });
+        } else if (timezoneSetting.value !== studyTimezone) {
+          await this.#database.local_settings.put({
+            ...timezoneSetting,
+            value: studyTimezone,
             updatedAt: initializedAt
           });
         }
@@ -216,28 +251,14 @@ export class IndexedDbLearningRepository implements LearningRepository {
       }
     );
 
-    const profile = await this.#requireProfile();
-    const studyDate = studyDateFor(this.#now(), profile.timezone);
-    const context = {
-      database: this.#database,
-      userId: this.#userId,
-      studyDate,
-      initializedAt
-    };
+    const studyDate = this.#studyDate();
+    const context = this.#bootstrapContext(initializedAt);
     if (this.#dailyBootstrap === undefined) {
       await this.#refreshSummaryMaterializations(studyDate, initializedAt);
     } else {
       await this.#ensureDailyBootstrap(context);
     }
     this.#syncState.setPendingCount(await this.#pendingOutboxCount());
-  }
-
-  async #requireProfile() {
-    const profile = await this.#database.local_profile.get(this.#userId);
-    if (profile === undefined) {
-      throw new Error(`No local profile exists for ${this.#userId}.`);
-    }
-    return profile;
   }
 
   async #refreshSummaryMaterializations(studyDate: string, updatedAt: string): Promise<void> {
@@ -282,13 +303,9 @@ export class IndexedDbLearningRepository implements LearningRepository {
     if (profile === undefined) {
       return null;
     }
-    const studyDate = studyDateFor(this.#now(), profile.timezone);
-    await this.#ensureDailyBootstrap({
-      database: this.#database,
-      userId: this.#userId,
-      studyDate,
-      initializedAt: this.#now().toISOString()
-    });
+    const studyDate = this.#studyDate();
+    const timezone = this.#studyTimezone();
+    await this.#ensureDailyBootstrap(this.#bootstrapContext(this.#now().toISOString()));
     const [research, medical] = await Promise.all([
       this.#database.daily_summary.get([this.#userId, "research_english", studyDate]),
       this.#database.daily_summary.get([this.#userId, "medical_english", studyDate])
@@ -299,7 +316,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
     return {
       userId: this.#userId,
       studyDate,
-      timezone: profile.timezone,
+      timezone,
       streak: Math.max(research.streak, medical.streak),
       modules: {
         research_english: toModuleSummary(research),
@@ -312,8 +329,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
 
   async getToday(module: ModuleSlug): Promise<TodaySnapshot> {
     await this.#ensureDeferredBootstrap();
-    const profile = await this.#requireProfile();
-    const studyDate = studyDateFor(this.#now(), profile.timezone);
+    const studyDate = this.#studyDate();
     const summary = await this.#database.daily_summary.get([this.#userId, module, studyDate]);
     const assignmentSet = await this.#database.cached_assignment_sets.get([
       this.#userId,
@@ -338,8 +354,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
 
   async getStudyQueue(module: ModuleSlug, queue: "new" | "review"): Promise<StudyQueueSnapshot> {
     await this.#ensureDeferredBootstrap();
-    const profile = await this.#requireProfile();
-    const studyDate = studyDateFor(this.#now(), profile.timezone);
+    const studyDate = this.#studyDate();
     const assignments =
       queue === "new"
         ? await this.#database.cached_daily_assignments
@@ -382,7 +397,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
     if (profile === undefined) {
       return null;
     }
-    const studyDate = studyDateFor(this.#now(), profile.timezone);
+    const studyDate = this.#studyDate();
     const assignments =
       queue === "new"
         ? await this.#database.cached_daily_assignments
@@ -433,7 +448,6 @@ export class IndexedDbLearningRepository implements LearningRepository {
     if (Number.isNaN(reviewedAt.getTime())) {
       throw new Error("reviewedAt must be an ISO-compatible timestamp.");
     }
-    const profile = await this.#requireProfile();
     const createdAt = this.#now().toISOString();
     const scheduler = await this.#loadScheduler();
 
@@ -502,7 +516,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
           studyDate: input.studyDate,
           rating: input.rating,
           reviewedAt: reviewedAt.toISOString(),
-          timezone: profile.timezone,
+          timezone: this.#studyTimezone(),
           deviceId: metadata.deviceId,
           deviceSequence,
           baseRevision,
@@ -643,24 +657,14 @@ export class IndexedDbLearningRepository implements LearningRepository {
       return;
     }
     await this.initialize();
-    const profile = await this.#requireProfile();
-    const studyDate = studyDateFor(this.#now(), profile.timezone);
-    await this.#ensureDailyBootstrap({
-      database: this.#database,
-      userId: this.#userId,
-      studyDate,
-      initializedAt: this.#now().toISOString()
-    });
+    const context = this.#bootstrapContext(this.#now().toISOString());
+    const studyDate = context.studyDate;
+    await this.#ensureDailyBootstrap(context);
     let bootstrap = this.#deferredBootstraps.get(studyDate);
     if (bootstrap === undefined) {
       const initializedAt = this.#now().toISOString();
       bootstrap = (async () => {
-        await this.#deferredBootstrap?.({
-          database: this.#database,
-          userId: this.#userId,
-          studyDate,
-          initializedAt
-        });
+        await this.#deferredBootstrap?.(this.#bootstrapContext(initializedAt));
         await this.#refreshSummaryMaterializations(studyDate, initializedAt);
       })();
       this.#deferredBootstraps.set(studyDate, bootstrap);
