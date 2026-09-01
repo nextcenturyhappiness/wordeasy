@@ -145,6 +145,12 @@ describe("strict content validation failures", () => {
     expect(issueCodes(validateDataset(invalid))).toContain("target_occurrence");
   });
 
+  it("rejects an English-only usage note", () => {
+    const invalid = copyDataset();
+    invalid.cards[0].usage_note = "Used in Results and Discussion when an effect becomes smaller.";
+    expect(issueCodes(validateDataset(invalid))).toContain("usage_note");
+  });
+
   it("rejects contradictory citation metadata on an original example", () => {
     const invalid = copyDataset();
     invalid.cards[0].doi = "10.1000/invented";

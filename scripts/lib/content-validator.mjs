@@ -520,6 +520,11 @@ export function validateDataset(dataset, { enforceCounts = true } = {}) {
     if (typeof card.meaning_zh === "string" && !hasCjk(card.meaning_zh)) {
       errors.push(makeIssue(card, index, "meaning_zh", "meaning_zh must contain Chinese text."));
     }
+    if (typeof card.usage_note === "string" && !hasCjk(card.usage_note)) {
+      errors.push(
+        makeIssue(card, index, "usage_note", "usage_note must be Chinese strength-of-use guidance.")
+      );
+    }
     if (typeof card.sentence_translation_zh === "string" && !hasCjk(card.sentence_translation_zh)) {
       errors.push(
         makeIssue(

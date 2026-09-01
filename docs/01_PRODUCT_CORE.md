@@ -84,8 +84,8 @@ Plain-English paraphrase
 Common collocations
 IPA
 Part of speech
-Usage note
-可选来源
+适用范围
+句子来源
 ```
 
 中文用于辅助理解，但不能成为唯一学习内容。

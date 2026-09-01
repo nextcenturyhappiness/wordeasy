@@ -196,4 +196,45 @@ describe("StudyPage", () => {
       rateCard.mock.calls[1]?.[0].presentationActionId
     );
   });
+
+  it("keeps the context sentence as the reveal scroll anchor", async () => {
+    const scrollIntoView = vi.fn();
+    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    const focus = vi.spyOn(HTMLElement.prototype, "focus");
+
+    try {
+      const repository = createRepository();
+      renderWithLearningApp(<StudyRoute />, {
+        repository,
+        initialEntries: ["/study/research?queue=new"]
+      });
+
+      await screen.findByText(/what does the missing word mean/i);
+      expect(document.querySelector("mark")).toBeNull();
+      fireEvent.keyDown(window, { key: " ", code: "Space" });
+
+      expect(await screen.findByText(researchCard.meaningEn)).toBeInTheDocument();
+      const anchor = document.getElementById("context-sentence-anchor");
+      expect(anchor).toHaveTextContent(researchCard.contextSentence);
+      expect(screen.getByText(researchCard.targetText, { selector: "mark" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "适用范围" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "句子来源" })).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", inline: "nearest" });
+      });
+      expect(scrollIntoView.mock.instances).toContain(anchor);
+
+      const ratingGroup = screen.getByRole("group", { name: /how well did you remember/i });
+      expect(scrollIntoView.mock.instances).not.toContain(ratingGroup);
+
+      await waitFor(() => {
+        expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+      });
+    } finally {
+      HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+      focus.mockRestore();
+    }
+  });
 });

@@ -80,7 +80,7 @@ pmid
   "category": "general_research",
   "meaning_en": "to make an effect, association, or signal weaker",
   "meaning_zh": "减弱；降低",
-  "usage_note": "Common in Results and Discussion when an effect becomes smaller after adjustment.",
+  "usage_note": "只有效应、关联或信号确实变弱时才能用，比 reduce 更强调“被压小”。不要写成已经消失或被消除。",
   "context_sentence": "The association was substantially attenuated after adjustment for age and BMI.",
   "target_text": "attenuated",
   "plain_english_paraphrase": "Adjusting for age and BMI made the observed association weaker.",
@@ -107,7 +107,7 @@ Medical 示例：
   "category": "signs",
   "meaning_en": "able to be felt during physical examination",
   "meaning_zh": "可触及的",
-  "usage_note": "Used for findings detected by palpation.",
+  "usage_note": "检查者用手摸到的体征，比 visible 更强调触诊。只看见摸不到就别写 palpable。",
   "context_sentence": "A firm, non-tender mass was palpable in the right upper quadrant.",
   "target_text": "palpable",
   "plain_english_paraphrase": "The examiner could feel a firm mass in the right upper abdomen.",
@@ -175,6 +175,7 @@ Paraphrase 必须真正降低句子理解难度，而不是只替换一两个词
 
 - 中文释义符合当前 sense；
 - 完整句子翻译自然准确；
+- `usage_note` 用一两句中文说明写作时的使用强度：证据或关系要多强才诚实，必要时对比更弱或更强的近邻词；
 - 不把中文逐词硬译；
 - 医学术语使用常见规范表达。
 
@@ -253,7 +254,8 @@ attenuate the association|attenuate an effect|attenuate inflammation
 - 重复 ID；
 - 完全重复 context；
 - collocations 为空；
-- 原创例句带有伪造 DOI / PMID。
+- 原创例句带有伪造 DOI / PMID；
+- usage_note 不是中文使用强度说明。
 
 输出应给出具体 card id 和错误原因。
 

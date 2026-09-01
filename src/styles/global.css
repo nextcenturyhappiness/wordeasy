@@ -672,6 +672,23 @@ p {
   margin-bottom: var(--space-5);
 }
 
+.context-card__prompt {
+  scroll-margin-top: var(--app-header-offset);
+}
+
+.context-card[data-revealed="true"] .context-card__header {
+  margin-bottom: var(--space-3);
+}
+
+.context-card[data-revealed="true"] .context-card__prompt {
+  position: sticky;
+  z-index: 4;
+  top: var(--app-header-offset);
+  margin-inline: calc(-1 * clamp(var(--space-5), 5vw, var(--space-7)));
+  padding: var(--space-2) clamp(var(--space-5), 5vw, var(--space-7)) var(--space-3);
+  background: var(--color-surface);
+}
+
 .card-meta {
   display: flex;
   flex-wrap: wrap;
@@ -717,9 +734,9 @@ mark {
 
 .context-answer {
   display: grid;
-  gap: var(--space-5);
-  margin-top: var(--space-6);
-  padding-top: var(--space-6);
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
   border-top: 1px solid var(--color-border);
 }
 
@@ -734,6 +751,11 @@ mark {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.answer-section[lang="zh-CN"] h2 {
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
 .answer-section p,

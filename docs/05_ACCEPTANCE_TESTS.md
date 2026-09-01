@@ -38,6 +38,7 @@ bundle size check
 - target text 被高亮；
 - 正面无中文答案；
 - reveal 后背面信息完整；
+- reveal 后语境原句（或高亮 target）仍在文档中，并以稳定顶部锚点保持在首屏，不得滚向评分按钮；
 - Review state 绑定 card，不只绑定 lemma。
 
 ### TEST-003 · Research 5 + 2 + 3

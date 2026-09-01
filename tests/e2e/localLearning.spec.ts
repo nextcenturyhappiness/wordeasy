@@ -18,7 +18,7 @@ test("persists a Context Card rating locally across reload", async ({ page }) =>
   await page.getByRole("link", { name: /Continue Research English/u }).click();
   await page.getByRole("link", { name: /Continue New/u }).click();
 
-  await expect(page.getByText(/what does the highlighted word mean/iu)).toBeVisible();
+  await expect(page.getByText(/what does the missing word mean/iu)).toBeVisible();
   await expect(page.getByRole("group", { name: "How well did you remember?" })).toHaveCount(0);
   await page.getByRole("button", { name: /Reveal answer/u }).click();
   await expect(page.getByRole("group", { name: "How well did you remember?" })).toBeVisible();

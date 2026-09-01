@@ -102,7 +102,7 @@ Total today
 - 语境提问；
 - 可选 IPA 和词性。
 
-Reveal 后再高亮 target text，并展开背面。正面不显示中文答案或释义。
+Reveal 后再高亮 target text，并展开背面。正面不显示中文答案或释义。Reveal 后语境原句（含高亮 target）必须立刻可见，不得被背面信息挤出视口顶部；评分按钮可以在折页下方。
 
 ### UI-009 · P0 · 背面
 
@@ -114,8 +114,8 @@ Reveal 后再高亮 target text，并展开背面。正面不显示中文答案�
 4. 完整句子翻译；
 5. Common collocations；
 6. IPA / part of speech；
-7. usage note；
-8. source。
+7. 适用范围；
+8. 句子来源。
 
 ### UI-010 · P0 · 评分防重复
 
