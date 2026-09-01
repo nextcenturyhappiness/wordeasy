@@ -224,6 +224,18 @@ Alternatives rejected: 保留墨绿教材调色只微调间距；引入 UI frame
 Consequences: 旧奶油/墨绿 token 不再使用。Light/Dark 都按产品界面而非期刊风验收。图标源 SVG 随品牌色更新，已安装 PWA 的旧图标缓存需等资源更新。
 Tests/docs affected: `src/styles/tokens.css`, `src/styles/global.css`, theme/PWA colors, Context Card 表现层 class，`docs/01_PRODUCT_CORE.md` UI-004, `docs/TRACEABILITY.md`.
 
+### DEC-030 · 个人 Mac 版改用与浏览器相同的云端学习 runtime
+
+Date: 2026-09-01
+Status: Accepted
+Related requirements: DESKTOP-003/004, AUTH-001–003, SYNC-001/005, SEC-005, PERF-002/003, TEST-042; DEC-019/025
+Context: 所有者删除了仍使用改版前 UI 且仅本地保存的旧 macOS `.app`，并要求新的 Tauri Mac 应用使用 main 上的现代 UI，以及他们刚在浏览器里用过的同一套 Supabase Email OTP 与自动同步。当时有效的 DESKTOP-003 禁止桌面 build 包含 Supabase 配置或远程 API 请求，与这次明确授权冲突。
+Decision: 保留 `desktop` Vite/app mode 作为 Mac 包装身份（不生成 Service Worker、Web Manifest、Workbox 或 Cloudflare `_headers`），但启动路径改为与 `npm run dev:cloud` 相同的云端学习 runtime。客户端只读取 `VITE_SUPABASE_URL` 与 `VITE_SUPABASE_PUBLISHABLE_KEY`，来源与 cloud web build 相同：本地 `.env` / `.env.local` / `.env.production` 与 CI secrets。不得把 publishable key 写入 git，不得包含 `service_role`。Tauri 继续零 capability、无 shell/fs/http/dialog/updater plugin、无 IPC command、ad-hoc 个人签名。CSP 与导航默认拒绝，仅放行本地 WebView origin 与本项目 Supabase origin `https://kksllqgtjtfxfnknlrfn.supabase.co` 及其 `wss`。学习仍 local-first：评分先写 IndexedDB，同步失败不得阻塞。界面常驻说明这是个人 Mac 版、与浏览器同一云端账户，进度先保存在本机。旧的 `desktop:v1` 本地-only identity 随被删除的旧 App 一起退役；新 App 使用 `article-english:cloud:${userId}`。
+Reason: 所有者指定的个人交付是“现代 UI + 已在用的云端账户”，而不是再做一个无法登录、无法同步的本地外壳。显式裁决 DESKTOP-003/004，避免静默解释旧的禁网条款。
+Alternatives rejected: 继续发布本地-only desktop；把 publishable key 写入仓库或 `.env.desktop`；为桌面单独复制一套学习内核；放开任意远程 origin 或启用 Tauri 网络/文件系统 plugin。
+Consequences: Android standalone PWA 仍是本地独立进度，不得称为已与 Mac 同步。缺少公开 Supabase 配置时 desktop 构建 fail closed，不回退 Demo 或 `desktop:v1`。Linux CI 不能生成 Apple Silicon `.dmg`；真实 OTP、跨设备收敛和当前-App 退出重开仍需在 Apple Silicon 上验收。DEC-025 中“无远程网络 / 不包含 Supabase”的桌面条款由本决策取代；bundle identifier、ad-hoc 签名和零 plugin 边界继续有效。
+Tests/docs affected: `src-tauri` CSP/navigation, desktop Vite env, `src/main.tsx`, desktop-build checker, Cargo navigation tests, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`, `README.md`.
+
 ## 新决策模板
 
 ```text

@@ -85,9 +85,7 @@ const demoRuntimeLoader =
     ? () => import("./demoRuntime")
     : null;
 const standaloneRuntimeLoader =
-  includeTestRuntimes ||
-  import.meta.env.VITE_APP_MODE === "standalone" ||
-  import.meta.env.VITE_APP_MODE === "desktop"
+  includeTestRuntimes || import.meta.env.VITE_APP_MODE === "standalone"
     ? () => import("./standaloneRuntime")
     : null;
 

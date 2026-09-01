@@ -6,6 +6,8 @@ import { loadEnv, type Plugin } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
 import { VitePWA } from "vite-plugin-pwa";
 
+import { resolveDesktopCloudPublicEnv } from "./src/desktop/personalSupabaseOrigin";
+
 const demoSeedModuleId = "virtual:article-english-demo-seed";
 const resolvedDemoSeedModuleId = `\0${demoSeedModuleId}`;
 const standaloneSeedModuleId = "virtual:article-english-standalone-seed";
@@ -146,17 +148,28 @@ function assertViteModeMatchesAppMode(mode: string, appMode: string | undefined)
   }
 }
 
+function loadDesktopCloudEnvironment(mode: string): Record<string, string> {
+  const modeEnvironment = loadEnv(mode, projectRoot, "VITE_");
+  if (mode !== "desktop") {
+    return modeEnvironment;
+  }
+  const productionEnvironment = loadEnv("production", projectRoot, "VITE_");
+  return {
+    ...productionEnvironment,
+    ...modeEnvironment,
+    VITE_SUPABASE_URL: modeEnvironment.VITE_SUPABASE_URL ?? productionEnvironment.VITE_SUPABASE_URL,
+    VITE_SUPABASE_PUBLISHABLE_KEY:
+      modeEnvironment.VITE_SUPABASE_PUBLISHABLE_KEY ??
+      productionEnvironment.VITE_SUPABASE_PUBLISHABLE_KEY
+  };
+}
+
 export default defineConfig(({ mode }) => {
-  const environment = loadEnv(mode, projectRoot, "VITE_");
+  const environment = loadDesktopCloudEnvironment(mode);
   const appMode = environment.VITE_APP_MODE;
   assertViteModeMatchesAppMode(mode, appMode);
-  if (
-    mode === "desktop" &&
-    (environment.VITE_SUPABASE_URL !== undefined ||
-      environment.VITE_SUPABASE_PUBLISHABLE_KEY !== undefined)
-  ) {
-    throw new Error("Desktop builds must not include Supabase browser configuration.");
-  }
+  const desktopCloudPublicEnv =
+    mode === "desktop" ? resolveDesktopCloudPublicEnv(environment) : null;
 
   return {
     plugins: [
@@ -273,7 +286,14 @@ export default defineConfig(({ mode }) => {
               "sb_publishable_performance_fixture"
             )
           }
-        : undefined,
+        : desktopCloudPublicEnv === null
+          ? undefined
+          : {
+              "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(desktopCloudPublicEnv.url),
+              "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(
+                desktopCloudPublicEnv.publishableKey
+              )
+            },
     build: {
       target: "es2022",
       cssCodeSplit: true,

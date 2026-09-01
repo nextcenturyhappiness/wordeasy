@@ -35,7 +35,7 @@
       "capabilities": [],
       "dangerousDisableAssetCspModification": false,
       "freezePrototype": true,
-      "csp": "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self'; worker-src 'none'; manifest-src 'none'; media-src 'none'; frame-src 'none'",
+      "csp": "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; img-src 'self'; font-src 'self'; connect-src 'self' https://kksllqgtjtfxfnknlrfn.supabase.co wss://kksllqgtjtfxfnknlrfn.supabase.co; worker-src 'none'; manifest-src 'none'; media-src 'none'; frame-src 'none'",
       "headers": {
         "Cross-Origin-Opener-Policy": "same-origin",
         "Cross-Origin-Resource-Policy": "same-origin",

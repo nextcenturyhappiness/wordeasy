@@ -40,7 +40,7 @@ describe("AppShell deployment notice", () => {
             element={
               <AppShell
                 authenticationEnabled={false}
-                environmentNotice="Personal Mac edition · Progress is stored only on this Mac. Cloud backup and Android sync are not connected."
+                environmentNotice="Personal Mac edition · Same cloud account as the browser. Progress is saved on this Mac first; sync happens in the background and never blocks learning."
               />
             }
           >
@@ -52,7 +52,9 @@ describe("AppShell deployment notice", () => {
 
     const notice = screen.getByRole("status", { name: "Deployment status" });
     expect(notice).toHaveTextContent("Personal Mac edition");
-    expect(notice).toHaveTextContent("Android sync are not connected");
+    expect(notice).toHaveTextContent("Same cloud account as the browser");
+    expect(notice).toHaveTextContent("never blocks learning");
     expect(notice).not.toHaveTextContent("Preview");
+    expect(notice).not.toHaveTextContent("stored only on this Mac");
   });
 });
