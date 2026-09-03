@@ -50,7 +50,7 @@ inputmode="numeric"
 
 本地缓存可用时，Supabase 慢或断网不能造成白屏或长时间全屏 loading。
 
-首页先显示一个 Next Session 主操作，再显示两个次级模块摘要。模块卡至少显示：
+首页先显示个人词库搜索主表面，再显示次级 Next Session 和两个更次一级的模块摘要。模块卡至少显示：
 
 ```text
 module name
@@ -59,7 +59,7 @@ words learned
 Continue
 ```
 
-另显示 streak、小型 sync state，以及首页顶部的本地 Context Card 搜索框。完整词库不得因 Home 首次绘制而被拉入首屏 bundle；搜索与下一句预览只读本地缓存，搜索首次输入才允许触发已有的 deferred catalog bootstrap。
+另显示 streak、小型 sync state。完整词库不得因 Home 首次绘制而被拉入首屏 bundle；搜索与下一句预览只读本地缓存，搜索首次输入才允许触发已有的 deferred catalog bootstrap。首页视觉层级见 DEC-039：搜索是打开应用的主因，Next Session 是可选清队列入口。
 
 ---
 
