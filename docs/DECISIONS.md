@@ -375,10 +375,10 @@ Decision:
 1. Home 的主表面是本地 Context Card 检索。搜索区视觉上更大、更可点，空间上先于 Next Session。标题用中文「词库」。空查询仍无 placeholder（DEC-034），不恢复「用中文搜学过的词」。无匹配仍只显示「还没有学过相关的词」。检索范围、排序、禁止词典/Add Word/独立 Search 导航仍按 DEC-032。结果在文档流中展开，Next Session 出现在结果下方，不用 overlay 挡住它。
 2. Next Session 保留「Start next session」和下一张到期语境句，但降为搜索下方的次级操作：更安静、更小，不是屏幕存在的理由。选择规则仍按 DEC-032：剩余 New+Review 最多的模块，并列取 Research English；有 Review 先 Review。不得拆回两个同等 Continue。
 3. 问候、模块摘要、streak、sync 仍在首页，但不与搜索争英雄位。问候语保持本地时区计算。不改学习流、FSRS、Reveal、IPA TTS、时区或应用图标。
-Reason: 写作工具打开是为了查已经学过的词；到期句子是顺手清掉的一件事。
-Alternatives rejected: 保持 Next Session 英雄；两个并列 Continue；独立 Search 导航；恢复 placeholder；结果 overlay 挡住 Next Session；把搜索做成新的主导航页。
-Consequences: UI-001 线框改为搜索主导；UI-015 不再写成“紧凑胶囊”。DEC-032 的队列选择、peek 与检索规则仍有效，只是视觉主次被本决策取代。
-Tests/docs affected: `HomePage`, `LexiconSearch`, `NextSessionCard`, `src/styles/global.css`, Home UI tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
+   Reason: 写作工具打开是为了查已经学过的词；到期句子是顺手清掉的一件事。
+   Alternatives rejected: 保持 Next Session 英雄；两个并列 Continue；独立 Search 导航；恢复 placeholder；结果 overlay 挡住 Next Session；把搜索做成新的主导航页。
+   Consequences: UI-001 线框改为搜索主导；UI-015 不再写成“紧凑胶囊”。DEC-032 的队列选择、peek 与检索规则仍有效，只是视觉主次被本决策取代。
+   Tests/docs affected: `HomePage`, `LexiconSearch`, `NextSessionCard`, `src/styles/global.css`, Home UI tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
 

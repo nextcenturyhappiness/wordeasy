@@ -206,9 +206,9 @@ describe("Home and Today", () => {
     });
 
     expect(screen.getByRole("heading", { name: "Nothing is due right now." })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Nothing is due right now." }).closest("section")).toHaveClass(
-      "next-session--secondary"
-    );
+    expect(
+      screen.getByRole("heading", { name: "Nothing is due right now." }).closest("section")
+    ).toHaveClass("next-session--secondary");
     expect(screen.queryByRole("link", { name: "Start next session" })).not.toBeInTheDocument();
     expect(screen.getByRole("article", { name: "Research English" })).toBeInTheDocument();
     expect(screen.getByRole("article", { name: "Medical English" })).toBeInTheDocument();
