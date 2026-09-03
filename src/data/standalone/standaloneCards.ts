@@ -5,8 +5,8 @@ import { normalizeSeedCard, type SeedCard } from "../local/seedCardNormalization
 
 const seedCards = standaloneSeedCards as SeedCard[];
 const EXPECTED_CARD_COUNTS: Record<DomainModuleSlug, number> = {
-  research_english: 30,
-  medical_english: 30
+  research_english: 60,
+  medical_english: 60
 };
 
 function requireCompleteActiveSeed(): NormalizedContextCard[] {
@@ -23,9 +23,9 @@ function requireCompleteActiveSeed(): NormalizedContextCard[] {
     }
   }
 
-  if (activeCards.length !== 60) {
+  if (activeCards.length !== 120) {
     throw new Error(
-      `Canonical standalone seed has ${String(activeCards.length)} active cards; expected 60.`
+      `Canonical standalone seed has ${String(activeCards.length)} active cards; expected 120.`
     );
   }
 

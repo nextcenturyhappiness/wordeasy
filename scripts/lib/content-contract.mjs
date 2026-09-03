@@ -5,27 +5,94 @@ export const CONTENT_DATASET_KEY = "wordeasy-seed-v1";
 export const UUID_NAMESPACE = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
 export const UUID_NAME_PREFIX = "https://github.com/nextcenturyhappiness/wordeasy/content/v1/";
 
+export const CANONICAL_CARD_TOTAL = 120;
+export const CANONICAL_RESEARCH_TOTAL = 60;
+export const CANONICAL_MEDICAL_TOTAL = 60;
+
 export const RESEARCH_COUNTS = Object.freeze({
-  general_research: 15,
-  statistics_methodology: 6,
-  bioinformatics: 9
+  general_research: 30,
+  statistics_methodology: 12,
+  bioinformatics: 18
 });
 
 export const MEDICAL_COUNTS = Object.freeze({
-  anatomy: 2,
-  physiology: 2,
-  pathology: 2,
-  symptoms: 3,
-  signs: 2,
-  diseases: 2,
-  diagnosis: 3,
-  laboratory: 2,
-  imaging: 2,
-  treatment: 3,
-  pharmacology: 2,
-  surgery_procedures: 2,
-  clinical_expressions: 3
+  anatomy: 4,
+  physiology: 4,
+  pathology: 4,
+  symptoms: 6,
+  signs: 4,
+  diseases: 4,
+  diagnosis: 6,
+  laboratory: 4,
+  imaging: 4,
+  treatment: 6,
+  pharmacology: 4,
+  surgery_procedures: 4,
+  clinical_expressions: 6
 });
+
+export const ORIGINAL_BATCH_CARD_KEYS = Object.freeze([
+  "res-general-attenuate-001",
+  "res-general-robust-001",
+  "res-general-elucidate-001",
+  "res-general-corroborate-001",
+  "res-general-salient-001",
+  "res-general-warrant-001",
+  "res-general-delineate-001",
+  "res-general-reconcile-001",
+  "res-general-underpin-001",
+  "res-general-confer-001",
+  "res-general-encompass-001",
+  "res-general-facilitate-001",
+  "res-general-infer-001",
+  "res-general-pertinent-001",
+  "res-general-account-for-001",
+  "res-stat-confounding-001",
+  "res-stat-heterogeneity-001",
+  "res-stat-impute-001",
+  "res-stat-stratify-001",
+  "res-stat-interaction-001",
+  "res-stat-power-001",
+  "res-bio-alignment-001",
+  "res-bio-coverage-001",
+  "res-bio-normalization-001",
+  "res-bio-differential-001",
+  "res-bio-enrichment-001",
+  "res-bio-cluster-001",
+  "res-bio-pseudotime-001",
+  "res-bio-batch-effect-001",
+  "res-bio-ortholog-001",
+  "med-anatomy-lumen-001",
+  "med-anatomy-hilum-001",
+  "med-physiology-perfusion-001",
+  "med-physiology-compliance-001",
+  "med-pathology-necrosis-001",
+  "med-pathology-fibrosis-001",
+  "med-symptoms-dyspnea-001",
+  "med-symptoms-paresthesia-001",
+  "med-symptoms-satiety-001",
+  "med-signs-palpable-001",
+  "med-signs-pitting-edema-001",
+  "med-diseases-cirrhosis-001",
+  "med-diseases-vasculitis-001",
+  "med-diagnosis-differential-001",
+  "med-diagnosis-presumptive-001",
+  "med-diagnosis-etiology-001",
+  "med-laboratory-leukocytosis-001",
+  "med-laboratory-hemolyzed-001",
+  "med-imaging-opacity-001",
+  "med-imaging-enhancement-001",
+  "med-treatment-titrate-001",
+  "med-treatment-supportive-001",
+  "med-treatment-refractory-001",
+  "med-pharmacology-bioavailability-001",
+  "med-pharmacology-contraindicated-001",
+  "med-surgery-debridement-001",
+  "med-surgery-anastomosis-001",
+  "med-clinical-deny-001",
+  "med-clinical-unremarkable-001",
+  "med-clinical-lost-follow-up-001"
+]);
 
 export const RESEARCH_CONTEXT_GENRES = Object.freeze([
   "research_abstract",

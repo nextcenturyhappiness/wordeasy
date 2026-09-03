@@ -80,10 +80,10 @@ test("runs the formal personal PWA with the complete catalog and offline local p
       window as typeof window & { __runArticleEnglishIdlePrefetch: () => void }
     ).__runArticleEnglishIdlePrefetch();
   });
-  await expect.poll(() => cachedCardCount(page)).toBe(60);
+  await expect.poll(() => cachedCardCount(page)).toBe(120);
 
   await page.getByRole("link", { name: /Continue Research English/u }).click();
-  expect(await cachedCardCount(page)).toBe(60);
+  expect(await cachedCardCount(page)).toBe(120);
   await page.getByRole("link", { name: /Continue New/u }).click();
   await page.getByRole("button", { name: /Reveal answer/u }).click();
   await page.getByRole("button", { name: /^Good/u }).click();
