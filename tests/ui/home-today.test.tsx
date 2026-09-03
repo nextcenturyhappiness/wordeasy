@@ -114,6 +114,10 @@ describe("Home and Today", () => {
       "href",
       "/study/research?queue=review"
     );
+    expect(screen.getByRole("link", { name: "Start next session" })).toHaveClass(
+      "button",
+      "button--secondary"
+    );
     expect(screen.getByRole("link", { name: "Continue Research English" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Continue Medical English" })).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /continue/i })).toHaveLength(2);

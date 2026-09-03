@@ -60,7 +60,7 @@ export function NextSessionCard({ target, nextCard }: NextSessionCardProps) {
         <blockquote className="next-session__sentence">{nextCard.contextSentence}</blockquote>
       )}
       <Link
-        className="button button--primary"
+        className="button button--secondary"
         to={href}
         onFocus={warmStudyRoute}
         onPointerEnter={warmStudyRoute}

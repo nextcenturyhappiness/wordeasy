@@ -454,10 +454,10 @@ p {
   box-shadow: var(--shadow-soft);
 }
 
-.next-session--secondary {
+.next-session.next-session--secondary {
   gap: var(--space-3);
   padding: var(--space-4);
-  background: transparent;
+  background: var(--color-surface-muted);
   box-shadow: none;
 }
 
