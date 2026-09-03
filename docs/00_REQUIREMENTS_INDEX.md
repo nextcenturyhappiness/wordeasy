@@ -9,7 +9,7 @@
 | `docs/01_PRODUCT_CORE.md`             | 产品目标、Context-first、模块、首页、Today、进度定义、MVP 范围 | 全部 Agent                        |
 | `docs/02_DATA_SYNC_SECURITY.md`       | 登录、数据库、FSRS、IndexedDB、离线同步、跨设备、RLS           | Backend、QA、Engineering Reviewer |
 | `docs/03_FRONTEND_PWA_PERFORMANCE.md` | 页面、交互、响应式、PWA、macOS 外壳、性能、安全边界和可访问性  | Frontend、QA、两位 Reviewer       |
-| `docs/04_CONTENT_SCHEMA.md`           | 60 张 seed cards、内容字段、分类、来源、去重、导入格式         | Content、QA、Product Reviewer     |
+| `docs/04_CONTENT_SCHEMA.md`           | 120 张 seed cards、内容字段、分类、来源、去重、导入格式        | Content、QA、Product Reviewer     |
 | `docs/05_ACCEPTANCE_TESTS.md`         | 自动测试、手工验收、性能测试、发布门槛                         | Root、QA、两位 Reviewer           |
 | `docs/06_AGENT_WORKFLOW.md`           | Agent 角色、文件所有权、阶段、独立审查和复审                   | Root、全部 Agent                  |
 | `docs/07_MILESTONES.md`               | M0–M4 的具体执行顺序                                           | Root、QA                          |

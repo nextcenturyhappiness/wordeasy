@@ -52,7 +52,7 @@ src/
   scheduler/         pinned FSRS adapter
   styles/            tokens and global responsive styles
   sync/              outbox, push/pull, locks, reconciliation
-data/                 authoring-only 60-card dataset and CSV template
+data/                 authoring-only 120-card dataset and CSV template
 scripts/              content, bundle, secret and build validation
 supabase/
   migrations/         versioned SQL schema/RLS/RPC changes
@@ -267,7 +267,7 @@ Every milestone records exact commands, outcomes, and environment-dependent omis
 
 ## 6. Content contract
 
-- Authoring source: `data/seed-data.json`, schema versioned, exactly 30 Research and 30 Medical cards.
+- Authoring source: `data/seed-data.json`, schema versioned, exactly 60 Research and 60 Medical cards.
 - Research distribution: 15 General, 6 Statistics/Methodology, 9 Bioinformatics.
 - Medical distribution: all 13 required categories, with 9 categories ×2 and 4 categories ×3.
 - Every seed uses `source_type = original_example` and null source title/URL/DOI/PMID unless independently verified later.

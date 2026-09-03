@@ -364,6 +364,25 @@ Alternatives rejected: 继续用白书；把附件满幅丢进 1024；只改 icn
 Consequences: Windows/Linux 与 PWA any-purpose 跟随同一 padded master。下一版 Apple Silicon `.app` 才能在 Launchpad 上确认观感。
 Tests/docs affected: `public/icons/**`, `src-tauri/icons/**`, `docs/TRACEABILITY.md`.
 
+### DEC-040 · Canonical seed 扩到 120 张，原 60 张身份不变
+
+Date: 2026-09-03
+Status: Accepted
+Related requirements: CONTENT-001/002/011, RES-001/002, MED-001/002, ASSIGN-003/004, PERF-006, TEST-034
+Context: 第一批 60 张 Context Cards 已写入 `wordeasy-seed-v1` 并随 `20260826000500_seed_content.sql` 应用到生产。继续扩词库时不得伪造 DOI/PMID/期刊，也不得改 Home UI、FSRS、TTS、时区或图标。校验器若仍要求 15+6+9 / 30 / 60 会把合法的第二批判失败。
+Decision:
+
+1. 在同一 `dataset_key` 下追加第二批 60 张原创例句，总量 120：Research 再 15+6+9，Medical 再 30，分类覆盖加倍。
+2. 原 60 张 `card_key` / UUID 保持稳定；新卡继续用同一 `uuid_namespace` 与 key 方案。
+3. 已应用的 `20260826000500_seed_content.sql` 不得重写。第二批由后续 additive migration 插入。
+4. 每日配额不变：Research 5+2+3，Medical 10。更多卡片只增加可分配新卡天数。
+5. Demo 仍从各类别取第一张，保持 20-card 子集。standalone/desktop catalog 版本改为 `canonical-120-v1`，每模块 60 张。
+
+Reason: 生产已吃下第一批 seed；重写旧 migration 会让已应用环境和仓库分叉。身份稳定才能保住已学进度。
+Alternatives rejected: 改 `dataset_key`；重生成全部 120 张进旧 migration；把每日配额改成吃掉更多新卡；为凑数编造文献来源。
+Consequences: 未冻结的新用户 Day-1 抽卡集合可能因候选池变大而改变；已冻结的当日 assignment 不变。云端需 apply 新 migration 后才有第二批。
+Tests/docs affected: `data/seed-data.json`, validator/counts, seed SQL pipeline, personal catalog version, content/assignment tests, `docs/04_CONTENT_SCHEMA.md`, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text

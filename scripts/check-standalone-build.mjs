@@ -180,13 +180,13 @@ assert(
     securityHeaders.includes("X-Robots-Tag: noindex"),
   "Standalone origin is missing its local-only security headers."
 );
-assert(activeCardIds.length === 60, "Canonical standalone catalog must contain 60 active cards.");
+assert(activeCardIds.length === 120, "Canonical standalone catalog must contain 120 active cards.");
 assert(
   cardCatalogFiles.length === 1,
-  `Expected one dedicated standalone 60-card chunk; found ${String(cardCatalogFiles.length)}.`
+  `Expected one dedicated standalone 120-card chunk; found ${String(cardCatalogFiles.length)}.`
 );
 const cardCatalogFile = cardCatalogFiles[0];
-assert(cardCatalogFile !== undefined, "Standalone 60-card chunk could not be identified.");
+assert(cardCatalogFile !== undefined, "Standalone 120-card chunk could not be identified.");
 assert(
   [...javascriptByName].every(
     ([name, source]) =>
@@ -231,5 +231,5 @@ assertBudget("Standalone initial CSS gzip", initialCssGzip, limits.initialCss);
 assertBudget("Standalone compressed precache", compressedPrecache, limits.precache);
 
 console.log(
-  `Standalone PWA boundary passed: ${formatBytes(initialGzip)} initial JS, ${formatBytes(homeGzip)} Home JS, ${formatBytes(initialCssGzip)} CSS, ${formatBytes(compressedPrecache)} precache, dedicated deferred 60-card and FSRS chunks.`
+  `Standalone PWA boundary passed: ${formatBytes(initialGzip)} initial JS, ${formatBytes(homeGzip)} Home JS, ${formatBytes(initialCssGzip)} CSS, ${formatBytes(compressedPrecache)} precache, dedicated deferred 120-card and FSRS chunks.`
 );

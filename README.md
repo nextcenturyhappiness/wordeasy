@@ -33,7 +33,7 @@ See `docs/RELEASE_VERIFICATION.md` for the exact evidence boundary.
 - New and Review totals are separate and stable for the profile-local study date.
 - A rating is committed locally before the UI advances. Sync failure never blocks learning.
 - Immutable UUID review events are retried idempotently through an account-scoped outbox.
-- The canonical 60-card authoring dataset contains 30 Research and 30 Medical cards and is not shipped in the initial browser bundle.
+- The canonical 120-card authoring dataset contains 60 Research and 60 Medical cards and is not shipped in the initial browser bundle.
 - Deferred features such as Add Word, search, AI, Anki, statistics dashboards, and social features have no placeholder routes or buttons.
 
 ## Technology
@@ -56,7 +56,7 @@ npm ci
 npm run dev:demo
 ```
 
-The demo is explicit and uses its own IndexedDB namespace. It derives a controlled 20-card browser subset from the canonical dataset at build time: Research 5 + 2 + 3 and Medical 10. The full 60-card dataset is never imported by browser source.
+The demo is explicit and uses its own IndexedDB namespace. It derives a controlled 20-card browser subset from the canonical dataset at build time: Research 5 + 2 + 3 and Medical 10. The full 120-card dataset is never imported by browser source.
 
 For cloud mode or the personal Mac app, copy `.env.example` to `.env.local` and set only the public browser values:
 
@@ -143,7 +143,7 @@ Clearing site data, using private browsing, changing browsers, or changing devic
 
 ## Configure Supabase
 
-The repository contains ordered SQL migrations under `supabase/migrations/`. They create normalized public content, account-private learning state, constraints, indexes, RLS policies, stable assignment RPCs, immutable review-event ingestion, and trusted reconciliation RPCs. The content migration imports the validated 60-card seed.
+The repository contains ordered SQL migrations under `supabase/migrations/`. They create normalized public content, account-private learning state, constraints, indexes, RLS policies, stable assignment RPCs, immutable review-event ingestion, and trusted reconciliation RPCs. The content migrations import the validated 120-card seed in two batches so the original 60 rows stay unchanged.
 
 With the Supabase CLI authenticated and linked to the intended project:
 
