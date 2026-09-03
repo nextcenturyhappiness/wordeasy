@@ -5,6 +5,7 @@ import hardeningSql from "../../supabase/migrations/20260826000600_sync_hardenin
 import preferencesSql from "../../supabase/migrations/20260826000400_account_preferences_rpcs.sql?raw";
 import schemaSql from "../../supabase/migrations/20260826000100_learning_schema.sql?raw";
 import seedSql from "../../supabase/migrations/20260826000500_seed_content.sql?raw";
+import seedBatch2Sql from "../../supabase/migrations/20260903000700_seed_content_batch2.sql?raw";
 import syncSql from "../../supabase/migrations/20260826000300_review_sync_rpcs.sql?raw";
 import edgeFsrs from "../../supabase/functions/_shared/fsrs.ts?raw";
 import edgeHandler from "../../supabase/functions/review-sync/index.ts?raw";
@@ -17,6 +18,7 @@ const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}`;
 const EFFECTIVE_SYNC = `${SYNC}\n${HARDENING}`;
 const PREFERENCES = preferencesSql.toLowerCase();
 const SEED = seedSql.toLowerCase();
+const SEED_BATCH2 = seedBatch2Sql.toLowerCase();
 
 const PUBLIC_CONTENT_TABLES = [
   "modules",
@@ -280,5 +282,18 @@ describe("Supabase migration contracts", () => {
     expect(SEED.match(/'context_recall', true\)/g)).toHaveLength(60);
     expect(SEED).toContain("begin;");
     expect(SEED).toContain("commit;");
+  });
+
+  it("adds the second 60 cards in a later additive migration", () => {
+    expect(SEED_BATCH2).toContain("additive insert of the second 60 context cards");
+    expect(SEED_BATCH2).toContain("do not rewrite 20260826000500_seed_content.sql");
+    expect(SEED_BATCH2).toContain("insert into public.words");
+    expect(SEED_BATCH2).toContain("insert into public.word_senses");
+    expect(SEED_BATCH2).toContain("insert into public.contexts");
+    expect(SEED_BATCH2).toContain("insert into public.cards");
+    expect(SEED_BATCH2).not.toContain("insert into public.modules");
+    expect(SEED_BATCH2.match(/'context_recall', true\)/g)).toHaveLength(60);
+    expect(SEED_BATCH2).toContain("begin;");
+    expect(SEED_BATCH2).toContain("commit;");
   });
 });

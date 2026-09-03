@@ -403,11 +403,11 @@ Space = Reveal
 24. 快速本地启动。
 25. Service Worker 静态缓存。
 26. 刷新后数据不丢失。
-27. 30 张 Research seed cards。
-28. 30 张 Medical seed cards。
+27. 60 张 Research seed cards（两批各 15 + 6 + 9）。
+28. 60 张 Medical seed cards（两批各 30，保持分类覆盖）。
 29. JSON / CSV 内容导入格式。
 30. RLS、migrations、测试和 README。
-31. macOS Apple Silicon 个人版 `.app` / `.dmg`，复用同一套 PWA 前端和完整 60-card 本地内容。
+31. macOS Apple Silicon 个人版 `.app` / `.dmg`，复用同一套 PWA 前端和完整 120-card 本地内容。
 
 ### SCOPE-002 · Deferred · 本次不得实现
 
