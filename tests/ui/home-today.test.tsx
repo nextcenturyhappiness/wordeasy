@@ -86,7 +86,7 @@ describe("Home and Today", () => {
     expect(getStudyQueue).not.toHaveBeenCalled();
   });
 
-  it("shows the passed local Home snapshot with one next session and compact module summaries", async () => {
+  it("shows the passed local Home snapshot with lexicon search first and a secondary next session", async () => {
     const getCachedHome = vi.fn<LearningRepository["getCachedHome"]>(() =>
       Promise.resolve(buildHomeSnapshot())
     );
@@ -96,16 +96,20 @@ describe("Home and Today", () => {
     });
     renderWithLearningApp(<HomePage />, { repository });
 
-    expect(
-      screen.getByRole("search", { name: "Search learned Context Cards" })
-    ).toBeInTheDocument();
+    const search = screen.getByRole("search", { name: "Search learned Context Cards" });
+    const nextSession = screen.getByRole("heading", { name: "Start the next card" });
+    expect(search).toBeInTheDocument();
+    expect(within(search).getByRole("heading", { name: "词库" })).toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: "Search learned Context Cards" })).toHaveAttribute(
       "placeholder",
       ""
     );
     expect(screen.queryByPlaceholderText("用中文搜学过的词")).not.toBeInTheDocument();
     expect(screen.queryByText("用中文搜学过的词")).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Start the next card" })).toBeInTheDocument();
+    expect(search.compareDocumentPosition(nextSession) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(nextSession.closest("section")).toHaveClass("next-session--secondary");
     expect(screen.getByRole("link", { name: "Start next session" })).toHaveAttribute(
       "href",
       "/study/research?queue=review"
@@ -162,6 +166,25 @@ describe("Home and Today", () => {
     expect(document.activeElement).not.toBe(field);
   });
 
+  it("keeps Next Session below open search results and still starts the selected queue", async () => {
+    const user = userEvent.setup();
+    renderWithLearningApp(<HomePage />);
+
+    const field = screen.getByRole("searchbox", { name: "Search learned Context Cards" });
+    await user.type(field, "attenuate");
+
+    const results = await screen.findByRole("list");
+    const nextSession = screen.getByRole("heading", { name: "Start the next card" });
+    expect(within(results).getByText("attenuate")).toBeInTheDocument();
+    expect(results.compareDocumentPosition(nextSession) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(screen.getByRole("link", { name: "Start next session" })).toHaveAttribute(
+      "href",
+      "/study/research?queue=review"
+    );
+  });
+
   it("shows a calm empty-study state when nothing is due", () => {
     renderWithLearningApp(<HomePage />, {
       initialHome: buildHomeSnapshot({
@@ -183,6 +206,9 @@ describe("Home and Today", () => {
     });
 
     expect(screen.getByRole("heading", { name: "Nothing is due right now." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Nothing is due right now." }).closest("section")).toHaveClass(
+      "next-session--secondary"
+    );
     expect(screen.queryByRole("link", { name: "Start next session" })).not.toBeInTheDocument();
     expect(screen.getByRole("article", { name: "Research English" })).toBeInTheDocument();
     expect(screen.getByRole("article", { name: "Medical English" })).toBeInTheDocument();

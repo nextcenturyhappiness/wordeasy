@@ -27,7 +27,10 @@ function queueLabel(target: NextSessionTarget): string {
 export function NextSessionCard({ target, nextCard }: NextSessionCardProps) {
   if (target === null) {
     return (
-      <section className="next-session next-session--empty" aria-labelledby="next-session-title">
+      <section
+        className="next-session next-session--secondary next-session--empty"
+        aria-labelledby="next-session-title"
+      >
         <p className="eyebrow">Study</p>
         <h2 id="next-session-title">Nothing is due right now.</h2>
         <p className="muted-copy">
@@ -42,7 +45,10 @@ export function NextSessionCard({ target, nextCard }: NextSessionCardProps) {
   const href = `/study/${getModuleRoute(target.module)}?queue=${target.queue}`;
 
   return (
-    <section className="next-session" aria-labelledby="next-session-title">
+    <section
+      className="next-session next-session--secondary"
+      aria-labelledby="next-session-title"
+    >
       <p className="eyebrow">Next session</p>
       <h2 id="next-session-title">Start the next card</h2>
       <p className="next-session__queue">

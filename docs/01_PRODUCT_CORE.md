@@ -199,12 +199,13 @@ Medical English 每天分配 10 个新词。
 
 ### UI-001 · P0 · 简单首页
 
-首页保持简单。主操作是一个 Next Session，而不是两个并列的 Continue。模块入口仍在，但降为次级摘要。参考：
+首页保持简单。打开应用的主因是检索自己学过的 Context Card，而不是清掉到期队列。主表面是个人词库搜索；Next Session 仍在，但降为搜索（及搜索结果）下方的次级一键入口。模块入口继续作为更次一级的摘要。不得把两个模块 Continue 拉回同等英雄位。参考：
 
 ```text
-[ search ]
+Good morning                         Synced
 
-Good morning
+词库
+[ search ]
 
 Start the next card
 Research English · Review
@@ -237,15 +238,15 @@ Offline
 - 社交动态；
 - 复杂图表。
 
-问候语根据计算机当前 IANA timezone 本地计算，不等待网络。Next Session 选择规则见 DEC-032。
+问候语根据计算机当前 IANA timezone 本地计算，不等待网络。Next Session 选择规则见 DEC-032；首页视觉层级见 DEC-039。
 
 ### UI-015 · P1 · 首页个人词库搜索
 
-首页顶部提供一个紧凑的胶囊搜索框，检索当前设备 IndexedDB 中的 Context Cards。
+首页把本地 Context Card 检索做成主表面：更大、更可点的搜索区，而不是顶部一条紧凑胶囊。检索当前设备 IndexedDB 中的 Context Cards。
 
 匹配字段：中文释义、英文 lemma / display form、语境句、搭配。已学/已复习卡片优先，但仍搜索本地词库，避免第一天搜索为空。
 
-空查询只显示搜索框，不打开独立搜索页。输入框不放中文或英文 placeholder 提示，可访问名称由 `aria-label` / label 提供。无匹配时显示诚实空文案「还没有学过相关的词」，不得回退到公共词典、翻译器或编造释义。不新增 Search 主导航。
+空查询只显示「词库」标题与搜索框，不打开独立搜索页。输入框不放中文或英文 placeholder 提示，可访问名称由 `aria-label` / label 提供。无匹配时显示诚实空文案「还没有学过相关的词」，不得回退到公共词典、翻译器或编造释义。不新增 Search 主导航。
 
 ---
 
@@ -412,7 +413,7 @@ Space = Reveal
 ### SCOPE-002 · Deferred · 本次不得实现
 
 - Add Word；
-- Vocabulary 全局搜索页 / 独立 Search 导航（首页本地 Context Card 检索由 DEC-032 授权，不属于本条）；
+- Vocabulary 全局搜索页 / 独立 Search 导航（首页本地 Context Card 检索由 DEC-032 / DEC-039 授权，不属于本条）；
 - 收藏；
 - 统计图表；
 - AI 自动生成；

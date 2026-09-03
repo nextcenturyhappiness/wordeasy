@@ -72,9 +72,12 @@ export function LexiconSearch({ repository }: LexiconSearchProps) {
 
   return (
     <search className="lexicon-search" role="search" aria-label="Search learned Context Cards">
+      <h2 className="lexicon-search__title" lang="zh-CN">
+        词库
+      </h2>
       <div className="lexicon-search__bar">
         <span className="lexicon-search__icon" aria-hidden="true">
-          <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+          <svg viewBox="0 0 20 20" width="22" height="22" fill="none">
             <circle cx="8.5" cy="8.5" r="5.25" stroke="currentColor" strokeWidth="1.6" />
             <path
               d="M12.4 12.4 16.2 16.2"
