@@ -364,7 +364,7 @@ Alternatives rejected: 继续用白书；把附件满幅丢进 1024；只改 icn
 Consequences: Windows/Linux 与 PWA any-purpose 跟随同一 padded master。下一版 Apple Silicon `.app` 才能在 Launchpad 上确认观感。
 Tests/docs affected: `public/icons/**`, `src-tauri/icons/**`, `docs/TRACEABILITY.md`.
 
-### DEC-039 · Canonical seed 扩到 120 张，原 60 张身份不变
+### DEC-040 · Canonical seed 扩到 120 张，原 60 张身份不变
 
 Date: 2026-09-03
 Status: Accepted
