@@ -164,6 +164,15 @@ const homeJavaScript = (
 const initialCss = (
   await Promise.all(initialStyles.map((path) => gzipSize(join(output, path.replace(/^\//u, "")))))
 ).reduce((total, size) => total + size, 0);
+const remoteFontPattern =
+  /fonts\.googleapis|fonts\.gstatic|use\.typekit|p\.typekit|@import\s+|@font-face|url\(\s*["']?https?:/iu;
+for (const path of initialStyles) {
+  const css = await readFile(join(output, path.replace(/^\//u, "")), "utf8");
+  assert(
+    !remoteFontPattern.test(css),
+    `Preview CSS ${path} requests a remote or bundled web font.`
+  );
+}
 const precacheExtensions = new Set([".html", ".css", ".js", ".png", ".svg", ".webmanifest"]);
 const precacheFiles = (await collectFiles(output)).filter(
   (path) =>

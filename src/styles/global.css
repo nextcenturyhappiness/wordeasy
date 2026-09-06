@@ -26,6 +26,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+:lang(zh),
+:lang(zh-CN),
+[lang="zh-CN"] {
+  font-family: var(--font-zh);
+}
+
+h1:lang(zh),
+h2:lang(zh),
+:lang(zh) h1,
+:lang(zh) h2 {
+  font-weight: 600;
+}
+
 button,
 input,
 select,

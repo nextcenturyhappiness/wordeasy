@@ -334,7 +334,7 @@ Compressed precache <= 1.5 MiB
 
 ### TEST-033 · 远程资源
 
-首屏不请求远程字体，不加载完整词库，不加载 Deferred 功能代码。
+首屏不请求远程字体（无 Google Fonts、无 CDN `@font-face`、无打包字体文件），不加载完整词库，不加载 Deferred 功能代码。`--font-ui` / `--font-zh` 必须是本机 PingFang-first 栈（DEC-041）。
 
 ---
 

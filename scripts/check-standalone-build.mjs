@@ -135,6 +135,15 @@ const initialGzip = (
 const initialCssGzip = (
   await Promise.all(initialStyles.map((path) => gzipSize(assetPath(path))))
 ).reduce((total, size) => total + size, 0);
+const remoteFontPattern =
+  /fonts\.googleapis|fonts\.gstatic|use\.typekit|p\.typekit|@import\s+|@font-face|url\(\s*["']?https?:/iu;
+for (const path of initialStyles) {
+  const css = await readFile(assetPath(path), "utf8");
+  assert(
+    !remoteFontPattern.test(css),
+    `Standalone CSS ${path} requests a remote or bundled web font.`
+  );
+}
 const standaloneRuntimeFiles = [...javascriptByName]
   .filter(([, source]) => source.includes("standalone:v1") && source.includes("local-user"))
   .map(([name]) => name);

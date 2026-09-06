@@ -148,6 +148,7 @@ describe("Home and Today", () => {
     renderWithLearningApp(<HomePage />, { repository });
 
     const field = screen.getByRole("searchbox", { name: "Search learned Context Cards" });
+    expect(field).toHaveAttribute("lang", "zh-CN");
     await user.type(field, "减弱");
 
     const results = await screen.findByRole("list");
@@ -155,6 +156,7 @@ describe("Home and Today", () => {
     const gloss = within(results).getByText("减弱；降低");
     expect(lemma).toHaveClass("lexicon-search__lemma");
     expect(gloss).toHaveClass("lexicon-search__gloss");
+    expect(gloss).toHaveAttribute("lang", "zh-CN");
     expect(lemma.parentElement).toBe(gloss.parentElement);
     expect(lemma.parentElement).toHaveClass("lexicon-search__lemma-row");
     expect(lemma.compareDocumentPosition(gloss) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
@@ -163,17 +165,17 @@ describe("Home and Today", () => {
     expect(
       within(results).getByText("to make an effect, association, or signal weaker")
     ).toHaveClass("lexicon-search__meaning");
-    expect(
-      within(results).getByText(
-        "The association was substantially attenuated after adjustment for age and BMI."
-      )
-    ).toHaveClass("lexicon-search__sentence");
+    const sentence = within(results).getByText(
+      "The association was substantially attenuated after adjustment for age and BMI."
+    );
+    expect(sentence).toHaveClass("lexicon-search__sentence");
+    expect(sentence).not.toHaveAttribute("lang");
     expect(within(results).queryByText("解释")).not.toBeInTheDocument();
     expect(screen.queryByText("还没有学过相关的词")).not.toBeInTheDocument();
 
     await user.clear(field);
     await user.type(field, "xyz-not-a-learned-word");
-    expect(await screen.findByText("还没有学过相关的词")).toBeInTheDocument();
+    expect(await screen.findByText("还没有学过相关的词")).toHaveAttribute("lang", "zh-CN");
     expect(screen.queryByText("attenuate")).not.toBeInTheDocument();
 
     await user.keyboard("{Escape}");
