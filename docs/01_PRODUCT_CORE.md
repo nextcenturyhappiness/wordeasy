@@ -237,7 +237,7 @@ Offline
 - 社交动态；
 - 复杂图表。
 
-问候语根据计算机当前 IANA timezone 本地计算，不等待网络。Next Session 选择规则见 DEC-032；首页视觉层级见 DEC-039；搜索呈现见 DEC-040。
+问候语根据计算机当前 IANA timezone 本地计算，不等待网络。Next Session 选择规则见 DEC-032；首页视觉层级见 DEC-039；搜索呈现见 DEC-042。
 
 ### UI-015 · P1 · 首页个人词库搜索
 
