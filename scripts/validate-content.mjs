@@ -45,6 +45,8 @@ if (dataset) {
     );
     console.log(`Research categories: ${JSON.stringify(result.counts.researchCategories)}.`);
     console.log(`Medical categories: ${JSON.stringify(result.counts.medicalCategories)}.`);
-    console.log("Source audit: 60 original examples with null citation metadata.");
+    console.log(
+      `Source audit: ${result.counts.total} original examples with null citation metadata.`
+    );
   }
 }

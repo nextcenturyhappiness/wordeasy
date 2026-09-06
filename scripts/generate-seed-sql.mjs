@@ -2,12 +2,20 @@
 
 import { readFile, writeFile } from "node:fs/promises";
 
-import { contentUuid } from "./lib/content-contract.mjs";
+import {
+  CANONICAL_CARD_TOTAL,
+  ORIGINAL_BATCH_CARD_KEYS,
+  contentUuid
+} from "./lib/content-contract.mjs";
 import { formatIssues, validateDataset } from "./lib/content-validator.mjs";
 
 const seedUrl = new URL("../data/seed-data.json", import.meta.url);
-const migrationUrl = new URL(
+const originalMigrationUrl = new URL(
   "../supabase/migrations/20260826000500_seed_content.sql",
+  import.meta.url
+);
+const batch2MigrationUrl = new URL(
+  "../supabase/migrations/20260903000700_seed_content_batch2.sql",
   import.meta.url
 );
 
@@ -70,31 +78,7 @@ function uniqueBy(cards, idField) {
   return [...new Map(cards.map((card) => [card[idField], card])).values()];
 }
 
-function generateMigration(dataset) {
-  const cards = dataset.cards;
-  const moduleRows = Object.entries(MODULE_NAMES).map(([slug, name]) =>
-    tuple([sqlText(contentUuid("module", slug)), sqlText(slug), sqlText(name), "true"])
-  );
-  const categories = [...new Set(cards.map((card) => `${card.module}|${card.category}`))]
-    .map((key) => {
-      const [module, category] = key.split("|");
-      return { module, category };
-    })
-    .sort(
-      (left, right) =>
-        left.module.localeCompare(right.module) ||
-        (CATEGORY_ORDER[left.category] ?? 999) - (CATEGORY_ORDER[right.category] ?? 999)
-    );
-  const categoryRows = categories.map(({ module, category }) =>
-    tuple([
-      sqlText(contentUuid("category", `${module}:${category}`)),
-      sqlText(contentUuid("module", module)),
-      sqlText(category),
-      sqlText(CATEGORY_NAMES[category]),
-      String(CATEGORY_ORDER[category]),
-      "true"
-    ])
-  );
+function contentEntityStatements(cards) {
   const wordRows = uniqueBy(cards, "word_id").map((card) =>
     tuple([
       sqlText(card.word_id),
@@ -147,21 +131,6 @@ function generateMigration(dataset) {
   );
 
   return [
-    "-- Generated from data/seed-data.json by scripts/generate-seed-sql.mjs.",
-    "-- Do not hand-edit; update the validated source dataset and regenerate.",
-    "begin;",
-    valuesStatement({
-      table: "modules",
-      columns: ["id", "slug", "name", "active"],
-      rows: moduleRows,
-      updates: ["slug", "name", "active"]
-    }),
-    valuesStatement({
-      table: "categories",
-      columns: ["id", "module_id", "slug", "name", "sort_order", "active"],
-      rows: categoryRows,
-      updates: ["module_id", "slug", "name", "sort_order", "active"]
-    }),
     valuesStatement({
       table: "words",
       columns: ["id", "stable_key", "lemma", "display_form", "ipa", "part_of_speech"],
@@ -231,10 +200,91 @@ function generateMigration(dataset) {
       columns: ["id", "stable_key", "word_sense_id", "context_id", "card_type", "active"],
       rows: cardRows,
       updates: ["stable_key", "word_sense_id", "context_id", "card_type", "active"]
+    })
+  ];
+}
+
+function generateMigration(dataset) {
+  const cards = dataset.cards;
+  const moduleRows = Object.entries(MODULE_NAMES).map(([slug, name]) =>
+    tuple([sqlText(contentUuid("module", slug)), sqlText(slug), sqlText(name), "true"])
+  );
+  const categories = [...new Set(cards.map((card) => `${card.module}|${card.category}`))]
+    .map((key) => {
+      const [module, category] = key.split("|");
+      return { module, category };
+    })
+    .sort(
+      (left, right) =>
+        left.module.localeCompare(right.module) ||
+        (CATEGORY_ORDER[left.category] ?? 999) - (CATEGORY_ORDER[right.category] ?? 999)
+    );
+  const categoryRows = categories.map(({ module, category }) =>
+    tuple([
+      sqlText(contentUuid("category", `${module}:${category}`)),
+      sqlText(contentUuid("module", module)),
+      sqlText(category),
+      sqlText(CATEGORY_NAMES[category]),
+      String(CATEGORY_ORDER[category]),
+      "true"
+    ])
+  );
+  return [
+    "-- Generated from data/seed-data.json by scripts/generate-seed-sql.mjs.",
+    "-- Do not hand-edit; update the validated source dataset and regenerate.",
+    "begin;",
+    valuesStatement({
+      table: "modules",
+      columns: ["id", "slug", "name", "active"],
+      rows: moduleRows,
+      updates: ["slug", "name", "active"]
     }),
+    valuesStatement({
+      table: "categories",
+      columns: ["id", "module_id", "slug", "name", "sort_order", "active"],
+      rows: categoryRows,
+      updates: ["module_id", "slug", "name", "sort_order", "active"]
+    }),
+    ...contentEntityStatements(cards),
     "commit;",
     ""
   ].join("\n\n");
+}
+
+function generateBatch2Migration(cards) {
+  return [
+    "-- Generated from data/seed-data.json batch 2 by scripts/generate-seed-sql.mjs.",
+    "-- Additive insert of the second 60 Context Cards.",
+    "-- Do not rewrite 20260826000500_seed_content.sql; original 60 rows stay unchanged.",
+    "begin;",
+    ...contentEntityStatements(cards),
+    "commit;",
+    ""
+  ].join("\n\n");
+}
+
+function splitCanonicalBatches(cards) {
+  const originalKeys = new Set(ORIGINAL_BATCH_CARD_KEYS);
+  const originalCards = [];
+  const batch2Cards = [];
+  for (const card of cards) {
+    if (originalKeys.has(card.card_key)) {
+      originalCards.push(card);
+    } else {
+      batch2Cards.push(card);
+    }
+  }
+  if (originalCards.length !== ORIGINAL_BATCH_CARD_KEYS.length) {
+    throw new Error(
+      `Original seed batch has ${originalCards.length} cards; expected ${ORIGINAL_BATCH_CARD_KEYS.length}.`
+    );
+  }
+  if (batch2Cards.length !== ORIGINAL_BATCH_CARD_KEYS.length) {
+    throw new Error(
+      `Second seed batch has ${batch2Cards.length} cards; expected ${ORIGINAL_BATCH_CARD_KEYS.length}.`
+    );
+  }
+  return { originalCards, batch2Cards };
 }
 
 const dataset = JSON.parse(await readFile(seedUrl, "utf8"));
@@ -245,14 +295,27 @@ if (validation.errors.length > 0) {
   );
 }
 
-const generated = generateMigration(dataset);
+const { originalCards, batch2Cards } = splitCanonicalBatches(dataset.cards);
+const originalGenerated = generateMigration({ ...dataset, cards: originalCards });
+const batch2Generated = generateBatch2Migration(batch2Cards);
+const existingOriginal = await readFile(originalMigrationUrl, "utf8");
+if (existingOriginal !== originalGenerated) {
+  throw new Error(
+    "Original 60-card seed migration drifted. Keep those card identities and content stable."
+  );
+}
+
 if (process.argv.includes("--check")) {
-  const existing = await readFile(migrationUrl, "utf8");
-  if (existing !== generated) {
-    throw new Error("Generated seed migration is stale. Run npm run content:seed-sql.");
+  const existingBatch2 = await readFile(batch2MigrationUrl, "utf8");
+  if (existingBatch2 !== batch2Generated) {
+    throw new Error("Generated batch-2 seed migration is stale. Run npm run content:seed-sql.");
   }
-  console.log("Seed SQL is current: 60 validated cards.");
+  console.log(
+    `Seed SQL is current: ${CANONICAL_CARD_TOTAL} validated cards across the original and batch-2 migrations.`
+  );
 } else {
-  await writeFile(migrationUrl, generated, "utf8");
-  console.log("Generated Supabase seed migration for 60 validated cards.");
+  await writeFile(batch2MigrationUrl, batch2Generated, "utf8");
+  console.log(
+    `Generated additive Supabase seed migration for the second ${batch2Cards.length} of ${CANONICAL_CARD_TOTAL} validated cards.`
+  );
 }

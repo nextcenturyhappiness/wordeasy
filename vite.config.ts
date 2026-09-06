@@ -88,9 +88,9 @@ function loadDemoSeedModule(): string {
 
 function loadStandaloneSeedModule(): string {
   const selected = loadCanonicalSeed().cards.filter((card) => card.active);
-  if (selected.length !== 60) {
+  if (selected.length !== 120) {
     throw new Error(
-      `Canonical seed produced ${String(selected.length)} active cards; expected 60.`
+      `Canonical seed produced ${String(selected.length)} active cards; expected 120.`
     );
   }
   return `export default ${JSON.stringify(selected)};`;

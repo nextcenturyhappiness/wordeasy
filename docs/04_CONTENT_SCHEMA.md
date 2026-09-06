@@ -4,7 +4,7 @@
 
 ### CONTENT-001 · P0 · Research
 
-创建 30 张 Research English Context Cards：
+创建 60 张 Research English Context Cards，分两批，每批：
 
 ```text
 15 General Research
@@ -12,11 +12,11 @@
 9 Bioinformatics
 ```
 
-必须支持连续至少三天严格 5 + 2 + 3 分配。
+合计 30 + 30。每日分配仍是严格 5 + 2 + 3；词库扩大后应支持连续至少六天新卡，而不是改变每日配额。
 
 ### CONTENT-002 · P0 · Medical
 
-创建 30 张 Medical English Context Cards。
+创建 60 张 Medical English Context Cards，分两批各 30 张。
 
 合理覆盖：
 
@@ -248,9 +248,9 @@ attenuate the association|attenuate an effect|attenuate inflammation
 - module 非法；
 - target_text 不在 context 中；
 - source_type 与来源字段矛盾；
-- Research 不是 15 + 6 + 9；
-- Medical 不是 30；
-- 总数不是 60；
+- Research 不是 30 + 12 + 18（两批各 15 + 6 + 9）；
+- Medical 不是 60（两批各 30，分类覆盖加倍）；
+- 总数不是 120；
 - 重复 ID；
 - 完全重复 context；
 - collocations 为空；

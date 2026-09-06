@@ -4,10 +4,14 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  CANONICAL_CARD_TOTAL,
+  CANONICAL_MEDICAL_TOTAL,
+  CANONICAL_RESEARCH_TOTAL,
   CARD_FIELDS,
   CSV_FIELDS,
   MEDICAL_CONTEXT_GENRES,
   MEDICAL_COUNTS,
+  ORIGINAL_BATCH_CARD_KEYS,
   RESEARCH_CONTEXT_GENRES,
   RESEARCH_COUNTS,
   addStableIdentity,
@@ -52,15 +56,22 @@ describe("formal seed dataset", () => {
     expect(result.warnings).toEqual([]);
   });
 
-  it("contains exactly 30 Research and 30 Medical cards with the locked distribution", () => {
+  it("contains exactly 60 Research and 60 Medical cards with the locked distribution", () => {
     const result = validateDataset(dataset);
     expect(result.counts).toMatchObject({
-      total: 60,
-      research: 30,
-      medical: 30,
+      total: CANONICAL_CARD_TOTAL,
+      research: CANONICAL_RESEARCH_TOTAL,
+      medical: CANONICAL_MEDICAL_TOTAL,
       researchCategories: RESEARCH_COUNTS,
       medicalCategories: MEDICAL_COUNTS
     });
+  });
+
+  it("keeps the original 60 card keys in place and ahead of the second batch", () => {
+    expect(
+      dataset.cards.slice(0, ORIGINAL_BATCH_CARD_KEYS.length).map((card) => card.card_key)
+    ).toEqual([...ORIGINAL_BATCH_CARD_KEYS]);
+    expect(dataset.cards).toHaveLength(CANONICAL_CARD_TOTAL);
   });
 
   it("covers every required Research and Medical material genre", () => {

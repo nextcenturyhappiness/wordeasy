@@ -1,4 +1,5 @@
 import {
+  CANONICAL_CARD_TOTAL,
   CARD_FIELDS,
   CONTENT_DATASET_KEY,
   CONTENT_SCHEMA_VERSION,
@@ -652,12 +653,12 @@ export function validateDataset(dataset, { enforceCounts = true } = {}) {
   }
 
   if (enforceCounts) {
-    if (dataset.cards.length !== 60) {
+    if (dataset.cards.length !== CANONICAL_CARD_TOTAL) {
       errors.push({
         cardId: "dataset",
         cardKey: null,
         code: "total_count",
-        message: `Dataset has ${dataset.cards.length} cards; expected 60.`
+        message: `Dataset has ${dataset.cards.length} cards; expected ${CANONICAL_CARD_TOTAL}.`
       });
     }
     compareExpectedCounts(researchCounts, RESEARCH_COUNTS, "research_english", errors);
