@@ -132,8 +132,6 @@ export function HomePage() {
 
   return (
     <section className="home-page">
-      <LexiconSearch repository={repository} />
-
       <header className="home-heading">
         <div>
           <p className="eyebrow">{snapshot.studyDate}</p>
@@ -141,6 +139,8 @@ export function HomePage() {
         </div>
         <SyncStatus state={syncState} onSync={triggerSync} />
       </header>
+
+      <LexiconSearch repository={repository} />
 
       <NextSessionCard target={nextSession} nextCard={nextCard} />
 

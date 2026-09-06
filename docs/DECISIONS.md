@@ -46,7 +46,7 @@ MVP 使用系统字体栈。
 
 ### DEC-011 · MVP 范围控制
 
-不实现 Add Word、独立全局搜索页、收藏、统计、AI、全文导入、Anki 和社交功能，也不创建占位入口。首页本地 Context Card 检索由 DEC-032 授权，不恢复公共词典或 Add Word。
+不实现 Add Word、独立全局搜索页、收藏、统计、AI、全文导入、Anki 和社交功能，也不创建占位入口。首页本地 Context Card 检索由 DEC-032 / DEC-039 授权，不恢复公共词典或 Add Word。
 
 ### DEC-012 · Public content / private progress
 
@@ -251,18 +251,18 @@ Tests/docs affected: `src/main.tsx`, `tests/ui/app-shell.test.tsx`, `docs/03_FRO
 ### DEC-032 · Home 为单一 Next Session + 本地 Context Card 检索
 
 Date: 2026-09-01
-Status: Accepted
+Status: Accepted — Home visual hierarchy superseded by DEC-039; Next Session selection, peek, and local-search rules remain.
 Related requirements: UI-001, UI-006, UI-015, CORE-005, SCOPE-002, PERF-003/005; DEC-011
 Context: Home 原先并排两个同等 Continue，下方留下大块空白；写作时也没有办法检索自己学过的 Context Card。SCOPE-002 / DEC-011 将“Vocabulary 全局搜索”列为 Deferred，但所有者明确要求在本 PR 于首页加入个人词库检索，并把 Home 收成一个 Next Session，而不是 Anki 统计看板或 Duolingo 游戏化。
 Decision:
 
-1. Home 只有一个主 CTA：Start next session。选择规则：取 New 剩余 + Review 剩余最多的模块；并列时取 Research English；该模块若仍有 Review 则先走 Review，否则走 New。按钮直接进入对应 Study 队列。模块 Continue 保留为次级入口，继续通往 Today，模块进度彼此隔离。
-2. 主 CTA 旁展示下一张到期 Context Card 的原句。句子只来自本地 assignment + `cached_cards` 的 peek，不触发 deferred catalog 加载，也不编造例句。无到期工作时显示平静空状态，而不是空白区域。
-3. Home 顶部增加 Google 移动端风格的胶囊搜索框，只检索当前账户 IndexedDB 中的 Context Cards（中文释义、lemma、语境句、搭配）。已学/已复习 sense 优先，但仍搜索本地词库。空查询不打开独立搜索页；无匹配只显示「还没有学过相关的词」。禁止公共词典、翻译 API、编造释义、Add Word、新的 Search 导航。
+1. Home 只有一个学习 CTA：Start next session。选择规则：取 New 剩余 + Review 剩余最多的模块；并列时取 Research English；该模块若仍有 Review 则先走 Review，否则走 New。按钮直接进入对应 Study 队列。模块 Continue 保留为次级入口，继续通往 Today，模块进度彼此隔离。该 CTA 的视觉主次由 DEC-039 取代：它不再是首页英雄。
+2. 该 CTA 旁展示下一张到期 Context Card 的原句。句子只来自本地 assignment + `cached_cards` 的 peek，不触发 deferred catalog 加载，也不编造例句。无到期工作时显示平静空状态，而不是空白区域。
+3. Home 提供本地 Context Card 检索，只检索当前账户 IndexedDB 中的 Context Cards（中文释义、lemma、语境句、搭配）。已学/已复习 sense 优先，但仍搜索本地词库。空查询不打开独立搜索页；无匹配只显示「还没有学过相关的词」。禁止公共词典、翻译 API、编造释义、Add Word、新的 Search 导航。搜索在首页的视觉权重由 DEC-039 提升为主表面。
 4. SCOPE-002 的“Vocabulary 全局搜索页”和 Add Word 仍 Deferred。本决策只授权首页内的本地 Context Card 检索。
    Reason: 写作中需要的是自己学过的语境，而不是另一本词典；开始学习只需要一个下一步，而不是两个同等英雄按钮。
    Alternatives rejected: 两个并列 Continue 保持英雄位；新的 Search 主导航；远程词典/AI 释义；把完整词库打入 Home bundle；XP / 排行榜 / 每日目标镀铬。
-   Consequences: UI-001 线框改为单一 Next Session；DEC-011 的“不实现搜索”收窄为不实现独立全局搜索。Home 首次绘制仍只读本地 summary。
+   Consequences: UI-001 曾改为单一 Next Session 英雄；DEC-011 的“不实现搜索”收窄为不实现独立全局搜索。Home 首次绘制仍只读本地 summary。层级后续由 DEC-039 反转。
 
 ### DEC-033 · 学习日时区跟随计算机 IANA 时区
 
@@ -363,6 +363,38 @@ Reason: 新标记直接表达 Context Card；macOS 槽位仍会原样显示整�
 Alternatives rejected: 继续用白书；把附件满幅丢进 1024；只改 icns 不改 source；maskable 也加 inset。
 Consequences: Windows/Linux 与 PWA any-purpose 跟随同一 padded master。下一版 Apple Silicon `.app` 才能在 Launchpad 上确认观感。
 Tests/docs affected: `public/icons/**`, `src-tauri/icons/**`, `docs/TRACEABILITY.md`.
+
+### DEC-039 · Home 以个人词库搜索为主，Next Session 为次
+
+Date: 2026-09-03
+Status: Accepted — search-desk chrome and result-row layout superseded by DEC-042; search-primary / Next Session-secondary hierarchy remains.
+Related requirements: UI-001, UI-006, UI-015; DEC-032, DEC-034
+Context: DEC-032 把 Next Session 做成首页英雄，搜索只是顶部紧凑胶囊。打开应用因此像还债（你欠一批复习），而不是写作时查已学语境。所有者要求反转层级：个人词库搜索是打开应用的主因，Next Session 是可选的清队列入口。不引入 streak 压力文案、XP、排行榜、每日目标或打卡日历。
+Decision:
+
+1. Home 的主表面是本地 Context Card 检索。搜索区视觉上更大、更可点，空间上先于 Next Session。标题用中文「词库」。空查询仍无 placeholder（DEC-034），不恢复「用中文搜学过的词」。无匹配仍只显示「还没有学过相关的词」。检索范围、排序、禁止词典/Add Word/独立 Search 导航仍按 DEC-032。结果在文档流中展开，Next Session 出现在结果下方，不用 overlay 挡住它。
+2. Next Session 保留「Start next session」和下一张到期语境句，但降为搜索下方的次级操作：更安静、更小，不是屏幕存在的理由。选择规则仍按 DEC-032：剩余 New+Review 最多的模块，并列取 Research English；有 Review 先 Review。不得拆回两个同等 Continue。
+3. 问候、模块摘要、streak、sync 仍在首页，但不与搜索争英雄位。问候语保持本地时区计算。不改学习流、FSRS、Reveal、IPA TTS、时区或应用图标。
+   Reason: 写作工具打开是为了查已经学过的词；到期句子是顺手清掉的一件事。
+   Alternatives rejected: 保持 Next Session 英雄；两个并列 Continue；独立 Search 导航；恢复 placeholder；结果 overlay 挡住 Next Session；把搜索做成新的主导航页。
+   Consequences: UI-001 线框改为搜索主导；UI-015 不再写成“紧凑胶囊”。DEC-032 的队列选择、peek 与检索规则仍有效，只是视觉主次被本决策取代。
+   Tests/docs affected: `HomePage`, `LexiconSearch`, `NextSessionCard`, `src/styles/global.css`, Home UI tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
+
+### DEC-042 · Home 搜索去掉「词库」标题，结果行收成 lemma+中文
+
+Date: 2026-09-06
+Status: Accepted
+Related requirements: UI-001, UI-015; DEC-034, DEC-039
+Context: DEC-039 把个人词库搜索做成首页主表面，并加上中文「词库」标题。所有者反馈标题多余，结果卡层数太多（lemma、英文释义、中文、语境句各自占一行），多条近义结果还会把 Home 无限拉长。不改检索范围、排序、空 placeholder，也不把 Next Session 拉回英雄位。
+Decision:
+
+1. 空查询只保留搜索 pill/box 作为主表面。去掉「词库」标题。可访问名称仍由 `<search>` / 输入的 `aria-label` 与 label 提供（“Search learned Context Cards”）。`placeholder=""` 不变（DEC-034）。
+2. 每条结果：模块 eyebrow 可保留且保持安静；lemma 与中文释义同一行，中文在 lemma 右侧；下一行保留 `meaning_en`；语境句保留但更小、更淡。不得另加「解释」或同类镀铬。
+3. 多条结果放在有限高度的纵向可滚动面板内，Next Session 仍在搜索区下方的文档流中，不用 overlay。检索/排序/禁止词典与 Add Word 仍按 DEC-032。
+   Reason: 打开应用是为了立刻查已学语境；标题和分层窗口会挡住 lemma+中文这一眼信息。
+   Alternatives rejected: 恢复「词库」标题或 placeholder；删掉语境句；把结果做成挡住 Next Session 的 overlay；为结果发明「解释」分区。
+   Consequences: DEC-039 的搜索-主 / Next Session-次层级仍有效，只是搜索桌面的标题与结果行布局由本决策取代。UI-001 线框与 UI-015 空查询描述同步去掉「词库」标题。
+   Tests/docs affected: `LexiconSearch`, `src/styles/global.css`, Home UI tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
 
