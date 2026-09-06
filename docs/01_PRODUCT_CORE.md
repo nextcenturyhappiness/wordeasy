@@ -204,7 +204,6 @@ Medical English 每天分配 10 个新词。
 ```text
 Good morning                         Synced
 
-词库
 [ search ]
 
 Start the next card
@@ -238,7 +237,7 @@ Offline
 - 社交动态；
 - 复杂图表。
 
-问候语根据计算机当前 IANA timezone 本地计算，不等待网络。Next Session 选择规则见 DEC-032；首页视觉层级见 DEC-039。
+问候语根据计算机当前 IANA timezone 本地计算，不等待网络。Next Session 选择规则见 DEC-032；首页视觉层级见 DEC-039；搜索呈现见 DEC-040。
 
 ### UI-015 · P1 · 首页个人词库搜索
 
@@ -246,7 +245,9 @@ Offline
 
 匹配字段：中文释义、英文 lemma / display form、语境句、搭配。已学/已复习卡片优先，但仍搜索本地词库，避免第一天搜索为空。
 
-空查询只显示「词库」标题与搜索框，不打开独立搜索页。输入框不放中文或英文 placeholder 提示，可访问名称由 `aria-label` / label 提供。无匹配时显示诚实空文案「还没有学过相关的词」，不得回退到公共词典、翻译器或编造释义。不新增 Search 主导航。
+空查询只显示搜索框，不显示「词库」标题，不打开独立搜索页。输入框不放中文或英文 placeholder 提示，可访问名称由 `aria-label` / label 提供。无匹配时显示诚实空文案「还没有学过相关的词」，不得回退到公共词典、翻译器或编造释义。不新增 Search 主导航。
+
+有结果时：lemma 与中文释义同一行（lemma 在左），其下是 `meaning_en`，再下是更安静的语境句。不得另加「解释」一类标签。多条结果放在有限高度的纵向可滚动区域内，Next Session 仍在搜索区下方。
 
 ---
 

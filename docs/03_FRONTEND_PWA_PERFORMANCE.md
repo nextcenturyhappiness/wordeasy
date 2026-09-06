@@ -59,7 +59,7 @@ words learned
 Continue
 ```
 
-另显示 streak、小型 sync state。完整词库不得因 Home 首次绘制而被拉入首屏 bundle；搜索与下一句预览只读本地缓存，搜索首次输入才允许触发已有的 deferred catalog bootstrap。首页视觉层级见 DEC-039：搜索是打开应用的主因，Next Session 是可选清队列入口。
+另显示 streak、小型 sync state。完整词库不得因 Home 首次绘制而被拉入首屏 bundle；搜索与下一句预览只读本地缓存，搜索首次输入才允许触发已有的 deferred catalog bootstrap。首页视觉层级见 DEC-039：搜索是打开应用的主因，Next Session 是可选清队列入口。搜索呈现见 DEC-040：无「词库」标题，结果行 lemma+中文同行，多条结果在有限高度面板内滚动。
 
 ---
 

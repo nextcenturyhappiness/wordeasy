@@ -367,7 +367,7 @@ Tests/docs affected: `public/icons/**`, `src-tauri/icons/**`, `docs/TRACEABILITY
 ### DEC-039 · Home 以个人词库搜索为主，Next Session 为次
 
 Date: 2026-09-03
-Status: Accepted
+Status: Accepted — search-desk chrome and result-row layout superseded by DEC-040; search-primary / Next Session-secondary hierarchy remains.
 Related requirements: UI-001, UI-006, UI-015; DEC-032, DEC-034
 Context: DEC-032 把 Next Session 做成首页英雄，搜索只是顶部紧凑胶囊。打开应用因此像还债（你欠一批复习），而不是写作时查已学语境。所有者要求反转层级：个人词库搜索是打开应用的主因，Next Session 是可选的清队列入口。不引入 streak 压力文案、XP、排行榜、每日目标或打卡日历。
 Decision:
@@ -379,6 +379,22 @@ Decision:
    Alternatives rejected: 保持 Next Session 英雄；两个并列 Continue；独立 Search 导航；恢复 placeholder；结果 overlay 挡住 Next Session；把搜索做成新的主导航页。
    Consequences: UI-001 线框改为搜索主导；UI-015 不再写成“紧凑胶囊”。DEC-032 的队列选择、peek 与检索规则仍有效，只是视觉主次被本决策取代。
    Tests/docs affected: `HomePage`, `LexiconSearch`, `NextSessionCard`, `src/styles/global.css`, Home UI tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
+
+### DEC-040 · Home 搜索去掉「词库」标题，结果行收成 lemma+中文
+
+Date: 2026-09-06
+Status: Accepted
+Related requirements: UI-001, UI-015; DEC-034, DEC-039
+Context: DEC-039 把个人词库搜索做成首页主表面，并加上中文「词库」标题。所有者反馈标题多余，结果卡层数太多（lemma、英文释义、中文、语境句各自占一行），多条近义结果还会把 Home 无限拉长。不改检索范围、排序、空 placeholder，也不把 Next Session 拉回英雄位。
+Decision:
+
+1. 空查询只保留搜索 pill/box 作为主表面。去掉「词库」标题。可访问名称仍由 `<search>` / 输入的 `aria-label` 与 label 提供（“Search learned Context Cards”）。`placeholder=""` 不变（DEC-034）。
+2. 每条结果：模块 eyebrow 可保留且保持安静；lemma 与中文释义同一行，中文在 lemma 右侧；下一行保留 `meaning_en`；语境句保留但更小、更淡。不得另加「解释」或同类镀铬。
+3. 多条结果放在有限高度的纵向可滚动面板内，Next Session 仍在搜索区下方的文档流中，不用 overlay。检索/排序/禁止词典与 Add Word 仍按 DEC-032。
+   Reason: 打开应用是为了立刻查已学语境；标题和分层窗口会挡住 lemma+中文这一眼信息。
+   Alternatives rejected: 恢复「词库」标题或 placeholder；删掉语境句；把结果做成挡住 Next Session 的 overlay；为结果发明「解释」分区。
+   Consequences: DEC-039 的搜索-主 / Next Session-次层级仍有效，只是搜索桌面的标题与结果行布局由本决策取代。UI-001 线框与 UI-015 空查询描述同步去掉「词库」标题。
+   Tests/docs affected: `LexiconSearch`, `src/styles/global.css`, Home UI tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
 

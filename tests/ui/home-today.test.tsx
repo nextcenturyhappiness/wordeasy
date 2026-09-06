@@ -99,7 +99,8 @@ describe("Home and Today", () => {
     const search = screen.getByRole("search", { name: "Search learned Context Cards" });
     const nextSession = screen.getByRole("heading", { name: "Start the next card" });
     expect(search).toBeInTheDocument();
-    expect(within(search).getByRole("heading", { name: "词库" })).toBeInTheDocument();
+    expect(within(search).queryByRole("heading", { name: "词库" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "词库" })).not.toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: "Search learned Context Cards" })).toHaveAttribute(
       "placeholder",
       ""
@@ -150,13 +151,24 @@ describe("Home and Today", () => {
     await user.type(field, "减弱");
 
     const results = await screen.findByRole("list");
-    expect(within(results).getByText("attenuate")).toBeInTheDocument();
-    expect(within(results).getByText("减弱；降低")).toBeInTheDocument();
+    const lemma = within(results).getByText("attenuate");
+    const gloss = within(results).getByText("减弱；降低");
+    expect(lemma).toHaveClass("lexicon-search__lemma");
+    expect(gloss).toHaveClass("lexicon-search__gloss");
+    expect(lemma.parentElement).toBe(gloss.parentElement);
+    expect(lemma.parentElement).toHaveClass("lexicon-search__lemma-row");
+    expect(lemma.compareDocumentPosition(gloss) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(
+      within(results).getByText("to make an effect, association, or signal weaker")
+    ).toHaveClass("lexicon-search__meaning");
     expect(
       within(results).getByText(
         "The association was substantially attenuated after adjustment for age and BMI."
       )
-    ).toBeInTheDocument();
+    ).toHaveClass("lexicon-search__sentence");
+    expect(within(results).queryByText("解释")).not.toBeInTheDocument();
     expect(screen.queryByText("还没有学过相关的词")).not.toBeInTheDocument();
 
     await user.clear(field);
@@ -186,6 +198,37 @@ describe("Home and Today", () => {
     expect(screen.getByRole("link", { name: "Start next session" })).toHaveAttribute(
       "href",
       "/study/research?queue=review"
+    );
+  });
+
+  it("keeps many search hits inside a capped scrollable panel above Next Session", async () => {
+    const user = userEvent.setup();
+    const manyHits = Array.from({ length: 8 }, (_, index) => ({
+      cardId: `card-near-${String(index + 1)}`,
+      module: "research_english" as const,
+      lemma: index === 0 ? "attenuate" : `attenuate-${String(index + 1)}`,
+      meaningEn: "to make an effect, association, or signal weaker",
+      meaningZh: "减弱；降低",
+      contextSentence: `Near-synonym example sentence ${String(index + 1)}.`,
+      learned: index === 0
+    }));
+    const repository = createRepository({
+      searchLocalCards: vi.fn<LearningRepository["searchLocalCards"]>(() =>
+        Promise.resolve(manyHits)
+      )
+    });
+    renderWithLearningApp(<HomePage />, { repository });
+
+    await user.type(screen.getByRole("searchbox", { name: "Search learned Context Cards" }), "减弱");
+
+    const results = await screen.findByRole("list");
+    const nextSession = screen.getByRole("heading", { name: "Start the next card" });
+    expect(results).toHaveClass("lexicon-search__results");
+    expect(results).toHaveAttribute("tabIndex", "0");
+    expect(within(results).getAllByRole("listitem")).toHaveLength(8);
+    expect(within(results).getByText("attenuate").parentElement).toHaveTextContent("减弱；降低");
+    expect(results.compareDocumentPosition(nextSession) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
     );
   });
 

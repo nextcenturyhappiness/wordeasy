@@ -72,9 +72,6 @@ export function LexiconSearch({ repository }: LexiconSearchProps) {
 
   return (
     <search className="lexicon-search" role="search" aria-label="Search learned Context Cards">
-      <h2 className="lexicon-search__title" lang="zh-CN">
-        词库
-      </h2>
       <div className="lexicon-search__bar">
         <span className="lexicon-search__icon" aria-hidden="true">
           <svg viewBox="0 0 20 20" width="22" height="22" fill="none">
@@ -122,18 +119,20 @@ export function LexiconSearch({ repository }: LexiconSearchProps) {
             还没有学过相关的词
           </p>
         ) : (
-          <ul className="lexicon-search__results" id={listId}>
+          <ul className="lexicon-search__results" id={listId} tabIndex={0}>
             {hits.map((hit) => (
               <li key={hit.cardId}>
                 <p className="lexicon-search__meta">
                   <span>{getModuleName(hit.module)}</span>
                   {hit.learned ? <span>Learned</span> : null}
                 </p>
-                <p className="lexicon-search__lemma">{hit.lemma}</p>
-                <p className="lexicon-search__sense">
-                  <span>{hit.meaningEn}</span>
-                  <span lang="zh-CN">{hit.meaningZh}</span>
+                <p className="lexicon-search__lemma-row">
+                  <span className="lexicon-search__lemma">{hit.lemma}</span>
+                  <span className="lexicon-search__gloss" lang="zh-CN">
+                    {hit.meaningZh}
+                  </span>
                 </p>
+                <p className="lexicon-search__meaning">{hit.meaningEn}</p>
                 <p className="lexicon-search__sentence">{hit.contextSentence}</p>
               </li>
             ))}
