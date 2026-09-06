@@ -399,6 +399,24 @@ Alternatives rejected: 改 `dataset_key`；重生成全部 120 张进旧 migrati
 Consequences: 未冻结的新用户 Day-1 抽卡集合可能因候选池变大而改变；已冻结的当日 assignment 不变。云端需 apply 新 migration 后才有第二批。
 Tests/docs affected: `data/seed-data.json`, validator/counts, seed SQL pipeline, personal catalog version, content/assignment tests, `docs/04_CONTENT_SCHEMA.md`, `docs/TRACEABILITY.md`.
 
+### DEC-041 · 中文 UI 使用本机 PingFang-first 字体栈
+
+Date: 2026-09-06
+Status: Accepted
+Related requirements: PERF-001, UI-004, UI-014, TEST-033; DEC-010
+Context: 所有者认为中文难看。`--font-ui` 把 `Segoe UI` / Arial 放在 PingFang 之前时，混合中文会落到西文 UI 字体的劣质 CJK 回退。DEC-010 与所有者选择禁止远程/Web 字体。DEC-039（Home 视觉层级）与 DEC-040（第二批 seed）已由并行 PR 占用。
+Decision:
+
+1. `--font-ui` 保留 Apple 西文路径（`ui-sans-serif`, `system-ui`, `-apple-system`, `BlinkMacSystemFont`），随后立刻列出 `"PingFang SC"`, `"Hiragino Sans GB"`, `"Heiti SC"`, `"Noto Sans SC"`, `"Microsoft YaHei UI"`, `"Microsoft YaHei"`，再才是 `"Segoe UI Variable"`, `"Segoe UI"`, `"Helvetica Neue"`, `Arial`, `sans-serif`。
+2. `:lang(zh)` / `:lang(zh-CN)` / `[lang="zh-CN"]` 使用 `--font-zh`：CJK 系统字体在前，西文系统字体在后。中文 UI（释义、适用范围、词库检索空态等）走 PingFang / Hiragino / YaHei；英文 lemma、IPA、语境原句仍用 `--font-ui`。
+3. 带 `lang="zh-CN"` 的标题把 `font-weight: 650` 收到 `600`，以对齐 PingFang Semibold，避免不存在的 650 档在 `font-synthesis: none` 下发虚或发糊。不改版式、字号或信息架构。
+4. 不下载、不打包字体文件，不 `@import` Google / Adobe / 其他 CDN `@font-face`。DEC-010 继续有效。
+
+Reason: 零包体即可让 CJK 不再落到 Segoe / Arial；`:lang(zh)` 在 Windows 上还能避开 `system-ui`→Segoe 的字体链接。
+Alternatives rejected: Google Fonts / CDN `@font-face`；把完整 Noto 打进 bundle；全局改用衬线或另一套设计系统字体。
+Consequences: Linux CI 没有 PingFang，不能代替所有者在 macOS 上的观感验收。未标 `lang` 的中文仍走 `--font-ui` 的 per-glyph 回退。
+Tests/docs affected: `src/styles/tokens.css`, `src/styles/global.css`, font-stack unit test, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
+
 ### DEC-042 · Home 搜索去掉「词库」标题，结果行收成 lemma+中文
 
 Date: 2026-09-06

@@ -127,6 +127,18 @@ const compressedPrecache = (await Promise.all(precacheFiles.map((path) => gzipSi
   0
 );
 
+const remoteFontPattern =
+  /fonts\.googleapis|fonts\.gstatic|use\.typekit|p\.typekit|@import\s+|@font-face|url\(\s*["']?https?:/iu;
+const builtStyles = (await collectFiles(distDirectory)).filter((path) => extname(path) === ".css");
+for (const path of builtStyles) {
+  const css = await readFile(path, "utf8");
+  if (remoteFontPattern.test(css)) {
+    throw new Error(
+      `Built CSS ${relative(distDirectory, path)} requests a remote or bundled web font.`
+    );
+  }
+}
+
 assertBudget("Initial JavaScript gzip", initialJavaScript, limits.initialJavaScript);
 assertBudget("Home cumulative JavaScript gzip", homeJavaScript, limits.homeJavaScript);
 assertBudget("Initial CSS gzip", initialCss, limits.initialCss);

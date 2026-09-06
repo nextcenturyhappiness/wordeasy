@@ -167,7 +167,9 @@ Reveal 后 sticky 原句下的 IPA 行是按钮。点击/轻触使用 `window.sp
 
 ### PERF-001 · P0 · 不使用远程字体
 
-MVP 使用系统字体栈，兼顾英文、中文和 IPA。
+MVP 使用本机/系统字体栈（DEC-010 / DEC-041），兼顾英文、中文和 IPA。
+
+`--font-ui` 在 Windows Segoe / Arial 之前列出 PingFang SC 及同级 CJK 系统字体。已标记 `lang="zh-CN"` 的中文 UI 使用 PingFang-first `--font-zh`。英文 lemma 与 IPA 继续走西文系统字体。
 
 禁止首屏依赖：
 
@@ -176,7 +178,7 @@ MVP 使用系统字体栈，兼顾英文、中文和 IPA。
 - 大型中文 Web Font；
 - icon font。
 
-图标使用少量本地 SVG 或单独导入。
+不得下载或打包字体文件，也不得从 CDN `@import` / `@font-face`。图标使用少量本地 SVG 或单独导入。
 
 ---
 
