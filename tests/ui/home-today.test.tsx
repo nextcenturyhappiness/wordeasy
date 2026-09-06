@@ -219,7 +219,10 @@ describe("Home and Today", () => {
     });
     renderWithLearningApp(<HomePage />, { repository });
 
-    await user.type(screen.getByRole("searchbox", { name: "Search learned Context Cards" }), "减弱");
+    await user.type(
+      screen.getByRole("searchbox", { name: "Search learned Context Cards" }),
+      "减弱"
+    );
 
     const results = await screen.findByRole("list");
     const nextSession = screen.getByRole("heading", { name: "Start the next card" });
