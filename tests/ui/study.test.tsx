@@ -79,7 +79,9 @@ describe("StudyPage", () => {
       initialEntries: ["/study/research?queue=new"]
     });
 
-    expect(await screen.findByText(/what does the missing word mean/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/what does this word mean in this context/i)
+    ).toBeInTheDocument();
     expect(screen.queryByText(researchCard.meaningEn)).not.toBeInTheDocument();
 
     const input = document.createElement("input");
@@ -112,7 +114,7 @@ describe("StudyPage", () => {
       initialEntries: ["/study/research?queue=new"]
     });
 
-    await screen.findByText(/what does the missing word mean/i);
+    await screen.findByText(/what does this word mean in this context/i);
     await user.click(screen.getByRole("button", { name: /reveal answer/i }));
     const good = screen.getByRole("button", { name: /good/i });
     await user.dblClick(good);
@@ -133,11 +135,13 @@ describe("StudyPage", () => {
     await waitFor(() => {
       expect(screen.getByText(/the association remained/i)).toBeInTheDocument();
     });
-    expect(document.querySelector(".context-blank")).toHaveAttribute(
-      "aria-label",
-      "hidden target word"
-    );
-    expect(screen.queryByText(secondResearchCard.targetText)).not.toBeInTheDocument();
+    expect(document.querySelector(".context-blank")).toBeNull();
+    expect(
+      screen.getByText(secondResearchCard.targetText, { selector: "mark" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: secondResearchCard.lemma })
+    ).toBeInTheDocument();
     expect(screen.queryByText(researchCard.meaningEn)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /reveal answer/i })).toBeEnabled();
   });
@@ -157,7 +161,7 @@ describe("StudyPage", () => {
       initialEntries: ["/study/research?queue=new"]
     });
 
-    await screen.findByText(/what does the missing word mean/i);
+    await screen.findByText(/what does this word mean in this context/i);
     fireEvent.keyDown(window, { key: " ", code: "Space" });
     await screen.findByText(researchCard.meaningEn);
     fireEvent.keyDown(window, { key: "3" });
@@ -182,7 +186,7 @@ describe("StudyPage", () => {
       initialEntries: ["/study/research?queue=new"]
     });
 
-    await screen.findByText(/what does the missing word mean/i);
+    await screen.findByText(/what does this word mean in this context/i);
     await user.click(screen.getByRole("button", { name: /reveal answer/i }));
     await user.click(screen.getByRole("button", { name: /good/i }));
 
@@ -218,13 +222,15 @@ describe("StudyPage", () => {
         initialEntries: ["/study/research?queue=new"]
       });
 
-      await screen.findByText(/what does the missing word mean/i);
-      expect(document.querySelector("mark")).toBeNull();
+      await screen.findByText(/what does this word mean in this context/i);
+      expect(screen.getByText(researchCard.targetText, { selector: "mark" })).toBeInTheDocument();
       fireEvent.keyDown(window, { key: " ", code: "Space" });
 
       expect(await screen.findByText(researchCard.meaningEn)).toBeInTheDocument();
       expect(screen.queryByText(/what does the highlighted word mean/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/what does the missing word mean/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/what does this word mean in this context/i)
+      ).not.toBeInTheDocument();
       const anchor = document.getElementById("context-sentence-anchor");
       expect(anchor).toHaveTextContent(researchCard.contextSentence);
       expect(anchor).toHaveTextContent(researchCard.ipa);
@@ -257,7 +263,7 @@ describe("StudyPage", () => {
     }
   });
 
-  it("does not auto-speak on the cloze front or when revealing", async () => {
+  it("does not auto-speak on the unrevealed front or when revealing", async () => {
     const user = userEvent.setup();
     const speak = vi.spyOn(systemTts, "speakEnglishWord").mockReturnValue({ ok: true });
     try {
@@ -267,7 +273,7 @@ describe("StudyPage", () => {
         initialEntries: ["/study/research?queue=new"]
       });
 
-      await screen.findByText(/what does the missing word mean/i);
+      await screen.findByText(/what does this word mean in this context/i);
       expect(speak).not.toHaveBeenCalled();
       expect(
         screen.queryByRole("button", { name: `Speak ${researchCard.lemma}` })

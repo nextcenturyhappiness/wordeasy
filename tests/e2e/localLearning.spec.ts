@@ -18,7 +18,7 @@ test("persists a Context Card rating locally across reload", async ({ page }) =>
   await page.getByRole("link", { name: /Continue Research English/u }).click();
   await page.getByRole("link", { name: /Continue New/u }).click();
 
-  await expect(page.getByText(/what does the missing word mean/iu)).toBeVisible();
+  await expect(page.getByText(/what does this word mean in this context/iu)).toBeVisible();
   await expect(page.getByRole("group", { name: "How well did you remember?" })).toHaveCount(0);
   await page.getByRole("button", { name: /Reveal answer/u }).click();
   await expect(page.getByRole("group", { name: "How well did you remember?" })).toBeVisible();
@@ -57,9 +57,10 @@ test("keeps the revealed context sentence in view at desktop size", async ({ pag
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/study/research?queue=new");
 
-  await expect(page.getByText(/what does the missing word mean/iu)).toBeVisible();
+  await expect(page.getByText(/what does this word mean in this context/iu)).toBeVisible();
   await expect(page.getByText(/what does the highlighted word mean/iu)).toHaveCount(0);
-  await expect(page.locator("mark")).toHaveCount(0);
+  await expect(page.getByText(/missing word/iu)).toHaveCount(0);
+  await expect(page.locator("mark")).toHaveCount(1);
   await page.getByRole("button", { name: /Reveal answer/u }).click();
 
   const sentence = page.locator("#context-sentence-anchor");
@@ -69,7 +70,7 @@ test("keeps the revealed context sentence in view at desktop size", async ({ pag
   await expect(sentence.locator(".context-card__pronunciation")).toHaveText(/\/.+\//u);
   await expect(page.getByRole("button", { name: /^Speak /u })).toBeVisible();
   await expect(page.getByText(/what does the highlighted word mean/iu)).toHaveCount(0);
-  await expect(page.getByText(/what does the missing word mean/iu)).toHaveCount(0);
+  await expect(page.getByText(/what does this word mean in this context/iu)).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "IPA / part of speech" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "适用范围" })).toBeAttached();
   await expect(page.getByRole("heading", { name: "句子来源" })).toBeAttached();

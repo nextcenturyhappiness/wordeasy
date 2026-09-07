@@ -17,7 +17,7 @@ interface ContextCardProps {
   speakWord?: (word: string) => SpeakWordResult;
 }
 
-function HighlightedContext({ card, revealed }: { card: ContextCardView; revealed: boolean }) {
+function HighlightedContext({ card }: { card: ContextCardView }) {
   const { contextSentence, targetText } = card;
   const parts: Array<{ text: string; highlighted: boolean }> = [];
   let cursor = 0;
@@ -41,17 +41,7 @@ function HighlightedContext({ card, revealed }: { card: ContextCardView; reveale
     <p className="context-sentence">
       {parts.map((part, index) => (
         <Fragment key={`${String(index)}-${part.text}`}>
-          {part.highlighted ? (
-            revealed ? (
-              <mark>{part.text}</mark>
-            ) : (
-              <span className="context-blank" aria-label="hidden target word">
-                <span aria-hidden="true">{"\u00a0".repeat(Math.max(part.text.length, 4))}</span>
-              </span>
-            )
-          ) : (
-            part.text
-          )}
+          {part.highlighted ? <mark>{part.text}</mark> : part.text}
         </Fragment>
       ))}
     </p>
@@ -171,8 +161,12 @@ export function ContextCard({
         </header>
       )}
 
+      <h1 className={revealed ? "sr-only" : "context-lemma"} id="context-question">
+        {card.lemma}
+      </h1>
+
       <div className="context-card__prompt" id="context-sentence-anchor" ref={sentenceAnchorRef}>
-        <HighlightedContext card={card} revealed={revealed} />
+        <HighlightedContext card={card} />
         {revealed ? (
           <IpaSpeakLine
             ipa={card.ipa}
@@ -182,9 +176,9 @@ export function ContextCard({
           />
         ) : null}
       </div>
-      <h1 className={revealed ? "sr-only" : "context-question"} id="context-question">
-        {revealed ? card.lemma : "What does the missing word mean in this context?"}
-      </h1>
+      {revealed ? null : (
+        <p className="context-question">What does this word mean in this context?</p>
+      )}
 
       {revealed ? (
         <section

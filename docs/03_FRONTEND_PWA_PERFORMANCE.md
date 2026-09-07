@@ -98,11 +98,12 @@ Total today
 
 正面显示：
 
-- context sentence，其中 target text 先隐藏为空白/下划线；
-- 语境提问（关于 missing word，不是 highlighted word）；
+- lemma，作为醒目标题直接可见；
+- context sentence，其中 target text 完整可见并可高亮，不得挖成空白/下划线；
+- 语境提问（问该词在当前语境中的意思，例如 “What does this word mean in this context?”）；
 - 可选 IPA 和词性。
 
-Reveal 后再高亮 target text，并展开背面。正面不显示中文答案或释义。Reveal 后语境原句（含高亮 target）必须立刻可见，不得被背面信息挤出视口顶部；评分按钮可以在折页下方。Reveal 后不再显示正面那句语境提问。
+Reveal 后展开背面。正面不显示中文答案或释义。Reveal 后语境原句（含高亮 target）必须立刻可见，不得被背面信息挤出视口顶部；评分按钮可以在折页下方。Reveal 后不再显示正面那句语境提问。
 
 ### UI-009 · P0 · 背面
 
@@ -120,7 +121,7 @@ Reveal 后 sticky 语境原句区域显示 IPA，可与词性同一行（`/…/ 
 
 ### UI-016 · P1 · Reveal 后 IPA tap-to-speak
 
-Reveal 后 sticky 原句下的 IPA 行是按钮。点击/轻触使用 `window.speechSynthesis` / `SpeechSynthesisUtterance` 朗读 **lemma**（lemma 为空时回退 displayForm），语言 `en-US`；若浏览器列出本地 English voice 则优先使用。必须由用户手势触发。正在朗读时再次点击先 `cancel()` 再重新 `speak()`。缺少 `speechSynthesis` 或 `speak()` 失败时不得崩溃，可静默或显示一行诚实提示。不得上传音频、拉取词典 MP3、或把 wav/mp3 写入仓库。未揭示 cloze 正面不得因此新泄露 IPA，也不得自动播放。
+Reveal 后 sticky 原句下的 IPA 行是按钮。点击/轻触使用 `window.speechSynthesis` / `SpeechSynthesisUtterance` 朗读 **lemma**（lemma 为空时回退 displayForm），语言 `en-US`；若浏览器列出本地 English voice 则优先使用。必须由用户手势触发。正在朗读时再次点击先 `cancel()` 再重新 `speak()`。缺少 `speechSynthesis` 或 `speak()` 失败时不得崩溃，可静默或显示一行诚实提示。不得上传音频、拉取词典 MP3、或把 wav/mp3 写入仓库。未揭示正面不得因此新泄露释义，也不得自动播放。
 
 ### UI-010 · P0 · 评分防重复
 
