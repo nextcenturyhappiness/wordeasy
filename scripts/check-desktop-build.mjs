@@ -162,11 +162,8 @@ assert(
   !/navigator\.serviceWorker|registerSW|virtual:pwa-register/u.test(allJavaScript),
   "Desktop JavaScript contains Service Worker registration code."
 );
-assert(activeCardIds.length === 120, "Canonical catalog must contain 120 active cards.");
-assert(
-  cardCatalogFiles.length === 0,
-  "Desktop cloud build must not embed the canonical 120-card catalog."
-);
+assert(activeCardIds.length === 148, "Canonical catalog must contain 148 active cards.");
+assert(cardCatalogFiles.length === 0, "Desktop cloud build must not embed the canonical catalog.");
 assert(
   [...javascriptByName].every(([, source]) =>
     activeCardIds.every((cardId) => !source.includes(cardId))

@@ -5,9 +5,14 @@ export const CONTENT_DATASET_KEY = "wordeasy-seed-v1";
 export const UUID_NAMESPACE = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
 export const UUID_NAME_PREFIX = "https://github.com/nextcenturyhappiness/wordeasy/content/v1/";
 
-export const CANONICAL_CARD_TOTAL = 120;
 export const CANONICAL_RESEARCH_TOTAL = 60;
-export const CANONICAL_MEDICAL_TOTAL = 60;
+export const CANONICAL_MEDICAL_ACTIVE_TOTAL = 140;
+export const CANONICAL_MEDICAL_INACTIVE_TOTAL = 37;
+export const CANONICAL_MEDICAL_TOTAL =
+  CANONICAL_MEDICAL_ACTIVE_TOTAL + CANONICAL_MEDICAL_INACTIVE_TOTAL;
+export const CANONICAL_ACTIVE_CARD_TOTAL =
+  CANONICAL_RESEARCH_TOTAL + CANONICAL_MEDICAL_ACTIVE_TOTAL;
+export const CANONICAL_CARD_TOTAL = CANONICAL_RESEARCH_TOTAL + CANONICAL_MEDICAL_TOTAL;
 
 export const RESEARCH_COUNTS = Object.freeze({
   general_research: 30,
@@ -16,20 +21,136 @@ export const RESEARCH_COUNTS = Object.freeze({
 });
 
 export const MEDICAL_COUNTS = Object.freeze({
-  anatomy: 4,
-  physiology: 4,
-  pathology: 4,
-  symptoms: 6,
+  anatomy: 12,
+  physiology: 8,
+  pathology: 7,
+  symptoms: 5,
   signs: 4,
   diseases: 4,
   diagnosis: 6,
   laboratory: 4,
   imaging: 4,
-  treatment: 6,
+  treatment: 5,
   pharmacology: 4,
-  surgery_procedures: 4,
-  clinical_expressions: 6
+  surgery_procedures: 1,
+  clinical_expressions: 6,
+  morphology: 70
 });
+
+export const MEDICAL_MORPHOLOGY_CATEGORY = "morphology";
+export const MEDICAL_CLINICAL_DAILY_QUOTA = 3;
+export const MEDICAL_MORPHOLOGY_DAILY_QUOTA = 7;
+
+export const CULLED_SPECIALTY_MEDICAL_CARD_KEYS = Object.freeze([
+  "med-anatomy-hilum-001",
+  "med-anatomy-parenchyma-001",
+  "med-physiology-compliance-001",
+  "med-physiology-preload-001",
+  "med-pathology-dysplasia-001",
+  "med-symptoms-cachexia-001",
+  "med-diagnosis-pathogenesis-001",
+  "med-laboratory-hemolyzed-001",
+  "med-laboratory-transaminitis-001",
+  "med-pharmacology-bioavailability-001",
+  "med-pharmacology-agonist-001",
+  "med-pharmacology-half-life-001",
+  "med-surgery-anastomosis-001",
+  "med-surgery-debridement-001",
+  "med-surgery-ligation-001",
+  "med-treatment-adjuvant-001"
+]);
+
+export const SHALLOW_CHART_MEDICAL_CARD_KEYS = Object.freeze([
+  "med-symptoms-symptom-001",
+  "med-signs-sign-001",
+  "med-diagnosis-diagnose-001",
+  "med-anatomy-artery-001",
+  "med-anatomy-vein-001",
+  "med-clinical-acute-001",
+  "med-clinical-chronic-001",
+  "med-symptoms-fever-001",
+  "med-anatomy-abdomen-001",
+  "med-anatomy-airway-001",
+  "med-physiology-pulse-001",
+  "med-pathology-infection-001",
+  "med-pharmacology-dose-001",
+  "med-pharmacology-allergy-001",
+  "med-pharmacology-side-effect-001",
+  "med-surgery-incision-001",
+  "med-surgery-procedure-001",
+  "med-surgery-suture-001",
+  "med-treatment-discharge-001",
+  "med-laboratory-culture-001",
+  "med-laboratory-elevated-001"
+]);
+
+export const DEACTIVATED_MEDICAL_CARD_KEYS = Object.freeze([
+  ...CULLED_SPECIALTY_MEDICAL_CARD_KEYS,
+  ...SHALLOW_CHART_MEDICAL_CARD_KEYS
+]);
+
+export const BATCH2_CARD_KEYS = Object.freeze([
+  "res-general-implicate-001",
+  "res-general-preclude-001",
+  "res-general-mediate-001",
+  "res-general-mitigate-001",
+  "res-general-substantiate-001",
+  "res-general-putative-001",
+  "res-general-modest-001",
+  "res-general-constrain-001",
+  "res-general-confound-001",
+  "res-general-plausible-001",
+  "res-general-tentative-001",
+  "res-general-attributable-001",
+  "res-general-caveat-001",
+  "res-general-abrogate-001",
+  "res-general-underscore-001",
+  "res-stat-censor-001",
+  "res-stat-hazard-001",
+  "res-stat-intention-to-treat-001",
+  "res-stat-sensitivity-analysis-001",
+  "res-stat-selection-bias-001",
+  "res-stat-multiplicity-001",
+  "res-bio-doublet-001",
+  "res-bio-umi-001",
+  "res-bio-dropout-001",
+  "res-bio-fdr-001",
+  "res-bio-variant-calling-001",
+  "res-bio-adapter-001",
+  "res-bio-integration-001",
+  "res-bio-annotation-001",
+  "res-bio-haplotype-001",
+  "med-anatomy-stenosis-001",
+  "med-anatomy-parenchyma-001",
+  "med-physiology-homeostasis-001",
+  "med-physiology-preload-001",
+  "med-pathology-ischemia-001",
+  "med-pathology-dysplasia-001",
+  "med-symptoms-syncope-001",
+  "med-symptoms-orthopnea-001",
+  "med-symptoms-cachexia-001",
+  "med-signs-ascites-001",
+  "med-signs-lymphadenopathy-001",
+  "med-diseases-sepsis-001",
+  "med-diseases-embolism-001",
+  "med-diagnosis-pathogenesis-001",
+  "med-diagnosis-idiopathic-001",
+  "med-diagnosis-iatrogenic-001",
+  "med-laboratory-thrombocytopenia-001",
+  "med-laboratory-transaminitis-001",
+  "med-imaging-effusion-001",
+  "med-imaging-infiltrate-001",
+  "med-treatment-empiric-001",
+  "med-treatment-prophylaxis-001",
+  "med-treatment-adjuvant-001",
+  "med-pharmacology-half-life-001",
+  "med-pharmacology-agonist-001",
+  "med-surgery-resection-001",
+  "med-surgery-ligation-001",
+  "med-clinical-present-with-001",
+  "med-clinical-hemodynamically-stable-001",
+  "med-clinical-status-post-001"
+]);
 
 export const ORIGINAL_BATCH_CARD_KEYS = Object.freeze([
   "res-general-attenuate-001",

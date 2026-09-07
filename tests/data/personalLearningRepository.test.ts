@@ -143,7 +143,7 @@ describe("PersonalLearningRepository", () => {
     expect(loadScheduler).not.toHaveBeenCalled();
   });
 
-  it("loads all 120 cards only on first Study access and freezes a stable 5+2+3 queue", async () => {
+  it("loads the full catalog only on first Study access and freezes a stable 5+2+3 queue", async () => {
     const { database, repository, loadCards, loadScheduler } = await createHarness();
 
     const first = await repository.getStudyQueue("research_english", "new");
@@ -157,7 +157,7 @@ describe("PersonalLearningRepository", () => {
 
     expect(loadCards).toHaveBeenCalledTimes(1);
     expect(loadScheduler).not.toHaveBeenCalled();
-    expect(await database.cached_cards.count()).toBe(120);
+    expect(await database.cached_cards.count()).toBe(237);
     expect(first.cards).toHaveLength(10);
     expect(second.cards.map((card) => card.cardId)).toEqual(first.cards.map((card) => card.cardId));
     expect(categories).toEqual({
@@ -165,6 +165,9 @@ describe("PersonalLearningRepository", () => {
       statistics_methodology: 2,
       bioinformatics: 3
     });
+    const medical = await repository.getStudyQueue("medical_english", "new");
+    expect(medical.cards.filter((card) => card.category === "morphology")).toHaveLength(7);
+    expect(medical.cards.filter((card) => card.category !== "morphology")).toHaveLength(3);
   });
 
   it("retries a failed catalog load in the same running repository", async () => {
@@ -219,12 +222,13 @@ describe("PersonalLearningRepository", () => {
       sourceUrl: template.context.source.url,
       doi: template.context.source.doi,
       pmid: template.context.source.pmid,
+      active: template.card.active,
       cachedAt: DAY_ONE_NOW.toISOString()
     });
 
     await repository.getStudyQueue("research_english", "new");
 
-    expect(await database.cached_cards.count()).toBe(120);
+    expect(await database.cached_cards.count()).toBe(237);
     expect(await database.cached_cards.get([USER_ID, "stale-card"])).toBeUndefined();
   });
 

@@ -6,6 +6,11 @@ import preferencesSql from "../../supabase/migrations/20260826000400_account_pre
 import schemaSql from "../../supabase/migrations/20260826000100_learning_schema.sql?raw";
 import seedSql from "../../supabase/migrations/20260826000500_seed_content.sql?raw";
 import seedBatch2Sql from "../../supabase/migrations/20260903000700_seed_content_batch2.sql?raw";
+import medicalReshapeSql from "../../supabase/migrations/20260907000800_medical_morphology.sql?raw";
+import medicalQuotaSql from "../../supabase/migrations/20260907000900_medical_assignment_quotas.sql?raw";
+import medicalPdfExpansionSql from "../../supabase/migrations/20260907001000_medical_pdf_expansion.sql?raw";
+import medicalQuotaFlipSql from "../../supabase/migrations/20260907001100_medical_assignment_quota_flip.sql?raw";
+import medicalChartMidlevelSql from "../../supabase/migrations/20260907001200_medical_chart_midlevel.sql?raw";
 import syncSql from "../../supabase/migrations/20260826000300_review_sync_rpcs.sql?raw";
 import edgeFsrs from "../../supabase/functions/_shared/fsrs.ts?raw";
 import edgeHandler from "../../supabase/functions/review-sync/index.ts?raw";
@@ -14,11 +19,16 @@ const SCHEMA = schemaSql.toLowerCase();
 const ASSIGNMENTS = assignmentSql.toLowerCase();
 const HARDENING = hardeningSql.toLowerCase();
 const SYNC = syncSql.toLowerCase();
-const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}`;
-const EFFECTIVE_SYNC = `${SYNC}\n${HARDENING}`;
+const MEDICAL_QUOTAS = medicalQuotaSql.toLowerCase();
+const MEDICAL_QUOTA_FLIP = medicalQuotaFlipSql.toLowerCase();
+const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}\n${MEDICAL_QUOTA_FLIP}`;
+const EFFECTIVE_SYNC = `${SYNC}\n${HARDENING}\n${MEDICAL_QUOTAS}`;
+const SEED_PDF_EXPANSION = medicalPdfExpansionSql.toLowerCase();
+const SEED_CHART_MIDLEVEL = medicalChartMidlevelSql.toLowerCase();
 const PREFERENCES = preferencesSql.toLowerCase();
 const SEED = seedSql.toLowerCase();
 const SEED_BATCH2 = seedBatch2Sql.toLowerCase();
+const SEED_RESHAPE = medicalReshapeSql.toLowerCase();
 
 const PUBLIC_CONTENT_TABLES = [
   "modules",
@@ -43,8 +53,8 @@ const PRIVATE_TABLES = [
 ];
 
 function functionBody(sql: string, name: string): string {
-  const plainStart = sql.lastIndexOf(`create function public.${name}`);
-  const replacementStart = sql.lastIndexOf(`create or replace function public.${name}`);
+  const plainStart = sql.lastIndexOf(`create function public.${name}(`);
+  const replacementStart = sql.lastIndexOf(`create or replace function public.${name}(`);
   const start = Math.max(plainStart, replacementStart);
   if (start < 0) {
     throw new Error(`Missing SQL function ${name}.`);
@@ -101,15 +111,16 @@ describe("Supabase migration contracts", () => {
     expect(SCHEMA).not.toMatch(/grant\s+(update|delete)[^;]*review_events/);
   });
 
-  it("freezes all-or-nothing Research 5+2+3 and Medical 10 assignments", () => {
-    const body = functionBody(ASSIGNMENTS, "ensure_daily_assignment");
+  it("freezes all-or-nothing Research 5+2+3 and Medical 7+3 assignments", () => {
+    const body = functionBody(EFFECTIVE_ASSIGNMENTS, "ensure_daily_assignment_v1_unlocked");
     expect(body).toContain("pg_catalog.pg_advisory_xact_lock");
     expect(body).toContain("auth.uid()");
     expect(body).toContain("statement_timestamp() at time zone v_timezone");
     expect(body).toContain("('general_research'::text, 'general research'::text, 5)");
     expect(body).toContain("('statistics_methodology'::text, 'statistics / methodology'::text, 2)");
     expect(body).toContain("('bioinformatics'::text, 'bioinformatics'::text, 3)");
-    expect(body).toContain("if v_available < 10 then");
+    expect(body).toContain("('clinical'::text, 'medical chart / class'::text, 3)");
+    expect(body).toContain("('morphology'::text, '词根构词'::text, 7)");
     expect(body).toContain("status,\n          assigned_count");
     expect(body).toContain("'shortage',\n          0");
     expect(body).toContain(
@@ -117,6 +128,8 @@ describe("Supabase migration contracts", () => {
     );
     expect(body).toContain("extensions.digest");
     expect(body).toContain("if v_inserted <> 10 then");
+    expect(body).toContain("bucket_slug = 'clinical' and bucket_position <= 3");
+    expect(body).toContain("bucket_slug = 'morphology' and bucket_position <= 7");
   });
 
   it("freezes even an empty Review queue at the next profile-local midnight", () => {
@@ -295,5 +308,42 @@ describe("Supabase migration contracts", () => {
     expect(SEED_BATCH2.match(/'context_recall', true\)/g)).toHaveLength(60);
     expect(SEED_BATCH2).toContain("begin;");
     expect(SEED_BATCH2).toContain("commit;");
+  });
+
+  it("adds Medical morphology cards and deactivates shipped specialty cards additively", () => {
+    expect(SEED_RESHAPE).toContain("do not rewrite 20260826000500_seed_content.sql");
+    expect(SEED_RESHAPE).toContain("insert into public.categories");
+    expect(SEED_RESHAPE).toContain("'morphology'");
+    expect(SEED_RESHAPE).toContain("词根构词");
+    expect(SEED_RESHAPE).toContain("insert into public.cards");
+    expect(SEED_RESHAPE).toContain("update public.cards");
+    expect(SEED_RESHAPE).toContain("set active = false");
+    expect(SEED_RESHAPE).toContain("med-physiology-preload-001");
+    expect(SEED_RESHAPE).toContain("med-morphology-endocarditis-001");
+    expect(SEED_RESHAPE).toContain("begin;");
+    expect(SEED_RESHAPE).toContain("commit;");
+  });
+
+  it("adds owner-PDF morphology and easy chart cards additively", () => {
+    expect(SEED_PDF_EXPANSION).toContain("or 20260907000800_medical_morphology.sql");
+    expect(SEED_PDF_EXPANSION).toContain("insert into public.cards");
+    expect(SEED_PDF_EXPANSION).toContain("med-morphology-stomatitis-001");
+    expect(SEED_PDF_EXPANSION).toContain("med-morphology-asymptomatic-001");
+    expect(SEED_PDF_EXPANSION).toContain("med-symptoms-symptom-001");
+    expect(SEED_PDF_EXPANSION).not.toContain("update public.cards");
+    expect(SEED_PDF_EXPANSION).toContain("begin;");
+    expect(SEED_PDF_EXPANSION).toContain("commit;");
+  });
+
+  it("raises the Medical chart pool with mid-level PDF lemmas additively", () => {
+    expect(SEED_CHART_MIDLEVEL).toContain("or 20260907001000_medical_pdf_expansion.sql");
+    expect(SEED_CHART_MIDLEVEL).toContain("insert into public.cards");
+    expect(SEED_CHART_MIDLEVEL).toContain("update public.cards");
+    expect(SEED_CHART_MIDLEVEL).toContain("set active = false");
+    expect(SEED_CHART_MIDLEVEL).toContain("med-symptoms-symptom-001");
+    expect(SEED_CHART_MIDLEVEL).toContain("med-anatomy-esophagus-001");
+    expect(SEED_CHART_MIDLEVEL).toContain("med-pharmacology-insulin-001");
+    expect(SEED_CHART_MIDLEVEL).toContain("begin;");
+    expect(SEED_CHART_MIDLEVEL).toContain("commit;");
   });
 });

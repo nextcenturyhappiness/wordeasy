@@ -34,21 +34,13 @@ export const DEMO_RESEARCH_CARDS: NormalizedContextCard[] = (
   requireCards("research_english", (card) => card.category === category, quota)
 );
 
-const medicalCategories = [
-  "anatomy",
-  "physiology",
-  "pathology",
-  "symptoms",
-  "signs",
-  "diseases",
-  "diagnosis",
-  "laboratory",
-  "imaging",
-  "treatment"
-] as const;
+const medicalClinicalDemoCategories = ["symptoms", "signs", "clinical_expressions"] as const;
 
-export const DEMO_MEDICAL_CARDS: NormalizedContextCard[] = medicalCategories.flatMap((category) =>
-  requireCards("medical_english", (card) => card.category === category, 1)
-);
+export const DEMO_MEDICAL_CARDS: NormalizedContextCard[] = [
+  ...requireCards("medical_english", (card) => card.category === "morphology", 7),
+  ...medicalClinicalDemoCategories.flatMap((category) =>
+    requireCards("medical_english", (card) => card.category === category, 1)
+  )
+];
 
 export const DEMO_CARDS: NormalizedContextCard[] = [...DEMO_RESEARCH_CARDS, ...DEMO_MEDICAL_CARDS];

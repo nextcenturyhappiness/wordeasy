@@ -257,7 +257,14 @@ Research 每日严格：
 
 ### ASSIGN-004 · P0 · Medical 配额
 
-Medical 每日 10 个新卡，并在滚动周期内尽量均衡分类。
+Medical 每日严格：
+
+```text
+7 morphology（词根构词）
+3 病历 / 课堂用语（非 morphology 分类）
+```
+
+任一池不足时整组不创建，返回结构化 shortage。不得跨池补足。
 
 ### ASSIGN-005 · P0 · 不重复已学新卡
 

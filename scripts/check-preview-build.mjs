@@ -191,17 +191,14 @@ const researchQuotas = new Map([
   ["statistics_methodology", 2],
   ["bioinformatics", 3]
 ]);
-const medicalCategories = [
-  "anatomy",
-  "physiology",
-  "pathology",
+const medicalClinicalCategories = [
   "symptoms",
   "signs",
-  "diseases",
+  "clinical_expressions",
+  "treatment",
   "diagnosis",
   "laboratory",
-  "imaging",
-  "treatment"
+  "imaging"
 ];
 const expectedPreviewIds = new Set([
   ...[...researchQuotas].flatMap(([category, quota]) =>
@@ -210,12 +207,16 @@ const expectedPreviewIds = new Set([
       .slice(0, quota)
       .map((card) => card.id)
   ),
-  ...medicalCategories.flatMap((category) =>
+  ...medicalClinicalCategories.flatMap((category) =>
     activeCards
       .filter((card) => card.module === "medical_english" && card.category === category)
       .slice(0, 1)
       .map((card) => card.id)
-  )
+  ),
+  ...activeCards
+    .filter((card) => card.module === "medical_english" && card.category === "morphology")
+    .slice(0, 3)
+    .map((card) => card.id)
 ]);
 const bundledCanonicalIds = activeCards
   .map((card) => card.id)

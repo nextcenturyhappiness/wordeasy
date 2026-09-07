@@ -4,8 +4,10 @@ import {
   CONTENT_DATASET_KEY,
   CONTENT_SCHEMA_VERSION,
   CSV_FIELDS,
+  DEACTIVATED_MEDICAL_CARD_KEYS,
   MEDICAL_CONTEXT_GENRES,
   MEDICAL_COUNTS,
+  MEDICAL_MORPHOLOGY_CATEGORY,
   RESEARCH_CONTEXT_GENRES,
   RESEARCH_COUNTS,
   UUID_NAMESPACE,
@@ -414,13 +416,39 @@ export function validateDataset(dataset, { enforceCounts = true } = {}) {
     if (card.card_type !== "context_recall") {
       errors.push(makeIssue(card, index, "card_type_value", "card_type must be context_recall."));
     }
-    if (card.active !== true) {
-      errors.push(makeIssue(card, index, "active", "Every initial seed card must be active."));
+    const deactivated = DEACTIVATED_MEDICAL_CARD_KEYS.includes(card.card_key);
+    if (deactivated) {
+      if (card.active !== false) {
+        errors.push(
+          makeIssue(
+            card,
+            index,
+            "active",
+            "Shipped specialty cards that were culled must stay inactive rather than changing lemma identity."
+          )
+        );
+      }
+      if (card.module !== "medical_english") {
+        errors.push(
+          makeIssue(card, index, "active", "Only shipped Medical specialty cards may be inactive.")
+        );
+      }
+    } else if (card.active !== true) {
+      errors.push(
+        makeIssue(
+          card,
+          index,
+          "active",
+          "Current catalog cards must be active unless explicitly culled."
+        )
+      );
     }
 
     if (card.module === "research_english") {
-      researchCounts[card.category] = (researchCounts[card.category] ?? 0) + 1;
-      researchGenres.add(card.context_genre);
+      if (card.active === true) {
+        researchCounts[card.category] = (researchCounts[card.category] ?? 0) + 1;
+        researchGenres.add(card.context_genre);
+      }
       if (!(card.category in RESEARCH_COUNTS)) {
         errors.push(
           makeIssue(card, index, "category_module", `${card.category} is not a Research category.`)
@@ -437,8 +465,10 @@ export function validateDataset(dataset, { enforceCounts = true } = {}) {
         );
       }
     } else if (card.module === "medical_english") {
-      medicalCounts[card.category] = (medicalCounts[card.category] ?? 0) + 1;
-      medicalGenres.add(card.context_genre);
+      if (card.active === true) {
+        medicalCounts[card.category] = (medicalCounts[card.category] ?? 0) + 1;
+        medicalGenres.add(card.context_genre);
+      }
       if (!(card.category in MEDICAL_COUNTS)) {
         errors.push(
           makeIssue(card, index, "category_module", `${card.category} is not a Medical category.`)
@@ -453,6 +483,32 @@ export function validateDataset(dataset, { enforceCounts = true } = {}) {
             `${card.context_genre} is not a Medical context genre.`
           )
         );
+      }
+      if (
+        card.active === true &&
+        card.category === MEDICAL_MORPHOLOGY_CATEGORY &&
+        typeof card.usage_note === "string"
+      ) {
+        if (!/(前缀|词根|后缀|构词)/u.test(card.usage_note)) {
+          errors.push(
+            makeIssue(
+              card,
+              index,
+              "morphology_usage_note",
+              "Morphology usage_note must name the prefix, root, or suffix pieces."
+            )
+          );
+        }
+        if (!/(猜|不能只靠|不等于诊断|不等于病名)/u.test(card.usage_note)) {
+          errors.push(
+            makeIssue(
+              card,
+              index,
+              "morphology_usage_note",
+              "Morphology usage_note must say that a root guess can miss clinical nuance."
+            )
+          );
+        }
       }
     } else {
       errors.push(makeIssue(card, index, "module", `Illegal module ${String(card.module)}.`));
@@ -663,6 +719,17 @@ export function validateDataset(dataset, { enforceCounts = true } = {}) {
     }
     compareExpectedCounts(researchCounts, RESEARCH_COUNTS, "research_english", errors);
     compareExpectedCounts(medicalCounts, MEDICAL_COUNTS, "medical_english", errors);
+    const deactivatedPresent = dataset.cards.filter((card) =>
+      DEACTIVATED_MEDICAL_CARD_KEYS.includes(card.card_key)
+    );
+    if (deactivatedPresent.length !== DEACTIVATED_MEDICAL_CARD_KEYS.length) {
+      errors.push({
+        cardId: "dataset",
+        cardKey: null,
+        code: "deactivated_count",
+        message: `Expected ${DEACTIVATED_MEDICAL_CARD_KEYS.length} culled Medical cards; found ${deactivatedPresent.length}.`
+      });
+    }
     for (const genre of RESEARCH_CONTEXT_GENRES) {
       if (!researchGenres.has(genre)) {
         errors.push({

@@ -238,7 +238,7 @@ export class LocalAssignmentService {
         );
         const selection = select(
           allCards
-            .filter((card) => !previouslyAssigned.has(card.cardId))
+            .filter((card) => card.active && !previouslyAssigned.has(card.cardId))
             .map((card) => ({ cardId: card.cardId, category: card.category })),
           this.userId,
           studyDate

@@ -1,5 +1,8 @@
 import {
+  MEDICAL_CLINICAL_DAILY_QUOTA,
   MEDICAL_DAILY_NEW_QUOTA,
+  MEDICAL_MORPHOLOGY_CATEGORY,
+  MEDICAL_MORPHOLOGY_DAILY_QUOTA,
   RESEARCH_CATEGORY_QUOTAS,
   type ContentShortageRecord,
   type ResearchCategory
@@ -77,24 +80,59 @@ export function selectResearchAssignment(
   return { status: "ready", cards: selected };
 }
 
+function isMorphologyCandidate(candidate: AssignmentCandidate): boolean {
+  return candidate.category === MEDICAL_MORPHOLOGY_CATEGORY;
+}
+
 export function selectMedicalAssignment(
   candidates: AssignmentCandidate[],
   userId: string,
   studyDate: string
 ): MedicalSelectionResult {
-  const available = deterministicOrder(candidates, userId, studyDate);
-  if (available.length < MEDICAL_DAILY_NEW_QUOTA) {
+  const clinical = deterministicOrder(
+    candidates.filter((candidate) => !isMorphologyCandidate(candidate)),
+    userId,
+    studyDate
+  );
+  const morphology = deterministicOrder(
+    candidates.filter(isMorphologyCandidate),
+    userId,
+    studyDate
+  );
+
+  if (clinical.length < MEDICAL_CLINICAL_DAILY_QUOTA) {
     return {
       status: "shortage",
       shortage: {
         code: "content_shortage",
-        category: null,
-        required: MEDICAL_DAILY_NEW_QUOTA,
-        available: available.length,
-        message: "Not enough new Medical English cards are available."
+        category: "clinical",
+        required: MEDICAL_CLINICAL_DAILY_QUOTA,
+        available: clinical.length,
+        message: "Not enough new Medical chart / class cards are available."
       }
     };
   }
 
-  return { status: "ready", cards: available.slice(0, MEDICAL_DAILY_NEW_QUOTA) };
+  if (morphology.length < MEDICAL_MORPHOLOGY_DAILY_QUOTA) {
+    return {
+      status: "shortage",
+      shortage: {
+        code: "content_shortage",
+        category: MEDICAL_MORPHOLOGY_CATEGORY,
+        required: MEDICAL_MORPHOLOGY_DAILY_QUOTA,
+        available: morphology.length,
+        message: "Not enough new 词根构词 cards are available."
+      }
+    };
+  }
+
+  const selected = [
+    ...clinical.slice(0, MEDICAL_CLINICAL_DAILY_QUOTA),
+    ...morphology.slice(0, MEDICAL_MORPHOLOGY_DAILY_QUOTA)
+  ];
+  if (selected.length !== MEDICAL_DAILY_NEW_QUOTA) {
+    throw new Error("Medical 7 morphology + 3 chart selection was not atomic.");
+  }
+
+  return { status: "ready", cards: selected };
 }

@@ -60,9 +60,16 @@ bundle size check
 3 bioinformatics
 ```
 
-### TEST-004 · Medical 10
+### TEST-004 · Medical 7 + 3
 
-Medical 每日 10 个新卡。
+同一用户、同一日期的 Medical assignment 必须是：
+
+```text
+7 morphology
+3 病历 / 课堂用语（非 morphology）
+```
+
+合计仍是 10 个新卡。任一池不足时整组 shortage。
 
 ### TEST-005 · New / Review
 
@@ -348,10 +355,10 @@ General = 30
 Statistics = 12
 Bioinformatics = 18
 Medical = 60
-Total = 120
+Total = current canonical catalog, including deactivated specialty cards
 ```
 
-两批各保持 15 + 6 + 9 与 30 张 Medical 的覆盖；每日分配仍是 Research 5 + 2 + 3、Medical 10。
+两批已发布卡身份保持不变；Medical 另含停用专科卡、病历用语替换和词根构词卡。每日分配仍是 Research 5 + 2 + 3、Medical 7 词根构词 + 3 病历用语。
 
 ### TEST-035 · 来源
 
@@ -455,7 +462,7 @@ Offline review survives refresh
 Outbox retry is idempotent
 Daily assignments are stable
 Research 5+2+3 is correct
-Medical 10 is correct
+Medical 7 词根构词 + 3 病历用语 is correct
 Modules are isolated
 Accounts are isolated
 Context-first is implemented

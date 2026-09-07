@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 import type { ModuleSummary } from "../application/contracts";
+import { medicalQuotaCopy } from "../app/categoryLabels";
 import { getModuleName, getModuleRoute } from "../app/moduleRoutes";
 import { preloadTodayRoute } from "../app/lazyRoutes";
 
@@ -33,6 +34,11 @@ export function ModuleSummaryCard({ summary }: ModuleSummaryCardProps) {
       <p className="muted-copy">
         {summary.wordsLearned} {summary.wordsLearned === 1 ? "word" : "words"} learned
       </p>
+      {summary.module === "medical_english" ? (
+        <p className="muted-copy" lang="zh-CN">
+          {medicalQuotaCopy()}
+        </p>
+      ) : null}
       <Link
         className="button button--secondary"
         to={`/today/${route}`}
