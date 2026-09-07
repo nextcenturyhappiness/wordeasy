@@ -6,7 +6,7 @@ import { normalizeSeedCard, type SeedCard } from "../local/seedCardNormalization
 const seedCards = standaloneSeedCards as SeedCard[];
 const EXPECTED_CARD_COUNTS: Record<DomainModuleSlug, number> = {
   research_english: 60,
-  medical_english: 153
+  medical_english: 177
 };
 
 function requireCompleteCatalog(): NormalizedContextCard[] {
@@ -24,15 +24,15 @@ function requireCompleteCatalog(): NormalizedContextCard[] {
   const activeMedical = seedCards.filter(
     (card) => card.module === "medical_english" && card.active
   ).length;
-  if (activeMedical !== 137) {
+  if (activeMedical !== 140) {
     throw new Error(
-      `Canonical standalone seed has ${String(activeMedical)} active Medical cards; expected 137.`
+      `Canonical standalone seed has ${String(activeMedical)} active Medical cards; expected 140.`
     );
   }
 
-  if (seedCards.length !== 213) {
+  if (seedCards.length !== 237) {
     throw new Error(
-      `Canonical standalone seed has ${String(seedCards.length)} cards; expected 213.`
+      `Canonical standalone seed has ${String(seedCards.length)} cards; expected 237.`
     );
   }
 

@@ -10,6 +10,7 @@ import medicalReshapeSql from "../../supabase/migrations/20260907000800_medical_
 import medicalQuotaSql from "../../supabase/migrations/20260907000900_medical_assignment_quotas.sql?raw";
 import medicalPdfExpansionSql from "../../supabase/migrations/20260907001000_medical_pdf_expansion.sql?raw";
 import medicalQuotaFlipSql from "../../supabase/migrations/20260907001100_medical_assignment_quota_flip.sql?raw";
+import medicalChartMidlevelSql from "../../supabase/migrations/20260907001200_medical_chart_midlevel.sql?raw";
 import syncSql from "../../supabase/migrations/20260826000300_review_sync_rpcs.sql?raw";
 import edgeFsrs from "../../supabase/functions/_shared/fsrs.ts?raw";
 import edgeHandler from "../../supabase/functions/review-sync/index.ts?raw";
@@ -23,6 +24,7 @@ const MEDICAL_QUOTA_FLIP = medicalQuotaFlipSql.toLowerCase();
 const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}\n${MEDICAL_QUOTA_FLIP}`;
 const EFFECTIVE_SYNC = `${SYNC}\n${HARDENING}\n${MEDICAL_QUOTAS}`;
 const SEED_PDF_EXPANSION = medicalPdfExpansionSql.toLowerCase();
+const SEED_CHART_MIDLEVEL = medicalChartMidlevelSql.toLowerCase();
 const PREFERENCES = preferencesSql.toLowerCase();
 const SEED = seedSql.toLowerCase();
 const SEED_BATCH2 = seedBatch2Sql.toLowerCase();
@@ -331,5 +333,17 @@ describe("Supabase migration contracts", () => {
     expect(SEED_PDF_EXPANSION).not.toContain("update public.cards");
     expect(SEED_PDF_EXPANSION).toContain("begin;");
     expect(SEED_PDF_EXPANSION).toContain("commit;");
+  });
+
+  it("raises the Medical chart pool with mid-level PDF lemmas additively", () => {
+    expect(SEED_CHART_MIDLEVEL).toContain("or 20260907001000_medical_pdf_expansion.sql");
+    expect(SEED_CHART_MIDLEVEL).toContain("insert into public.cards");
+    expect(SEED_CHART_MIDLEVEL).toContain("update public.cards");
+    expect(SEED_CHART_MIDLEVEL).toContain("set active = false");
+    expect(SEED_CHART_MIDLEVEL).toContain("med-symptoms-symptom-001");
+    expect(SEED_CHART_MIDLEVEL).toContain("med-anatomy-esophagus-001");
+    expect(SEED_CHART_MIDLEVEL).toContain("med-pharmacology-insulin-001");
+    expect(SEED_CHART_MIDLEVEL).toContain("begin;");
+    expect(SEED_CHART_MIDLEVEL).toContain("commit;");
   });
 });

@@ -5,10 +5,12 @@ import { readFile, writeFile } from "node:fs/promises";
 import {
   BATCH2_CARD_KEYS,
   CANONICAL_CARD_TOTAL,
-  DEACTIVATED_MEDICAL_CARD_KEYS,
+  CULLED_SPECIALTY_MEDICAL_CARD_KEYS,
   ORIGINAL_BATCH_CARD_KEYS,
+  SHALLOW_CHART_MEDICAL_CARD_KEYS,
   contentUuid
 } from "./lib/content-contract.mjs";
+import { MEDICAL_CHART_MIDLEVEL_CARD_KEYS } from "./lib/medical-chart-midlevel-cards.mjs";
 import { MEDICAL_PDF_EXPANSION_CARD_KEYS } from "./lib/medical-pdf-expansion-cards.mjs";
 import { MEDICAL_RESHAPE_CARD_KEYS } from "./lib/medical-reshape-cards.mjs";
 import { formatIssues, validateDataset } from "./lib/content-validator.mjs";
@@ -28,6 +30,10 @@ const reshapeMigrationUrl = new URL(
 );
 const pdfExpansionMigrationUrl = new URL(
   "../supabase/migrations/20260907001000_medical_pdf_expansion.sql",
+  import.meta.url
+);
+const chartMidlevelMigrationUrl = new URL(
+  "../supabase/migrations/20260907001200_medical_chart_midlevel.sql",
   import.meta.url
 );
 
@@ -276,6 +282,25 @@ function generateBatch2Migration(cards) {
   ].join("\n\n");
 }
 
+function generateChartMidlevelMigration(cards, shallowKeys) {
+  const deactivateList = shallowKeys.map((key) => sqlText(key)).join(",\n  ");
+  return [
+    "-- Generated from data/seed-data.json Medical mid-level chart expansion by scripts/generate-seed-sql.mjs.",
+    "-- Additive: deactivate shallow chart lemmas and insert mid-level owner-PDF chart cards.",
+    "-- Do not rewrite 20260826000500_seed_content.sql, 20260903000700_seed_content_batch2.sql,",
+    "-- 20260907000800_medical_morphology.sql, or 20260907001000_medical_pdf_expansion.sql.",
+    "begin;",
+    ...contentEntityStatements(cards),
+    [
+      "update public.cards",
+      "set active = false",
+      `where stable_key in (\n  ${deactivateList}\n);`
+    ].join("\n"),
+    "commit;",
+    ""
+  ].join("\n\n");
+}
+
 function generatePdfExpansionMigration(cards) {
   return [
     "-- Generated from data/seed-data.json Medical PDF expansion by scripts/generate-seed-sql.mjs.",
@@ -331,19 +356,23 @@ function splitCanonicalBatches(cards) {
   const batch2Keys = new Set(BATCH2_CARD_KEYS);
   const reshapeKeys = new Set(MEDICAL_RESHAPE_CARD_KEYS);
   const pdfKeys = new Set(MEDICAL_PDF_EXPANSION_CARD_KEYS);
+  const midlevelKeys = new Set(MEDICAL_CHART_MIDLEVEL_CARD_KEYS);
   const originalCards = [];
   const batch2Cards = [];
   const reshapeCards = [];
   const pdfCards = [];
+  const midlevelCards = [];
   for (const card of cards) {
     if (originalKeys.has(card.card_key)) {
       originalCards.push(withShippedActiveFlag(card));
     } else if (batch2Keys.has(card.card_key)) {
       batch2Cards.push(withShippedActiveFlag(card));
     } else if (reshapeKeys.has(card.card_key)) {
-      reshapeCards.push(card);
+      reshapeCards.push(withShippedActiveFlag(card));
     } else if (pdfKeys.has(card.card_key)) {
-      pdfCards.push(card);
+      pdfCards.push(withShippedActiveFlag(card));
+    } else if (midlevelKeys.has(card.card_key)) {
+      midlevelCards.push(card);
     } else {
       throw new Error(`Unassigned seed card_key ${card.card_key}.`);
     }
@@ -368,7 +397,12 @@ function splitCanonicalBatches(cards) {
       `PDF expansion batch has ${pdfCards.length} cards; expected ${MEDICAL_PDF_EXPANSION_CARD_KEYS.length}.`
     );
   }
-  return { originalCards, batch2Cards, reshapeCards, pdfCards };
+  if (midlevelCards.length !== MEDICAL_CHART_MIDLEVEL_CARD_KEYS.length) {
+    throw new Error(
+      `Chart mid-level batch has ${midlevelCards.length} cards; expected ${MEDICAL_CHART_MIDLEVEL_CARD_KEYS.length}.`
+    );
+  }
+  return { originalCards, batch2Cards, reshapeCards, pdfCards, midlevelCards };
 }
 
 const dataset = JSON.parse(await readFile(seedUrl, "utf8"));
@@ -379,11 +413,18 @@ if (validation.errors.length > 0) {
   );
 }
 
-const { originalCards, batch2Cards, reshapeCards, pdfCards } = splitCanonicalBatches(dataset.cards);
+const { originalCards, batch2Cards, reshapeCards, pdfCards, midlevelCards } = splitCanonicalBatches(
+  dataset.cards
+);
 const originalGenerated = generateMigration({ ...dataset, cards: originalCards });
 const batch2Generated = generateBatch2Migration(batch2Cards);
-const reshapeGenerated = generateReshapeMigration(reshapeCards, [...DEACTIVATED_MEDICAL_CARD_KEYS]);
+const reshapeGenerated = generateReshapeMigration(reshapeCards, [
+  ...CULLED_SPECIALTY_MEDICAL_CARD_KEYS
+]);
 const pdfGenerated = generatePdfExpansionMigration(pdfCards);
+const chartGenerated = generateChartMidlevelMigration(midlevelCards, [
+  ...SHALLOW_CHART_MEDICAL_CARD_KEYS
+]);
 const existingOriginal = await readFile(originalMigrationUrl, "utf8");
 if (existingOriginal !== originalGenerated) {
   throw new Error(
@@ -408,12 +449,18 @@ if (process.argv.includes("--check")) {
       "Generated Medical PDF expansion seed migration is stale. Run npm run content:seed-sql."
     );
   }
+  const existingChart = await readFile(chartMidlevelMigrationUrl, "utf8");
+  if (existingChart !== chartGenerated) {
+    throw new Error(
+      "Generated Medical mid-level chart seed migration is stale. Run npm run content:seed-sql."
+    );
+  }
   console.log(
-    `Seed SQL is current: ${CANONICAL_CARD_TOTAL} validated cards across original, batch-2, Medical reshape, and PDF expansion migrations.`
+    `Seed SQL is current: ${CANONICAL_CARD_TOTAL} validated cards across original, batch-2, Medical reshape, PDF expansion, and mid-level chart migrations.`
   );
 } else {
-  await writeFile(pdfExpansionMigrationUrl, pdfGenerated, "utf8");
+  await writeFile(chartMidlevelMigrationUrl, chartGenerated, "utf8");
   console.log(
-    `Generated additive Medical PDF expansion migration for ${pdfCards.length} new cards.`
+    `Generated additive Medical mid-level chart migration for ${midlevelCards.length} new cards and ${SHALLOW_CHART_MEDICAL_CARD_KEYS.length} shallow deactivations.`
   );
 }

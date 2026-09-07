@@ -419,7 +419,7 @@ Space = Reveal
 25. Service Worker 静态缓存。
 26. 刷新后数据不丢失。
 27. 60 张 Research seed cards（两批各 15 + 6 + 9）。
-28. Medical seed：保留已发布身份；停用过难专科卡；补易读病历用语；词根构词卡以所有者教材词表扩到可支撑多日 7/day。
+28. Medical seed：保留已发布身份；停用过难专科卡与过浅病历填充；病历池用教材中档词；词根构词卡支撑多日 7/day。
 29. JSON / CSV 内容导入格式。
 30. RLS、migrations、测试和 README。
 31. macOS Apple Silicon 个人版 `.app` / `.dmg`，复用同一套 PWA 前端和完整 120-card 本地内容。

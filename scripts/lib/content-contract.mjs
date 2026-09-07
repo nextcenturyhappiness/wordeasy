@@ -6,8 +6,8 @@ export const UUID_NAMESPACE = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
 export const UUID_NAME_PREFIX = "https://github.com/nextcenturyhappiness/wordeasy/content/v1/";
 
 export const CANONICAL_RESEARCH_TOTAL = 60;
-export const CANONICAL_MEDICAL_ACTIVE_TOTAL = 137;
-export const CANONICAL_MEDICAL_INACTIVE_TOTAL = 16;
+export const CANONICAL_MEDICAL_ACTIVE_TOTAL = 140;
+export const CANONICAL_MEDICAL_INACTIVE_TOTAL = 37;
 export const CANONICAL_MEDICAL_TOTAL =
   CANONICAL_MEDICAL_ACTIVE_TOTAL + CANONICAL_MEDICAL_INACTIVE_TOTAL;
 export const CANONICAL_ACTIVE_CARD_TOTAL =
@@ -21,19 +21,19 @@ export const RESEARCH_COUNTS = Object.freeze({
 });
 
 export const MEDICAL_COUNTS = Object.freeze({
-  anatomy: 6,
-  physiology: 4,
-  pathology: 4,
-  symptoms: 7,
-  signs: 5,
+  anatomy: 12,
+  physiology: 8,
+  pathology: 7,
+  symptoms: 5,
+  signs: 4,
   diseases: 4,
-  diagnosis: 7,
+  diagnosis: 6,
   laboratory: 4,
   imaging: 4,
-  treatment: 6,
+  treatment: 5,
   pharmacology: 4,
-  surgery_procedures: 4,
-  clinical_expressions: 8,
+  surgery_procedures: 1,
+  clinical_expressions: 6,
   morphology: 70
 });
 
@@ -41,7 +41,7 @@ export const MEDICAL_MORPHOLOGY_CATEGORY = "morphology";
 export const MEDICAL_CLINICAL_DAILY_QUOTA = 3;
 export const MEDICAL_MORPHOLOGY_DAILY_QUOTA = 7;
 
-export const DEACTIVATED_MEDICAL_CARD_KEYS = Object.freeze([
+export const CULLED_SPECIALTY_MEDICAL_CARD_KEYS = Object.freeze([
   "med-anatomy-hilum-001",
   "med-anatomy-parenchyma-001",
   "med-physiology-compliance-001",
@@ -58,6 +58,35 @@ export const DEACTIVATED_MEDICAL_CARD_KEYS = Object.freeze([
   "med-surgery-debridement-001",
   "med-surgery-ligation-001",
   "med-treatment-adjuvant-001"
+]);
+
+export const SHALLOW_CHART_MEDICAL_CARD_KEYS = Object.freeze([
+  "med-symptoms-symptom-001",
+  "med-signs-sign-001",
+  "med-diagnosis-diagnose-001",
+  "med-anatomy-artery-001",
+  "med-anatomy-vein-001",
+  "med-clinical-acute-001",
+  "med-clinical-chronic-001",
+  "med-symptoms-fever-001",
+  "med-anatomy-abdomen-001",
+  "med-anatomy-airway-001",
+  "med-physiology-pulse-001",
+  "med-pathology-infection-001",
+  "med-pharmacology-dose-001",
+  "med-pharmacology-allergy-001",
+  "med-pharmacology-side-effect-001",
+  "med-surgery-incision-001",
+  "med-surgery-procedure-001",
+  "med-surgery-suture-001",
+  "med-treatment-discharge-001",
+  "med-laboratory-culture-001",
+  "med-laboratory-elevated-001"
+]);
+
+export const DEACTIVATED_MEDICAL_CARD_KEYS = Object.freeze([
+  ...CULLED_SPECIALTY_MEDICAL_CARD_KEYS,
+  ...SHALLOW_CHART_MEDICAL_CARD_KEYS
 ]);
 
 export const BATCH2_CARD_KEYS = Object.freeze([
