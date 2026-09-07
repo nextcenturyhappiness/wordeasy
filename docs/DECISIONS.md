@@ -300,7 +300,7 @@ Related requirements: CORE-004, UI-008, UI-009, CONTENT-007, TEST-002; DEC-002
 Context: Mac 学习窗在 Reveal 后背面堆叠过高，`focus()` 把答案区滚进视口，语境原句（含高亮 target）被切到窗口上方。USAGE NOTE 是抽象英文，SOURCE 看不出是例句来源。所有者写科研/医学英文，需要知道这个词有多硬才用得诚实。
 Decision:
 
-1. Reveal 后把语境原句滚到学习窗顶部并 sticky 钉住；不得滚向释义或评分行。正面 cloze、背面高亮（UI-008）不变。评分按钮可以在折页下方。
+1. Reveal 后把语境原句滚到学习窗顶部并 sticky 钉住；不得滚向释义或评分行。正面挖空已被 DEC-046 取代，背面高亮（UI-008）仍在。评分按钮可以在折页下方。
 2. 背面第 7 层标题固定为「适用范围」；`usage_note` 对全部 60 张 seed 卡改为一两句中文使用强度说明，不改 lemma、sense、例句、搭配、IPA 或 FSRS。
 3. 背面第 8 层标题为「句子来源」；`original_example` 显示「为本词表撰写的例句」。不编造 DOI 或其他引用。
 
@@ -317,11 +317,11 @@ Related requirements: CORE-003, CORE-004, UI-008, UI-009, TEST-002; DEC-035
 Context: Reveal 后学习窗仍显示 “What does the highlighted word mean in this context?”。所有者已经在看释义页，这句提问多余。音标有助于记忆，应出现在仍钉在首屏的原句附近。
 Decision:
 
-1. 正面 cloze 仍问 “What does the missing word mean in this context?”。既有正面 IPA/词性保持原样，不新增会泄露答案的字段。
+1. 正面提问已由 DEC-046 改为 “What does this word mean in this context?”；lemma 与完整原句在揭示前可见。既有正面 IPA/词性保持原样，不新增会泄露释义的字段。
 2. Reveal 后不再显示 “What does the highlighted word mean…” 或等价提问。该位置改为 sticky 语境原句下的 IPA；词性可同行，写成 `/…/ · verb`。
 3. 背面释义堆叠不再重复 IPA / part of speech 区块。Meaning、paraphrase、中文释义、完整句子翻译、collocations、适用范围、句子来源保留。DEC-035 的 sticky 原句、适用范围与句子来源标题不变。
 
-Reason: 提问只服务于未揭示的 cloze；揭示后首屏应留给句子和读音。
+Reason: 提问只服务于未揭示的正面；揭示后首屏应留给句子和读音。
 Alternatives rejected: 保留提问只改文案；把 IPA 留在下方释义层；正面新藏 IPA。
 Consequences: CORE-004 / UI-009 的稳定层级不再把 IPA 当作第 6 层独立标题。
 Tests/docs affected: `ContextCard`, UI/E2E tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
@@ -337,7 +337,7 @@ Decision:
 1. Reveal 后 sticky 原句下的 `/…/ · verb` 行是按钮。点击用 `window.speechSynthesis` 朗读 **lemma**（与 IPA 对应的词典形）；lemma 为空时才用 displayForm。语言固定 `en-US`。若 `getVoices()` 列出 `localService` 的 English voice，优先 `en-US` 本地声。
 2. 只在用户点击/轻触时朗读（满足 WKWebView / Chrome 手势要求）。正在朗读时再次点击：先 `cancel()` 再重新 `speak()`。
 3. `speechSynthesis` 缺失或 `speak()` 抛错时不崩溃；显示一行 “Speech is not available on this device.” 或 “Speech could not start.”。异步 `utterance.onerror` 静默。
-4. 正面 cloze 的既有 IPA 仍是静态文本，不因此新泄露字段，也不自动播放。Reveal 本身不朗读。
+4. 未揭示正面的既有 IPA 仍是静态文本，不因此新增释义字段，也不自动播放。Reveal 本身不朗读。
 5. 不引入 Forvo / Cambridge / ElevenLabs，不新增 Tauri speech plugin。若日后证明本项目 WebView 的 Web Speech 不可用，再另开决策。
 6. 视觉：指针、小型本地 SVG 喇叭；不是大块主按钮。适用范围、句子来源、sticky 原句布局不变。
 
@@ -488,6 +488,24 @@ Reason: 3/day 陪练仍要有课堂用处，但不能是「什么是动脉」那
 Alternatives rejected: 改变 7+3 配额；把已有词根卡改分类进病历池；重写已落地 seed migration。
 Consequences: 未冻结 Day-1 病历三张会换成中档教材词；词根 7/day 不变。
 Tests/docs affected: seed JSON/SQL, validator/counts, catalog version, Demo/standalone, `docs/04_CONTENT_SCHEMA.md`, `docs/TRACEABILITY.md`.
+
+### DEC-046 · 学习卡正面改为可见 lemma + 完整原句，不再挖空
+
+Date: 2026-09-07
+Status: Accepted
+Related requirements: CORE-003, UI-008, TEST-002; DEC-002, DEC-035, DEC-036
+Context: 所有者在手机上使用当前 cloze 正面（句子里目标词被下划线挖空，提问 “What does the missing word mean in this context?”）觉得过难。他们已经认识或能看见这个词，只需要猜测它在当前科研/医学语境中的意思。这与 DEC-036 锁定的正面 cloze 冲突。
+Decision:
+
+1. 未揭示正面必须同时显示：lemma 醒目标题、完整语境原句（target 可见，允许 `<mark>` 高亮，禁止空白/下划线挖空）、既有词性 / IPA / 分类。
+2. 提问改为 meaning-in-context，例如 “What does this word mean in this context?”。不得再写 missing word 或要求填空。
+3. 正面仍不得泄露释义：中文释义、英文 meaning、paraphrase、完整句子翻译。Reveal 后的释义堆叠、sticky 原句、IPA tap-to-speak、FSRS / sync / assignment / seed 内容不变。
+4. 本决策取代 DEC-035 / DEC-036 / DEC-037 中把正面规定为 cloze 的条款。
+
+Reason: Context-first 的学习对象是 sense-in-context，不是默写词形。挖空把任务变成 cloze，超过所有者当前需要的难度。
+Alternatives rejected: 保留挖空只改提问文案；正面只显示 lemma 不显示原句；Reveal 前高亮但隐藏 lemma。
+Consequences: CORE-003 / UI-008 / TEST-002 从 “target 隐藏” 改为 “lemma + 可见原句”；答案仍是释义而不是词形。
+Tests/docs affected: `ContextCard`, Study UI/E2E tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
 

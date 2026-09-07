@@ -11,14 +11,17 @@ describe("ContextCard", () => {
   it("implements the context-first front without leaking any answer", () => {
     const { container } = render(<ContextCard card={researchCard} revealed={false} />);
 
-    expect(screen.getByText(/what does the missing word mean/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: researchCard.lemma })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/what does this word mean in this context/i)).toBeInTheDocument();
+    expect(screen.queryByText(/missing word/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/what does the highlighted word mean/i)).not.toBeInTheDocument();
-    expect(container.querySelector("mark")).toBeNull();
-    expect(container.querySelector(".context-blank")).toHaveAttribute(
-      "aria-label",
-      "hidden target word"
+    expect(container.querySelector(".context-blank")).toBeNull();
+    expect(screen.getByText(researchCard.targetText, { selector: "mark" })).toBeInTheDocument();
+    expect(document.getElementById("context-sentence-anchor")).toHaveTextContent(
+      researchCard.contextSentence
     );
-    expect(screen.queryByText(researchCard.targetText)).not.toBeInTheDocument();
     expect(screen.queryByText(researchCard.meaningEn)).not.toBeInTheDocument();
     expect(screen.queryByText(researchCard.plainEnglishParaphrase)).not.toBeInTheDocument();
     expect(screen.queryByText(researchCard.meaningZh)).not.toBeInTheDocument();
@@ -30,7 +33,7 @@ describe("ContextCard", () => {
     expect(screen.queryByRole("button", { name: /speak /i })).not.toBeInTheDocument();
   });
 
-  it("does not auto-speak on the cloze front", () => {
+  it("does not auto-speak on the unrevealed front", () => {
     const speakWord = vi.fn<(word: string) => SpeakWordResult>(() => ({ ok: true }));
     render(<ContextCard card={researchCard} revealed={false} speakWord={speakWord} />);
 
@@ -56,8 +59,9 @@ describe("ContextCard", () => {
       "适用范围",
       "句子来源"
     ]);
+    expect(screen.queryByText(/what does this word mean in this context/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/what does the highlighted word mean/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/what does the missing word mean/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/missing word/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "IPA / part of speech" })).not.toBeInTheDocument();
     expect(screen.getByText(researchCard.meaningEn)).toBeInTheDocument();
     expect(screen.getByText(researchCard.plainEnglishParaphrase)).toBeInTheDocument();
@@ -104,6 +108,15 @@ describe("ContextCard", () => {
 
   it("has no automatically detectable accessibility violations when revealed", async () => {
     const { container } = render(<ContextCard card={researchCard} revealed />);
+
+    const result = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false } }
+    });
+    expect(result.violations).toEqual([]);
+  });
+
+  it("has no automatically detectable accessibility violations on the unrevealed front", async () => {
+    const { container } = render(<ContextCard card={researchCard} revealed={false} />);
 
     const result = await axe.run(container, {
       rules: { "color-contrast": { enabled: false } }

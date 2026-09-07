@@ -536,13 +536,6 @@ p {
   font-size: 1.15rem;
 }
 
-.context-blank {
-  display: inline-block;
-  min-width: 4.5ch;
-  border-bottom: 0.14em solid var(--color-text);
-  vertical-align: baseline;
-}
-
 .home-heading,
 .today-heading,
 .study-heading {
@@ -828,6 +821,16 @@ p {
   color: var(--color-error);
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.context-lemma {
+  margin: 0 0 var(--space-4);
+  font-family: inherit;
+  font-size: clamp(1.85rem, 6.2vw, 2.55rem);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+  overflow-wrap: break-word;
 }
 
 .context-sentence {
