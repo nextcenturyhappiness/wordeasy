@@ -103,7 +103,7 @@ describe("createLearningRuntime", () => {
       expect((await runtime.learning.getStudyQueue("research_english", "new")).cards).toHaveLength(
         10
       );
-      expect(await inspectionDatabase.cached_cards.count()).toBe(164);
+      expect(await inspectionDatabase.cached_cards.count()).toBe(213);
       inspectionDatabase.close();
       await runtime.dispose();
     }

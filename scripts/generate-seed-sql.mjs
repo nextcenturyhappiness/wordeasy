@@ -9,6 +9,8 @@ import {
   ORIGINAL_BATCH_CARD_KEYS,
   contentUuid
 } from "./lib/content-contract.mjs";
+import { MEDICAL_PDF_EXPANSION_CARD_KEYS } from "./lib/medical-pdf-expansion-cards.mjs";
+import { MEDICAL_RESHAPE_CARD_KEYS } from "./lib/medical-reshape-cards.mjs";
 import { formatIssues, validateDataset } from "./lib/content-validator.mjs";
 
 const seedUrl = new URL("../data/seed-data.json", import.meta.url);
@@ -22,6 +24,10 @@ const batch2MigrationUrl = new URL(
 );
 const reshapeMigrationUrl = new URL(
   "../supabase/migrations/20260907000800_medical_morphology.sql",
+  import.meta.url
+);
+const pdfExpansionMigrationUrl = new URL(
+  "../supabase/migrations/20260907001000_medical_pdf_expansion.sql",
   import.meta.url
 );
 
@@ -270,6 +276,19 @@ function generateBatch2Migration(cards) {
   ].join("\n\n");
 }
 
+function generatePdfExpansionMigration(cards) {
+  return [
+    "-- Generated from data/seed-data.json Medical PDF expansion by scripts/generate-seed-sql.mjs.",
+    "-- Additive: insert owner-PDF morphology cards and easy chart lemmas.",
+    "-- Do not rewrite 20260826000500_seed_content.sql, 20260903000700_seed_content_batch2.sql,",
+    "-- or 20260907000800_medical_morphology.sql.",
+    "begin;",
+    ...contentEntityStatements(cards),
+    "commit;",
+    ""
+  ].join("\n\n");
+}
+
 function generateReshapeMigration(cards, deactivatedKeys) {
   const morphologyCategory = tuple([
     sqlText(contentUuid("category", "medical_english:morphology")),
@@ -310,16 +329,23 @@ function withShippedActiveFlag(card) {
 function splitCanonicalBatches(cards) {
   const originalKeys = new Set(ORIGINAL_BATCH_CARD_KEYS);
   const batch2Keys = new Set(BATCH2_CARD_KEYS);
+  const reshapeKeys = new Set(MEDICAL_RESHAPE_CARD_KEYS);
+  const pdfKeys = new Set(MEDICAL_PDF_EXPANSION_CARD_KEYS);
   const originalCards = [];
   const batch2Cards = [];
   const reshapeCards = [];
+  const pdfCards = [];
   for (const card of cards) {
     if (originalKeys.has(card.card_key)) {
       originalCards.push(withShippedActiveFlag(card));
     } else if (batch2Keys.has(card.card_key)) {
       batch2Cards.push(withShippedActiveFlag(card));
-    } else {
+    } else if (reshapeKeys.has(card.card_key)) {
       reshapeCards.push(card);
+    } else if (pdfKeys.has(card.card_key)) {
+      pdfCards.push(card);
+    } else {
+      throw new Error(`Unassigned seed card_key ${card.card_key}.`);
     }
   }
   if (originalCards.length !== ORIGINAL_BATCH_CARD_KEYS.length) {
@@ -332,7 +358,17 @@ function splitCanonicalBatches(cards) {
       `Second seed batch has ${batch2Cards.length} cards; expected ${BATCH2_CARD_KEYS.length}.`
     );
   }
-  return { originalCards, batch2Cards, reshapeCards };
+  if (reshapeCards.length !== MEDICAL_RESHAPE_CARD_KEYS.length) {
+    throw new Error(
+      `Medical reshape batch has ${reshapeCards.length} cards; expected ${MEDICAL_RESHAPE_CARD_KEYS.length}.`
+    );
+  }
+  if (pdfCards.length !== MEDICAL_PDF_EXPANSION_CARD_KEYS.length) {
+    throw new Error(
+      `PDF expansion batch has ${pdfCards.length} cards; expected ${MEDICAL_PDF_EXPANSION_CARD_KEYS.length}.`
+    );
+  }
+  return { originalCards, batch2Cards, reshapeCards, pdfCards };
 }
 
 const dataset = JSON.parse(await readFile(seedUrl, "utf8"));
@@ -343,10 +379,11 @@ if (validation.errors.length > 0) {
   );
 }
 
-const { originalCards, batch2Cards, reshapeCards } = splitCanonicalBatches(dataset.cards);
+const { originalCards, batch2Cards, reshapeCards, pdfCards } = splitCanonicalBatches(dataset.cards);
 const originalGenerated = generateMigration({ ...dataset, cards: originalCards });
 const batch2Generated = generateBatch2Migration(batch2Cards);
 const reshapeGenerated = generateReshapeMigration(reshapeCards, [...DEACTIVATED_MEDICAL_CARD_KEYS]);
+const pdfGenerated = generatePdfExpansionMigration(pdfCards);
 const existingOriginal = await readFile(originalMigrationUrl, "utf8");
 if (existingOriginal !== originalGenerated) {
   throw new Error(
@@ -365,12 +402,18 @@ if (process.argv.includes("--check")) {
       "Generated Medical reshape seed migration is stale. Run npm run content:seed-sql."
     );
   }
+  const existingPdf = await readFile(pdfExpansionMigrationUrl, "utf8");
+  if (existingPdf !== pdfGenerated) {
+    throw new Error(
+      "Generated Medical PDF expansion seed migration is stale. Run npm run content:seed-sql."
+    );
+  }
   console.log(
-    `Seed SQL is current: ${CANONICAL_CARD_TOTAL} validated cards across original, batch-2, and Medical reshape migrations.`
+    `Seed SQL is current: ${CANONICAL_CARD_TOTAL} validated cards across original, batch-2, Medical reshape, and PDF expansion migrations.`
   );
 } else {
-  await writeFile(reshapeMigrationUrl, reshapeGenerated, "utf8");
+  await writeFile(pdfExpansionMigrationUrl, pdfGenerated, "utf8");
   console.log(
-    `Generated additive Medical reshape migration for ${reshapeCards.length} new cards and ${DEACTIVATED_MEDICAL_CARD_KEYS.length} deactivations.`
+    `Generated additive Medical PDF expansion migration for ${pdfCards.length} new cards.`
   );
 }

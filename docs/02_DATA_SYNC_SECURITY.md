@@ -260,8 +260,8 @@ Research 每日严格：
 Medical 每日严格：
 
 ```text
-7 病历 / 课堂用语（非 morphology 分类）
-3 morphology（词根构词）
+7 morphology（词根构词）
+3 病历 / 课堂用语（非 morphology 分类）
 ```
 
 任一池不足时整组不创建，返回结构化 shortage。不得跨池补足。

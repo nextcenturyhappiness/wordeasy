@@ -25,5 +25,5 @@ export function categoryLabel(category: string): string {
 }
 
 export function medicalQuotaCopy(): string {
-  return "7 病历用语 + 3 词根构词";
+  return "7 词根构词 + 3 病历用语";
 }

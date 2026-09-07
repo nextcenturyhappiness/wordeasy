@@ -56,7 +56,7 @@ npm ci
 npm run dev:demo
 ```
 
-The demo is explicit and uses its own IndexedDB namespace. It derives a controlled 20-card browser subset from the canonical dataset at build time: Research 5 + 2 + 3 and Medical 7 + 3. The full catalog is never imported by browser source.
+The demo is explicit and uses its own IndexedDB namespace. It derives a controlled 20-card browser subset from the canonical dataset at build time: Research 5 + 2 + 3 and Medical 7 词根构词 + 3 病历用语. The full catalog is never imported by browser source.
 
 For cloud mode or the personal Mac app, copy `.env.example` to `.env.local` and set only the public browser values:
 

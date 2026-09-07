@@ -878,3 +878,8 @@ export const MEDICAL_MORPHOLOGY_CARDS = [
     collocations: ["give an antipyretic", "oral antipyretic", "antipyretic effect"]
   }
 ];
+
+export const MEDICAL_RESHAPE_CARD_KEYS = [
+  ...MEDICAL_REPLACEMENT_CARDS.map((card) => card.card_key),
+  ...MEDICAL_MORPHOLOGY_CARDS.map((card) => card.card_key)
+];

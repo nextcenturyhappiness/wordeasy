@@ -11,14 +11,14 @@ import { LocalAssignmentService } from "./localAssignmentService";
 const MODULES = ["research_english", "medical_english"] as const;
 const PERSONAL_CATALOG_SIZE = {
   research_english: 60,
-  medical_english: 104
+  medical_english: 153
 } as const;
 const PERSONAL_ACTIVE_NEW_POOL = {
   research_english: 60,
-  medical_english: 88
+  medical_english: 137
 } as const;
 const PERSONAL_DAILY_QUOTA = 10;
-const PERSONAL_CATALOG_VERSION = "canonical-medical-morphology-v1";
+const PERSONAL_CATALOG_VERSION = "canonical-medical-morphology-v2";
 const PERSONAL_CATALOG_VERSION_KEY = "personal-catalog-version";
 const REVIEW_QUEUE_MIGRATION_KEY = "personal-review-queues-v1";
 

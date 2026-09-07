@@ -89,7 +89,7 @@ describe("formal seed dataset", () => {
     expect(culled.every((card) => card.active === false)).toBe(true);
     expect(
       dataset.cards.filter((card) => card.category === "morphology" && card.active)
-    ).toHaveLength(28);
+    ).toHaveLength(MEDICAL_COUNTS.morphology);
   });
 
   it("covers every required Research and Medical material genre", () => {

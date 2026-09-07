@@ -6,7 +6,7 @@ export const UUID_NAMESPACE = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
 export const UUID_NAME_PREFIX = "https://github.com/nextcenturyhappiness/wordeasy/content/v1/";
 
 export const CANONICAL_RESEARCH_TOTAL = 60;
-export const CANONICAL_MEDICAL_ACTIVE_TOTAL = 88;
+export const CANONICAL_MEDICAL_ACTIVE_TOTAL = 137;
 export const CANONICAL_MEDICAL_INACTIVE_TOTAL = 16;
 export const CANONICAL_MEDICAL_TOTAL =
   CANONICAL_MEDICAL_ACTIVE_TOTAL + CANONICAL_MEDICAL_INACTIVE_TOTAL;
@@ -21,25 +21,25 @@ export const RESEARCH_COUNTS = Object.freeze({
 });
 
 export const MEDICAL_COUNTS = Object.freeze({
-  anatomy: 4,
+  anatomy: 6,
   physiology: 4,
   pathology: 4,
-  symptoms: 6,
-  signs: 4,
+  symptoms: 7,
+  signs: 5,
   diseases: 4,
-  diagnosis: 6,
+  diagnosis: 7,
   laboratory: 4,
   imaging: 4,
   treatment: 6,
   pharmacology: 4,
   surgery_procedures: 4,
-  clinical_expressions: 6,
-  morphology: 28
+  clinical_expressions: 8,
+  morphology: 70
 });
 
 export const MEDICAL_MORPHOLOGY_CATEGORY = "morphology";
-export const MEDICAL_CLINICAL_DAILY_QUOTA = 7;
-export const MEDICAL_MORPHOLOGY_DAILY_QUOTA = 3;
+export const MEDICAL_CLINICAL_DAILY_QUOTA = 3;
+export const MEDICAL_MORPHOLOGY_DAILY_QUOTA = 7;
 
 export const DEACTIVATED_MEDICAL_CARD_KEYS = Object.freeze([
   "med-anatomy-hilum-001",

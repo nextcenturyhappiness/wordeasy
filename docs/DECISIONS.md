@@ -58,7 +58,7 @@ Date: 2026-08-26
 Status: Accepted
 Related requirements: RES-001, RES-003, MED-001, ASSIGN-003–006
 Decision: 任一必需分类不足时，当日该模块的新卡 assignment 整组不创建；返回并冻结结构化 shortage。不得部分分配、跨分类补足或重复旧卡。
-Reason: 只有 all-or-nothing 才能同时保持 Research 5+2+3、Medical 7+3 和同日稳定。
+Reason: 只有 all-or-nothing 才能同时保持 Research 5+2+3、Medical 7+3（现为 7 词根 + 3 病历）和同日稳定。
 
 ### DEC-014 · Review 日队列截止点
 
@@ -442,14 +442,33 @@ Context: 所有者不是应试学习者，用 -itis、-osis、derm、hemat、leu
 Decision:
 
 1. 不新增第三个顶层模块。Medical English 内增加 `morphology` 分类，中文 UI 为「词根构词」。学习单元仍是 Context Card，学习点是 prefix+root+suffix 拆解。
-2. 每日 Medical 新卡改为严格 7 病历/课堂用语 + 3 词根构词。本地选择器和 `ensure_daily_assignment_v1_unlocked` 同步该配额；任一池不足则整组 shortage，不得跨池补足。
+2. 每日 Medical 新卡先按 7 病历/课堂用语 + 3 词根构词落地；该配额已被 DEC-044 翻转为 7 词根构词 + 3 病历用语。本地选择器和 `ensure_daily_assignment_v1_unlocked` 必须与当前配额同步；任一池不足则整组 shortage，不得跨池补足。
 3. 已发布过难专科卡停用（`active = false`），UUID / card_key / lemma 身份不变。用更易读的病历用语替换同一临床分类名额。词根卡使用新 UUID。
-4. 原 60 + 第二批 60 的 SQL migration 不重写。停用、替换和词根卡由 additive migration 完成。catalog 版本改为 `canonical-medical-morphology-v1`。Demo 仍 20 张：Research 5+2+3，Medical 7+3。
+4. 原 60 + 第二批 60 的 SQL migration 不重写。停用、替换和词根卡由 additive migration 完成。当时 catalog 版本为 `canonical-medical-morphology-v1`；DEC-044 再升为 v2。Demo 仍 20 张，Medical 配额以 DEC-044 为准。
 5. 停用卡保留在词库身份里，供已有 FSRS / Review 继续显示；新卡分配只取 `active` 卡。云端 ingest 允许给已停用卡记分，避免进度被卡住。
 
 Reason: 这是最小且符合 CORE Medical 分类+配额模型的形状，既给构词一条独立学习面，又不发明空导航或第三套进度。
 Alternatives rejected: 第三个顶层模块；回收旧 UUID 改写成新词；重写已应用 seed migration；把构词只当翻译附录而不改每日配额。
-Consequences: Medical 生效词库大于 60；未冻结的新用户 Day-1 集合会变；已冻结当日 assignment 不变。Home / Today 用安静中文写出「7 病历用语 + 3 词根构词」，不做游戏化。
+Consequences: Medical 生效词库大于 60；未冻结的新用户 Day-1 集合会变；已冻结当日 assignment 不变。Home / Today 用安静中文写出配额，不做游戏化。配额文案以 DEC-044 为准。
+Tests/docs affected: seed JSON/SQL, validator/counts, assignment selector/RPC/parser, catalog version, Demo/standalone, Home/Today copy, `docs/01_PRODUCT_CORE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/TRACEABILITY.md`.
+
+### DEC-044 · Medical 配额改为 7 词根构词 + 3 病历用语，并以所有者教材词表扩卡
+
+Date: 2026-09-07
+Status: Accepted
+Related requirements: MED-001/002/003, ASSIGN-004, CONTENT-002/007/011, TEST-004/034; DEC-013/018/040/043
+Context: 所有者反馈 PR #15：他们主要靠词根构词学医学英语，病历用语只需少量陪练。指定 PDF《医学专业英语的重点单词终结版》为 Medical 主词源，并要求每日配额翻转为 7 词根 + 3 病历。
+Decision:
+
+1. 每日 Medical 新卡改为严格 7 词根构词 + 3 病历/课堂用语，合计仍是 10。本地选择器、`ensure_daily_assignment_v1_unlocked`、cloud parser、Demo 20 卡同步该配额。任一池不足则整组 shortage，不得跨池补足。
+2. 不新开第三个顶层模块。`morphology` / 「词根构词」仍是 Medical 内分类。Home / Today 文案改为「7 词根构词 + 3 病历用语」。
+3. 词根生效卡扩到至少 56–70 张，优先收录 PDF 中可拆 prefix/root/suffix 的课堂词（如 stomatitis、colitis、hematology、asymptomatic、pathogen、apnea）。保留已发布且仍好用的 endocarditis 等卡。不复活已停用专科卡。
+4. 病历池保持小而浅：3/day，补入 PDF 里的 symptom、sign、diagnose、artery、vein、acute、chronic 等易读词。跳过带侮辱性历史病名（如 mental retardation、venereal disease）。
+5. 已应用 seed migration 不重写。PDF 扩卡与配额翻转用 additive migration。catalog 版本改为 `canonical-medical-morphology-v2`。词根卡继续用新 UUID；usage_note 写清语素，并写明凭词根猜测可能错过临床细节。无伪造 DOI/PMID。
+
+Reason: 所有者明确说构词才是主学习面，病历用语只作陪练；教材词表比专科写作词更贴近课堂。
+Alternatives rejected: 维持 7 病历 + 3 词根；为配额再开第三个顶层模块；把 PDF 里难拆或过时病名全部做成卡。
+Consequences: 未冻结的新用户 Day-1 Medical 集合再次变化；已冻结当日 assignment 不变。词根池需支撑连续多日 7/day。
 Tests/docs affected: seed JSON/SQL, validator/counts, assignment selector/RPC/parser, catalog version, Demo/standalone, Home/Today copy, `docs/01_PRODUCT_CORE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板

@@ -157,7 +157,7 @@ describe("PersonalLearningRepository", () => {
 
     expect(loadCards).toHaveBeenCalledTimes(1);
     expect(loadScheduler).not.toHaveBeenCalled();
-    expect(await database.cached_cards.count()).toBe(164);
+    expect(await database.cached_cards.count()).toBe(213);
     expect(first.cards).toHaveLength(10);
     expect(second.cards.map((card) => card.cardId)).toEqual(first.cards.map((card) => card.cardId));
     expect(categories).toEqual({
@@ -166,8 +166,8 @@ describe("PersonalLearningRepository", () => {
       bioinformatics: 3
     });
     const medical = await repository.getStudyQueue("medical_english", "new");
-    expect(medical.cards.filter((card) => card.category === "morphology")).toHaveLength(3);
-    expect(medical.cards.filter((card) => card.category !== "morphology")).toHaveLength(7);
+    expect(medical.cards.filter((card) => card.category === "morphology")).toHaveLength(7);
+    expect(medical.cards.filter((card) => card.category !== "morphology")).toHaveLength(3);
   });
 
   it("retries a failed catalog load in the same running repository", async () => {
@@ -228,7 +228,7 @@ describe("PersonalLearningRepository", () => {
 
     await repository.getStudyQueue("research_english", "new");
 
-    expect(await database.cached_cards.count()).toBe(164);
+    expect(await database.cached_cards.count()).toBe(213);
     expect(await database.cached_cards.get([USER_ID, "stale-card"])).toBeUndefined();
   });
 

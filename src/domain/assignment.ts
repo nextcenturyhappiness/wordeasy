@@ -131,7 +131,7 @@ export function selectMedicalAssignment(
     ...morphology.slice(0, MEDICAL_MORPHOLOGY_DAILY_QUOTA)
   ];
   if (selected.length !== MEDICAL_DAILY_NEW_QUOTA) {
-    throw new Error("Medical 7+3 selection was not atomic.");
+    throw new Error("Medical 7 morphology + 3 chart selection was not atomic.");
   }
 
   return { status: "ready", cards: selected };

@@ -160,7 +160,7 @@ export function parseNewAssignmentSet(value: unknown): CloudNewAssignmentSet {
         clinical += 1;
       }
     }
-    if (clinical !== 7 || morphology !== 3) {
+    if (clinical !== 3 || morphology !== 7) {
       throw new CloudPayloadError("assignment.assignments", "Medical 7+3 quota");
     }
   }

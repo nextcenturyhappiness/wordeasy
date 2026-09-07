@@ -130,7 +130,7 @@ describe("Home and Today", () => {
     expect(within(research).getByText("128 words learned")).toBeInTheDocument();
     expect(within(medical).getByText("3 / 10")).toBeInTheDocument();
     expect(within(medical).getByText("74 words learned")).toBeInTheDocument();
-    expect(within(medical).getByText("7 病历用语 + 3 词根构词")).toBeInTheDocument();
+    expect(within(medical).getByText("7 词根构词 + 3 病历用语")).toBeInTheDocument();
     expect(screen.getByText("12").closest(".streak-line")).toHaveTextContent(
       "12 days in your current streak"
     );
@@ -366,7 +366,7 @@ describe("Home and Today", () => {
 
     expect(await screen.findByRole("heading", { name: "Today" })).toBeInTheDocument();
     expect(getToday).toHaveBeenCalledWith("medical_english");
-    expect(screen.getByText("7 病历用语 + 3 词根构词")).toBeInTheDocument();
+    expect(screen.getByText("7 词根构词 + 3 病历用语")).toBeInTheDocument();
     expect(screen.queryByText(/xp|streak goal|leaderboard/i)).not.toBeInTheDocument();
   });
 

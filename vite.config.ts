@@ -32,15 +32,7 @@ const localOnlySecurityHeaders = `/*
 /sw.js
   Cache-Control: no-store, max-age=0
 `;
-const medicalDemoClinicalCategories = [
-  "symptoms",
-  "signs",
-  "clinical_expressions",
-  "treatment",
-  "diagnosis",
-  "laboratory",
-  "imaging"
-];
+const medicalDemoClinicalCategories = ["symptoms", "signs", "clinical_expressions"];
 
 interface BuildSeedCard {
   active: boolean;
@@ -80,7 +72,7 @@ function loadDemoSeedModule(): string {
       .filter(
         (card) => card.active && card.module === "medical_english" && card.category === "morphology"
       )
-      .slice(0, 3)
+      .slice(0, 7)
   ];
   if (selected.length !== 20) {
     throw new Error(`Canonical seed produced ${String(selected.length)} demo cards; expected 20.`);
@@ -90,9 +82,9 @@ function loadDemoSeedModule(): string {
 
 function loadStandaloneSeedModule(): string {
   const selected = loadCanonicalSeed().cards;
-  if (selected.length !== 164) {
+  if (selected.length !== 213) {
     throw new Error(
-      `Canonical seed produced ${String(selected.length)} catalog cards; expected 164.`
+      `Canonical seed produced ${String(selected.length)} catalog cards; expected 213.`
     );
   }
   return `export default ${JSON.stringify(selected)};`;

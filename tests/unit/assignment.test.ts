@@ -47,20 +47,20 @@ describe("daily assignment quotas", () => {
     });
   });
 
-  it("selects Medical 7 chart/class + 3 morphology and does not backfill across buckets", () => {
+  it("selects Medical 7 morphology + 3 chart/class and does not backfill across buckets", () => {
     const ready = selectMedicalAssignment(
       cards([
-        ["symptoms", 4],
-        ["signs", 3],
-        ["morphology", 5]
+        ["symptoms", 2],
+        ["signs", 2],
+        ["morphology", 8]
       ]),
       "user-a",
       "2026-09-07"
     );
     expect(ready.status).toBe("ready");
     if (ready.status === "ready") {
-      expect(ready.cards.filter((card) => card.category === "morphology")).toHaveLength(3);
-      expect(ready.cards.filter((card) => card.category !== "morphology")).toHaveLength(7);
+      expect(ready.cards.filter((card) => card.category === "morphology")).toHaveLength(7);
+      expect(ready.cards.filter((card) => card.category !== "morphology")).toHaveLength(3);
       expect(ready.cards).toHaveLength(10);
     }
 
@@ -68,19 +68,19 @@ describe("daily assignment quotas", () => {
       selectMedicalAssignment(
         cards([
           ["symptoms", 10],
-          ["morphology", 2]
+          ["morphology", 6]
         ]),
         "user-a",
         "2026-09-07"
       )
     ).toMatchObject({
       status: "shortage",
-      shortage: { category: "morphology", required: 3, available: 2 }
+      shortage: { category: "morphology", required: 7, available: 6 }
     });
     expect(
       selectMedicalAssignment(
         cards([
-          ["symptoms", 6],
+          ["symptoms", 2],
           ["morphology", 10]
         ]),
         "user-a",
@@ -88,7 +88,7 @@ describe("daily assignment quotas", () => {
       )
     ).toMatchObject({
       status: "shortage",
-      shortage: { category: "clinical", required: 7, available: 6 }
+      shortage: { category: "clinical", required: 3, available: 2 }
     });
   });
 

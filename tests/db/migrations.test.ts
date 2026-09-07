@@ -8,6 +8,8 @@ import seedSql from "../../supabase/migrations/20260826000500_seed_content.sql?r
 import seedBatch2Sql from "../../supabase/migrations/20260903000700_seed_content_batch2.sql?raw";
 import medicalReshapeSql from "../../supabase/migrations/20260907000800_medical_morphology.sql?raw";
 import medicalQuotaSql from "../../supabase/migrations/20260907000900_medical_assignment_quotas.sql?raw";
+import medicalPdfExpansionSql from "../../supabase/migrations/20260907001000_medical_pdf_expansion.sql?raw";
+import medicalQuotaFlipSql from "../../supabase/migrations/20260907001100_medical_assignment_quota_flip.sql?raw";
 import syncSql from "../../supabase/migrations/20260826000300_review_sync_rpcs.sql?raw";
 import edgeFsrs from "../../supabase/functions/_shared/fsrs.ts?raw";
 import edgeHandler from "../../supabase/functions/review-sync/index.ts?raw";
@@ -17,8 +19,10 @@ const ASSIGNMENTS = assignmentSql.toLowerCase();
 const HARDENING = hardeningSql.toLowerCase();
 const SYNC = syncSql.toLowerCase();
 const MEDICAL_QUOTAS = medicalQuotaSql.toLowerCase();
-const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}`;
+const MEDICAL_QUOTA_FLIP = medicalQuotaFlipSql.toLowerCase();
+const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}\n${MEDICAL_QUOTA_FLIP}`;
 const EFFECTIVE_SYNC = `${SYNC}\n${HARDENING}\n${MEDICAL_QUOTAS}`;
+const SEED_PDF_EXPANSION = medicalPdfExpansionSql.toLowerCase();
 const PREFERENCES = preferencesSql.toLowerCase();
 const SEED = seedSql.toLowerCase();
 const SEED_BATCH2 = seedBatch2Sql.toLowerCase();
@@ -113,8 +117,8 @@ describe("Supabase migration contracts", () => {
     expect(body).toContain("('general_research'::text, 'general research'::text, 5)");
     expect(body).toContain("('statistics_methodology'::text, 'statistics / methodology'::text, 2)");
     expect(body).toContain("('bioinformatics'::text, 'bioinformatics'::text, 3)");
-    expect(body).toContain("('clinical'::text, 'medical chart / class'::text, 7)");
-    expect(body).toContain("('morphology'::text, '词根构词'::text, 3)");
+    expect(body).toContain("('clinical'::text, 'medical chart / class'::text, 3)");
+    expect(body).toContain("('morphology'::text, '词根构词'::text, 7)");
     expect(body).toContain("status,\n          assigned_count");
     expect(body).toContain("'shortage',\n          0");
     expect(body).toContain(
@@ -122,8 +126,8 @@ describe("Supabase migration contracts", () => {
     );
     expect(body).toContain("extensions.digest");
     expect(body).toContain("if v_inserted <> 10 then");
-    expect(body).toContain("bucket_slug = 'clinical' and bucket_position <= 7");
-    expect(body).toContain("bucket_slug = 'morphology' and bucket_position <= 3");
+    expect(body).toContain("bucket_slug = 'clinical' and bucket_position <= 3");
+    expect(body).toContain("bucket_slug = 'morphology' and bucket_position <= 7");
   });
 
   it("freezes even an empty Review queue at the next profile-local midnight", () => {
@@ -316,5 +320,16 @@ describe("Supabase migration contracts", () => {
     expect(SEED_RESHAPE).toContain("med-morphology-endocarditis-001");
     expect(SEED_RESHAPE).toContain("begin;");
     expect(SEED_RESHAPE).toContain("commit;");
+  });
+
+  it("adds owner-PDF morphology and easy chart cards additively", () => {
+    expect(SEED_PDF_EXPANSION).toContain("or 20260907000800_medical_morphology.sql");
+    expect(SEED_PDF_EXPANSION).toContain("insert into public.cards");
+    expect(SEED_PDF_EXPANSION).toContain("med-morphology-stomatitis-001");
+    expect(SEED_PDF_EXPANSION).toContain("med-morphology-asymptomatic-001");
+    expect(SEED_PDF_EXPANSION).toContain("med-symptoms-symptom-001");
+    expect(SEED_PDF_EXPANSION).not.toContain("update public.cards");
+    expect(SEED_PDF_EXPANSION).toContain("begin;");
+    expect(SEED_PDF_EXPANSION).toContain("commit;");
   });
 });

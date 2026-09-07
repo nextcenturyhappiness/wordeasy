@@ -89,8 +89,8 @@ describe("DemoLearningRepository", () => {
       queue: "new",
       studyDate: "2026-08-26"
     });
-    expect(snapshot.cards.filter((card) => card.category === "morphology")).toHaveLength(3);
-    expect(snapshot.cards.filter((card) => card.category !== "morphology")).toHaveLength(7);
+    expect(snapshot.cards.filter((card) => card.category === "morphology")).toHaveLength(7);
+    expect(snapshot.cards.filter((card) => card.category !== "morphology")).toHaveLength(3);
     expect(snapshot.cards.every((card) => card.contextSentence.includes(card.targetText))).toBe(
       true
     );
