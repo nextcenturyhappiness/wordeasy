@@ -3,7 +3,9 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 import {
+  BATCH2_CARD_KEYS,
   CANONICAL_CARD_TOTAL,
+  DEACTIVATED_MEDICAL_CARD_KEYS,
   ORIGINAL_BATCH_CARD_KEYS,
   contentUuid
 } from "./lib/content-contract.mjs";
@@ -16,6 +18,10 @@ const originalMigrationUrl = new URL(
 );
 const batch2MigrationUrl = new URL(
   "../supabase/migrations/20260903000700_seed_content_batch2.sql",
+  import.meta.url
+);
+const reshapeMigrationUrl = new URL(
+  "../supabase/migrations/20260907000800_medical_morphology.sql",
   import.meta.url
 );
 
@@ -40,7 +46,8 @@ const CATEGORY_NAMES = {
   treatment: "Treatment",
   pharmacology: "Pharmacology",
   surgery_procedures: "Surgery / Procedures",
-  clinical_expressions: "Clinical expressions"
+  clinical_expressions: "Clinical expressions",
+  morphology: "词根构词"
 };
 
 const CATEGORY_ORDER = Object.fromEntries(
@@ -263,15 +270,56 @@ function generateBatch2Migration(cards) {
   ].join("\n\n");
 }
 
+function generateReshapeMigration(cards, deactivatedKeys) {
+  const morphologyCategory = tuple([
+    sqlText(contentUuid("category", "medical_english:morphology")),
+    sqlText(contentUuid("module", "medical_english")),
+    sqlText("morphology"),
+    sqlText("词根构词"),
+    "14",
+    "true"
+  ]);
+  const deactivateList = deactivatedKeys.map((key) => sqlText(key)).join(",\n  ");
+  return [
+    "-- Generated from data/seed-data.json Medical reshape by scripts/generate-seed-sql.mjs.",
+    "-- Additive: deactivate shipped specialty cards, insert chart replacements and morphology.",
+    "-- Do not rewrite 20260826000500_seed_content.sql or 20260903000700_seed_content_batch2.sql.",
+    "begin;",
+    [
+      "insert into public.categories (id, module_id, slug, name, sort_order, active)",
+      "values",
+      morphologyCategory,
+      "on conflict (id) do update set",
+      "  module_id = excluded.module_id,\n  slug = excluded.slug,\n  name = excluded.name,\n  sort_order = excluded.sort_order,\n  active = excluded.active;"
+    ].join("\n"),
+    ...contentEntityStatements(cards),
+    [
+      "update public.cards",
+      "set active = false",
+      `where stable_key in (\n  ${deactivateList}\n);`
+    ].join("\n"),
+    "commit;",
+    ""
+  ].join("\n\n");
+}
+
+function withShippedActiveFlag(card) {
+  return { ...card, active: true };
+}
+
 function splitCanonicalBatches(cards) {
   const originalKeys = new Set(ORIGINAL_BATCH_CARD_KEYS);
+  const batch2Keys = new Set(BATCH2_CARD_KEYS);
   const originalCards = [];
   const batch2Cards = [];
+  const reshapeCards = [];
   for (const card of cards) {
     if (originalKeys.has(card.card_key)) {
-      originalCards.push(card);
+      originalCards.push(withShippedActiveFlag(card));
+    } else if (batch2Keys.has(card.card_key)) {
+      batch2Cards.push(withShippedActiveFlag(card));
     } else {
-      batch2Cards.push(card);
+      reshapeCards.push(card);
     }
   }
   if (originalCards.length !== ORIGINAL_BATCH_CARD_KEYS.length) {
@@ -279,12 +327,12 @@ function splitCanonicalBatches(cards) {
       `Original seed batch has ${originalCards.length} cards; expected ${ORIGINAL_BATCH_CARD_KEYS.length}.`
     );
   }
-  if (batch2Cards.length !== ORIGINAL_BATCH_CARD_KEYS.length) {
+  if (batch2Cards.length !== BATCH2_CARD_KEYS.length) {
     throw new Error(
-      `Second seed batch has ${batch2Cards.length} cards; expected ${ORIGINAL_BATCH_CARD_KEYS.length}.`
+      `Second seed batch has ${batch2Cards.length} cards; expected ${BATCH2_CARD_KEYS.length}.`
     );
   }
-  return { originalCards, batch2Cards };
+  return { originalCards, batch2Cards, reshapeCards };
 }
 
 const dataset = JSON.parse(await readFile(seedUrl, "utf8"));
@@ -295,9 +343,10 @@ if (validation.errors.length > 0) {
   );
 }
 
-const { originalCards, batch2Cards } = splitCanonicalBatches(dataset.cards);
+const { originalCards, batch2Cards, reshapeCards } = splitCanonicalBatches(dataset.cards);
 const originalGenerated = generateMigration({ ...dataset, cards: originalCards });
 const batch2Generated = generateBatch2Migration(batch2Cards);
+const reshapeGenerated = generateReshapeMigration(reshapeCards, [...DEACTIVATED_MEDICAL_CARD_KEYS]);
 const existingOriginal = await readFile(originalMigrationUrl, "utf8");
 if (existingOriginal !== originalGenerated) {
   throw new Error(
@@ -310,12 +359,16 @@ if (process.argv.includes("--check")) {
   if (existingBatch2 !== batch2Generated) {
     throw new Error("Generated batch-2 seed migration is stale. Run npm run content:seed-sql.");
   }
+  const existingReshape = await readFile(reshapeMigrationUrl, "utf8");
+  if (existingReshape !== reshapeGenerated) {
+    throw new Error("Generated Medical reshape seed migration is stale. Run npm run content:seed-sql.");
+  }
   console.log(
-    `Seed SQL is current: ${CANONICAL_CARD_TOTAL} validated cards across the original and batch-2 migrations.`
+    `Seed SQL is current: ${CANONICAL_CARD_TOTAL} validated cards across original, batch-2, and Medical reshape migrations.`
   );
 } else {
-  await writeFile(batch2MigrationUrl, batch2Generated, "utf8");
+  await writeFile(reshapeMigrationUrl, reshapeGenerated, "utf8");
   console.log(
-    `Generated additive Supabase seed migration for the second ${batch2Cards.length} of ${CANONICAL_CARD_TOTAL} validated cards.`
+    `Generated additive Medical reshape migration for ${reshapeCards.length} new cards and ${DEACTIVATED_MEDICAL_CARD_KEYS.length} deactivations.`
   );
 }

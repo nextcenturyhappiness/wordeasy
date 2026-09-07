@@ -130,6 +130,7 @@ describe("Home and Today", () => {
     expect(within(research).getByText("128 words learned")).toBeInTheDocument();
     expect(within(medical).getByText("3 / 10")).toBeInTheDocument();
     expect(within(medical).getByText("74 words learned")).toBeInTheDocument();
+    expect(within(medical).getByText("7 病历用语 + 3 词根构词")).toBeInTheDocument();
     expect(screen.getByText("12").closest(".streak-line")).toHaveTextContent(
       "12 days in your current streak"
     );
@@ -348,6 +349,25 @@ describe("Home and Today", () => {
     expect(within(total).getByText("18")).toBeInTheDocument();
     expect(within(total).getByText("28")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("3 changes pending");
+  });
+
+  it("shows the Medical 词根构词 quota on Today without gamification", async () => {
+    const getToday = vi.fn<LearningRepository["getToday"]>(() =>
+      Promise.resolve(buildTodaySnapshot("medical_english"))
+    );
+    const repository = createRepository({
+      getToday
+    });
+
+    renderWithLearningApp(<TodayRoute />, {
+      repository,
+      initialEntries: ["/today/medical"]
+    });
+
+    expect(await screen.findByRole("heading", { name: "Today" })).toBeInTheDocument();
+    expect(getToday).toHaveBeenCalledWith("medical_english");
+    expect(screen.getByText("7 病历用语 + 3 词根构词")).toBeInTheDocument();
+    expect(screen.queryByText(/xp|streak goal|leaderboard/i)).not.toBeInTheDocument();
   });
 
   it("renders honest no-review and content-shortage states without a New action", async () => {

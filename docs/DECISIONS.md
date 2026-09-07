@@ -58,7 +58,7 @@ Date: 2026-08-26
 Status: Accepted
 Related requirements: RES-001, RES-003, MED-001, ASSIGN-003–006
 Decision: 任一必需分类不足时，当日该模块的新卡 assignment 整组不创建；返回并冻结结构化 shortage。不得部分分配、跨分类补足或重复旧卡。
-Reason: 只有 all-or-nothing 才能同时保持 Research 5+2+3、Medical 10 和同日稳定。
+Reason: 只有 all-or-nothing 才能同时保持 Research 5+2+3、Medical 7+3 和同日稳定。
 
 ### DEC-014 · Review 日队列截止点
 
@@ -432,6 +432,25 @@ Decision:
    Alternatives rejected: 恢复「词库」标题或 placeholder；删掉语境句；把结果做成挡住 Next Session 的 overlay；为结果发明「解释」分区。
    Consequences: DEC-039 的搜索-主 / Next Session-次层级仍有效，只是搜索桌面的标题与结果行布局由本决策取代。UI-001 线框与 UI-015 空查询描述同步去掉「词库」标题。
    Tests/docs affected: `LexiconSearch`, `src/styles/global.css`, Home UI tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
+
+### DEC-043 · Medical 内开词根构词配额，停用过难专科卡
+
+Date: 2026-09-07
+Status: Accepted
+Related requirements: MED-001/002/003, ASSIGN-004, CONTENT-002/007/011, TEST-004/034; DEC-013/018/040
+Context: 所有者不是应试学习者，用 -itis、-osis、derm、hemat、leuko 等语素读医学词。当前不少 Medical seed（preload、bioavailability、transaminitis、dysplasia、anastomosis、hemolyze 及同类专科写作词）对他们无用。他们要求「医学里面再开一个模块」学构词，并点名 endocarditis（正确拼写，不是 endocardiacitis）。
+Decision:
+
+1. 不新增第三个顶层模块。Medical English 内增加 `morphology` 分类，中文 UI 为「词根构词」。学习单元仍是 Context Card，学习点是 prefix+root+suffix 拆解。
+2. 每日 Medical 新卡改为严格 7 病历/课堂用语 + 3 词根构词。本地选择器和 `ensure_daily_assignment_v1_unlocked` 同步该配额；任一池不足则整组 shortage，不得跨池补足。
+3. 已发布过难专科卡停用（`active = false`），UUID / card_key / lemma 身份不变。用更易读的病历用语替换同一临床分类名额。词根卡使用新 UUID。
+4. 原 60 + 第二批 60 的 SQL migration 不重写。停用、替换和词根卡由 additive migration 完成。catalog 版本改为 `canonical-medical-morphology-v1`。Demo 仍 20 张：Research 5+2+3，Medical 7+3。
+5. 停用卡保留在词库身份里，供已有 FSRS / Review 继续显示；新卡分配只取 `active` 卡。云端 ingest 允许给已停用卡记分，避免进度被卡住。
+
+Reason: 这是最小且符合 CORE Medical 分类+配额模型的形状，既给构词一条独立学习面，又不发明空导航或第三套进度。
+Alternatives rejected: 第三个顶层模块；回收旧 UUID 改写成新词；重写已应用 seed migration；把构词只当翻译附录而不改每日配额。
+Consequences: Medical 生效词库大于 60；未冻结的新用户 Day-1 集合会变；已冻结当日 assignment 不变。Home / Today 用安静中文写出「7 病历用语 + 3 词根构词」，不做游戏化。
+Tests/docs affected: seed JSON/SQL, validator/counts, assignment selector/RPC/parser, catalog version, Demo/standalone, Home/Today copy, `docs/01_PRODUCT_CORE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
 

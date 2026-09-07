@@ -31,6 +31,7 @@ export interface CachedCardRow {
   sourceUrl: string | null;
   doi: string | null;
   pmid: string | null;
+  active: boolean;
   cachedAt: string;
 }
 
@@ -164,6 +165,7 @@ export function cachedCardFromNormalized(
     sourceUrl: value.context.source.url,
     doi: value.context.source.doi,
     pmid: value.context.source.pmid,
+    active: value.card.active,
     cachedAt
   };
 }

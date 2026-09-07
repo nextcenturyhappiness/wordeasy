@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState, type RefObject } from "react";
 
+import { categoryLabel } from "../app/categoryLabels";
 import type { ContextCardView } from "../application/contracts";
 import {
   cancelEnglishSpeech,
@@ -158,6 +159,14 @@ export function ContextCard({
             <span>{card.partOfSpeech}</span>
             <span aria-hidden="true">·</span>
             <span>{card.ipa}</span>
+            {card.category === "" ? null : (
+              <>
+                <span aria-hidden="true">·</span>
+                <span lang={card.category === "morphology" ? "zh-CN" : undefined}>
+                  {categoryLabel(card.category)}
+                </span>
+              </>
+            )}
           </p>
         </header>
       )}

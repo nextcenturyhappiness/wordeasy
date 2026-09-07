@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 
 import type { ModuleSlug, QueueKind, TodaySnapshot } from "../../application/contracts";
 import { preloadStudyRoute } from "../../app/lazyRoutes";
+import { medicalQuotaCopy } from "../../app/categoryLabels";
 import { getModuleName, getModuleRoute, parseModuleRoute } from "../../app/moduleRoutes";
 import { useLearningApp } from "../../app/LearningAppContext";
 import { ProgressBreakdown } from "../../components/ProgressBreakdown";
@@ -186,6 +187,11 @@ export function TodayPage() {
         <section className="queue-card" aria-labelledby="new-queue-title">
           <p className="eyebrow">Assigned cards</p>
           <h2 id="new-queue-title">New</h2>
+          {module === "medical_english" ? (
+            <p className="muted-copy" lang="zh-CN">
+              {medicalQuotaCopy()}
+            </p>
+          ) : null}
           <p className="queue-card__count">
             {snapshot.new.completed} of {snapshot.new.total} completed
           </p>

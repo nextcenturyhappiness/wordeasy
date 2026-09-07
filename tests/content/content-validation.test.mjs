@@ -4,9 +4,12 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  CANONICAL_ACTIVE_CARD_TOTAL,
   CANONICAL_CARD_TOTAL,
+  CANONICAL_MEDICAL_ACTIVE_TOTAL,
   CANONICAL_MEDICAL_TOTAL,
   CANONICAL_RESEARCH_TOTAL,
+  DEACTIVATED_MEDICAL_CARD_KEYS,
   CARD_FIELDS,
   CSV_FIELDS,
   MEDICAL_CONTEXT_GENRES,
@@ -56,15 +59,19 @@ describe("formal seed dataset", () => {
     expect(result.warnings).toEqual([]);
   });
 
-  it("contains exactly 60 Research and 60 Medical cards with the locked distribution", () => {
+  it("contains 60 Research cards and the reshaped Medical catalog", () => {
     const result = validateDataset(dataset);
     expect(result.counts).toMatchObject({
       total: CANONICAL_CARD_TOTAL,
       research: CANONICAL_RESEARCH_TOTAL,
-      medical: CANONICAL_MEDICAL_TOTAL,
+      medical: CANONICAL_MEDICAL_ACTIVE_TOTAL,
       researchCategories: RESEARCH_COUNTS,
       medicalCategories: MEDICAL_COUNTS
     });
+    expect(result.counts.research + result.counts.medical).toBe(CANONICAL_ACTIVE_CARD_TOTAL);
+    expect(dataset.cards.filter((card) => card.module === "medical_english")).toHaveLength(
+      CANONICAL_MEDICAL_TOTAL
+    );
   });
 
   it("keeps the original 60 card keys in place and ahead of the second batch", () => {
@@ -72,6 +79,17 @@ describe("formal seed dataset", () => {
       dataset.cards.slice(0, ORIGINAL_BATCH_CARD_KEYS.length).map((card) => card.card_key)
     ).toEqual([...ORIGINAL_BATCH_CARD_KEYS]);
     expect(dataset.cards).toHaveLength(CANONICAL_CARD_TOTAL);
+  });
+
+  it("deactivates culled specialty cards instead of recycling their identities", () => {
+    const culled = dataset.cards.filter((card) =>
+      DEACTIVATED_MEDICAL_CARD_KEYS.includes(card.card_key)
+    );
+    expect(culled).toHaveLength(DEACTIVATED_MEDICAL_CARD_KEYS.length);
+    expect(culled.every((card) => card.active === false)).toBe(true);
+    expect(dataset.cards.filter((card) => card.category === "morphology" && card.active)).toHaveLength(
+      28
+    );
   });
 
   it("covers every required Research and Medical material genre", () => {

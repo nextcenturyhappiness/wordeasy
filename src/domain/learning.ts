@@ -10,9 +10,14 @@ export const RESEARCH_CATEGORY_QUOTAS = {
   bioinformatics: 3
 } as const;
 
-export const MEDICAL_DAILY_NEW_QUOTA = 10;
+export const MEDICAL_MORPHOLOGY_CATEGORY = "morphology" as const;
+export const MEDICAL_CLINICAL_DAILY_QUOTA = 7;
+export const MEDICAL_MORPHOLOGY_DAILY_QUOTA = 3;
+export const MEDICAL_DAILY_NEW_QUOTA =
+  MEDICAL_CLINICAL_DAILY_QUOTA + MEDICAL_MORPHOLOGY_DAILY_QUOTA;
 
 export type ResearchCategory = keyof typeof RESEARCH_CATEGORY_QUOTAS;
+export type MedicalAssignmentBucket = "clinical" | typeof MEDICAL_MORPHOLOGY_CATEGORY;
 
 export interface WordEntity {
   id: string;

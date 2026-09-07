@@ -16,9 +16,13 @@
 
 ### CONTENT-002 · P0 · Medical
 
-创建 60 张 Medical English Context Cards，分两批各 30 张。
+已发布的两批各 30 张 Medical English Context Cards 保持身份。当前生效词库为：
 
-合理覆盖：
+- 仍在使用的病历 / 课堂用语卡（覆盖原 13 个临床分类）；
+- 明确停用、不得改写 lemma 的过难专科卡；
+- 约 28 张 `morphology`（词根构词）Context Cards。
+
+病历用语仍须覆盖：
 
 - Anatomy
 - Physiology
@@ -34,7 +38,7 @@
 - Surgery / Procedures
 - Clinical expressions
 
-不得几乎全部集中在疾病、药物或解剖名词。
+词根构词卡的学习点是 prefix + root + suffix 拆解，而不是只给中文翻译。不得几乎全部集中在疾病、药物或解剖名词。已发布卡若不再适合学习者，必须 `active = false`，不得回收 UUID 改写成另一个 lemma。
 
 ---
 
@@ -176,6 +180,7 @@ Paraphrase 必须真正降低句子理解难度，而不是只替换一两个词
 - 中文释义符合当前 sense；
 - 完整句子翻译自然准确；
 - `usage_note` 用一两句中文说明写作时的使用强度：证据或关系要多强才诚实，必要时对比更弱或更强的近邻词；
+- 词根构词卡还要写清各语素含义，并说明凭词根猜测可能错过临床细节；
 - 不把中文逐词硬译；
 - 医学术语使用常见规范表达。
 
@@ -249,8 +254,9 @@ attenuate the association|attenuate an effect|attenuate inflammation
 - target_text 不在 context 中；
 - source_type 与来源字段矛盾；
 - Research 不是 30 + 12 + 18（两批各 15 + 6 + 9）；
-- Medical 不是 60（两批各 30，分类覆盖加倍）；
-- 总数不是 120；
+- Medical 生效分类数量与 `MEDICAL_COUNTS` 不符（含 `morphology`）；
+- 已发布专科卡未被停用，或停用卡被改写 lemma；
+- 总数不是当前 canonical 全量（含停用卡）；
 - 重复 ID；
 - 完全重复 context；
 - collocations 为空；

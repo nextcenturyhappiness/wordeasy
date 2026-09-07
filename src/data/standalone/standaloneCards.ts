@@ -6,30 +6,37 @@ import { normalizeSeedCard, type SeedCard } from "../local/seedCardNormalization
 const seedCards = standaloneSeedCards as SeedCard[];
 const EXPECTED_CARD_COUNTS: Record<DomainModuleSlug, number> = {
   research_english: 60,
-  medical_english: 60
+  medical_english: 104
 };
 
-function requireCompleteActiveSeed(): NormalizedContextCard[] {
-  const activeCards = seedCards.filter((card) => card.active);
-
+function requireCompleteCatalog(): NormalizedContextCard[] {
   for (const [module, expected] of Object.entries(EXPECTED_CARD_COUNTS) as Array<
     [DomainModuleSlug, number]
   >) {
-    const actual = activeCards.filter((card) => card.module === module).length;
+    const actual = seedCards.filter((card) => card.module === module).length;
     if (actual !== expected) {
       throw new Error(
-        `Canonical standalone seed has ${String(actual)} active ${module} cards; expected ${String(expected)}.`
+        `Canonical standalone seed has ${String(actual)} ${module} cards; expected ${String(expected)}.`
       );
     }
   }
 
-  if (activeCards.length !== 120) {
+  const activeMedical = seedCards.filter(
+    (card) => card.module === "medical_english" && card.active
+  ).length;
+  if (activeMedical !== 88) {
     throw new Error(
-      `Canonical standalone seed has ${String(activeCards.length)} active cards; expected 120.`
+      `Canonical standalone seed has ${String(activeMedical)} active Medical cards; expected 88.`
     );
   }
 
-  return activeCards.map(normalizeSeedCard);
+  if (seedCards.length !== 164) {
+    throw new Error(
+      `Canonical standalone seed has ${String(seedCards.length)} cards; expected 164.`
+    );
+  }
+
+  return seedCards.map(normalizeSeedCard);
 }
 
-export const STANDALONE_CARDS = requireCompleteActiveSeed();
+export const STANDALONE_CARDS = requireCompleteCatalog();

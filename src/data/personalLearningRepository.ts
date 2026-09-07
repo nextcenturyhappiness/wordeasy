@@ -8,12 +8,19 @@ import {
 } from "./indexedDbLearningRepository";
 import { LocalAssignmentService } from "./localAssignmentService";
 
-const PERSONAL_CATALOG_SIZE = 60;
+const MODULES = ["research_english", "medical_english"] as const;
+const PERSONAL_CATALOG_SIZE = {
+  research_english: 60,
+  medical_english: 104
+} as const;
+const PERSONAL_ACTIVE_NEW_POOL = {
+  research_english: 60,
+  medical_english: 88
+} as const;
 const PERSONAL_DAILY_QUOTA = 10;
-const PERSONAL_CATALOG_VERSION = "canonical-120-v1";
+const PERSONAL_CATALOG_VERSION = "canonical-medical-morphology-v1";
 const PERSONAL_CATALOG_VERSION_KEY = "personal-catalog-version";
 const REVIEW_QUEUE_MIGRATION_KEY = "personal-review-queues-v1";
-const MODULES = ["research_english", "medical_english"] as const;
 
 export interface PersonalLearningRepositoryOptions {
   database: LearningDatabase;
@@ -40,7 +47,7 @@ async function cachedCatalogIsComplete(
   ]);
   return (
     version?.value === PERSONAL_CATALOG_VERSION &&
-    counts.every((count) => count === PERSONAL_CATALOG_SIZE)
+    counts.every((count, index) => count === PERSONAL_CATALOG_SIZE[MODULES[index]])
   );
 }
 
@@ -50,12 +57,12 @@ function assertCompleteCatalog(cards: NormalizedContextCard[]): void {
   }
   for (const module of MODULES) {
     const moduleCards = cards.filter((card) => card.sense.module === module);
-    if (moduleCards.length !== PERSONAL_CATALOG_SIZE) {
+    if (moduleCards.length !== PERSONAL_CATALOG_SIZE[module]) {
       throw new Error(
-        `The personal ${module} catalog must contain exactly ${String(PERSONAL_CATALOG_SIZE)} cards.`
+        `The personal ${module} catalog must contain exactly ${String(PERSONAL_CATALOG_SIZE[module])} cards.`
       );
     }
-    if (new Set(moduleCards.map((card) => card.card.id)).size !== PERSONAL_CATALOG_SIZE) {
+    if (new Set(moduleCards.map((card) => card.card.id)).size !== PERSONAL_CATALOG_SIZE[module]) {
       throw new Error(`The personal ${module} catalog contains duplicate card IDs.`);
     }
   }
@@ -109,14 +116,14 @@ async function prepareDailyAssignments(
     await assignments.ensureProvisionalNewSummary(
       "research_english",
       context.studyDate,
-      PERSONAL_CATALOG_SIZE,
+      PERSONAL_ACTIVE_NEW_POOL.research_english,
       PERSONAL_DAILY_QUOTA,
       context.initializedAt
     );
     await assignments.ensureProvisionalNewSummary(
       "medical_english",
       context.studyDate,
-      PERSONAL_CATALOG_SIZE,
+      PERSONAL_ACTIVE_NEW_POOL.medical_english,
       PERSONAL_DAILY_QUOTA,
       context.initializedAt
     );

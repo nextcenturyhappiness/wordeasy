@@ -150,6 +150,19 @@ export function parseNewAssignmentSet(value: unknown): CloudNewAssignmentSet {
     ) {
       throw new CloudPayloadError("assignment.assignments", "Research 5+2+3 quota");
     }
+  } else {
+    let morphology = 0;
+    let clinical = 0;
+    for (const assignment of assignments) {
+      if (assignment.category === "morphology") {
+        morphology += 1;
+      } else {
+        clinical += 1;
+      }
+    }
+    if (clinical !== 7 || morphology !== 3) {
+      throw new CloudPayloadError("assignment.assignments", "Medical 7+3 quota");
+    }
   }
   return { ...common, status: "ready", shortage: null, assignments };
 }

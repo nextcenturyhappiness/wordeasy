@@ -167,11 +167,24 @@ Not enough new Bioinformatics cards are available.
 
 ### MED-001 · P0 · 每日 10 个新词
 
-Medical English 每天分配 10 个新词。
+Medical English 每天分配 10 个新词，严格分成：
+
+```text
+7 病历 / 课堂用语（chart / class vocabulary）
+3 词根构词（morphology）
+```
+
+分类固定标识：
+
+```text
+morphology
+```
+
+其余既有 Medical 分类共同组成每日 7 张病历用语池。不得用另一池补足缺口，也不得重复已学卡片冒充新词。
 
 ### MED-002 · P0 · 长期分类覆盖
 
-内容在滚动周期内均衡覆盖：
+内容在滚动周期内均衡覆盖病历用语分类：
 
 - Anatomy
 - Physiology
@@ -187,7 +200,7 @@ Medical English 每天分配 10 个新词。
 - Surgery / Procedures
 - Clinical expressions
 
-不要求每天全部出现，但不得长期只集中于疾病名词、药物名或解剖名词。
+并保证词根构词（`morphology`，中文 UI「词根构词」）每天都有固定配额。不要求每天出现全部病历分类，但不得长期只集中于疾病名词、药物名或解剖名词，也不得把词根卡改写成普通翻译卡。
 
 ### MED-003 · P1 · 医学语境
 
@@ -387,7 +400,7 @@ Space = Reveal
 6. Session 恢复和登出。
 7. 两个学习模块。
 8. Research 每日 5 + 2 + 3。
-9. Medical 每日 10。
+9. Medical 每日 7 病历用语 + 3 词根构词。
 10. Context-first 卡片。
 11. Again / Hard / Good / Easy。
 12. New 与 Review 分离。
@@ -406,7 +419,7 @@ Space = Reveal
 25. Service Worker 静态缓存。
 26. 刷新后数据不丢失。
 27. 60 张 Research seed cards（两批各 15 + 6 + 9）。
-28. 60 张 Medical seed cards（两批各 30，保持分类覆盖）。
+28. Medical seed：保留已发布身份；停用过难专科卡；补易读病历用语；另增词根构词 Context Cards。
 29. JSON / CSV 内容导入格式。
 30. RLS、migrations、测试和 README。
 31. macOS Apple Silicon 个人版 `.app` / `.dmg`，复用同一套 PWA 前端和完整 120-card 本地内容。
