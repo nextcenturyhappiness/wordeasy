@@ -361,7 +361,9 @@ if (process.argv.includes("--check")) {
   }
   const existingReshape = await readFile(reshapeMigrationUrl, "utf8");
   if (existingReshape !== reshapeGenerated) {
-    throw new Error("Generated Medical reshape seed migration is stale. Run npm run content:seed-sql.");
+    throw new Error(
+      "Generated Medical reshape seed migration is stale. Run npm run content:seed-sql."
+    );
   }
   console.log(
     `Seed SQL is current: ${CANONICAL_CARD_TOTAL} validated cards across original, batch-2, and Medical reshape migrations.`

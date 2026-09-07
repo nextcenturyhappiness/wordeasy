@@ -2,10 +2,7 @@
 
 import { readFile, writeFile } from "node:fs/promises";
 
-import {
-  DEACTIVATED_MEDICAL_CARD_KEYS,
-  addStableIdentity
-} from "./lib/content-contract.mjs";
+import { DEACTIVATED_MEDICAL_CARD_KEYS, addStableIdentity } from "./lib/content-contract.mjs";
 import {
   MEDICAL_MORPHOLOGY_CARDS,
   MEDICAL_REPLACEMENT_CARDS

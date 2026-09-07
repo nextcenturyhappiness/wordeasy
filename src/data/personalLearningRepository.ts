@@ -47,7 +47,7 @@ async function cachedCatalogIsComplete(
   ]);
   return (
     version?.value === PERSONAL_CATALOG_VERSION &&
-    counts.every((count, index) => count === PERSONAL_CATALOG_SIZE[MODULES[index]])
+    MODULES.every((module, index) => counts[index] === PERSONAL_CATALOG_SIZE[module])
   );
 }
 

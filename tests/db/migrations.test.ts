@@ -47,8 +47,8 @@ const PRIVATE_TABLES = [
 ];
 
 function functionBody(sql: string, name: string): string {
-  const plainStart = sql.lastIndexOf(`create function public.${name}`);
-  const replacementStart = sql.lastIndexOf(`create or replace function public.${name}`);
+  const plainStart = sql.lastIndexOf(`create function public.${name}(`);
+  const replacementStart = sql.lastIndexOf(`create or replace function public.${name}(`);
   const start = Math.max(plainStart, replacementStart);
   if (start < 0) {
     throw new Error(`Missing SQL function ${name}.`);

@@ -163,10 +163,7 @@ assert(
   "Desktop JavaScript contains Service Worker registration code."
 );
 assert(activeCardIds.length === 148, "Canonical catalog must contain 148 active cards.");
-assert(
-  cardCatalogFiles.length === 0,
-  "Desktop cloud build must not embed the canonical catalog."
-);
+assert(cardCatalogFiles.length === 0, "Desktop cloud build must not embed the canonical catalog.");
 assert(
   [...javascriptByName].every(([, source]) =>
     activeCardIds.every((cardId) => !source.includes(cardId))

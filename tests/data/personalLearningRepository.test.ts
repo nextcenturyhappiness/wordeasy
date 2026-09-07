@@ -222,6 +222,7 @@ describe("PersonalLearningRepository", () => {
       sourceUrl: template.context.source.url,
       doi: template.context.source.doi,
       pmid: template.context.source.pmid,
+      active: template.card.active,
       cachedAt: DAY_ONE_NOW.toISOString()
     });
 

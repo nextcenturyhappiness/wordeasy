@@ -78,8 +78,7 @@ function loadDemoSeedModule(): string {
     ),
     ...seed.cards
       .filter(
-        (card) =>
-          card.active && card.module === "medical_english" && card.category === "morphology"
+        (card) => card.active && card.module === "medical_english" && card.category === "morphology"
       )
       .slice(0, 3)
   ];

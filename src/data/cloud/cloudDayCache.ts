@@ -38,6 +38,7 @@ function cachedCard(userId: string, card: CloudContextCard, cachedAt: string): C
     sourceUrl: card.sourceUrl,
     doi: card.doi,
     pmid: card.pmid,
+    active: true,
     cachedAt
   };
 }

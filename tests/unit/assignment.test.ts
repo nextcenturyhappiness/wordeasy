@@ -65,13 +65,27 @@ describe("daily assignment quotas", () => {
     }
 
     expect(
-      selectMedicalAssignment(cards([["symptoms", 10], ["morphology", 2]]), "user-a", "2026-09-07")
+      selectMedicalAssignment(
+        cards([
+          ["symptoms", 10],
+          ["morphology", 2]
+        ]),
+        "user-a",
+        "2026-09-07"
+      )
     ).toMatchObject({
       status: "shortage",
       shortage: { category: "morphology", required: 3, available: 2 }
     });
     expect(
-      selectMedicalAssignment(cards([["symptoms", 6], ["morphology", 10]]), "user-a", "2026-09-07")
+      selectMedicalAssignment(
+        cards([
+          ["symptoms", 6],
+          ["morphology", 10]
+        ]),
+        "user-a",
+        "2026-09-07"
+      )
     ).toMatchObject({
       status: "shortage",
       shortage: { category: "clinical", required: 7, available: 6 }

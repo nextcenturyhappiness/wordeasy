@@ -435,7 +435,12 @@ export function validateDataset(dataset, { enforceCounts = true } = {}) {
       }
     } else if (card.active !== true) {
       errors.push(
-        makeIssue(card, index, "active", "Current catalog cards must be active unless explicitly culled.")
+        makeIssue(
+          card,
+          index,
+          "active",
+          "Current catalog cards must be active unless explicitly culled."
+        )
       );
     }
 
