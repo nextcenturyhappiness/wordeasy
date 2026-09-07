@@ -79,7 +79,9 @@ describe("StudyPage", () => {
       initialEntries: ["/study/research?queue=new"]
     });
 
-    expect(await screen.findByText(/what does this word mean in this context/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/what does this word mean in this context/i)
+    ).toBeInTheDocument();
     expect(screen.queryByText(researchCard.meaningEn)).not.toBeInTheDocument();
 
     const input = document.createElement("input");
@@ -221,14 +223,14 @@ describe("StudyPage", () => {
       });
 
       await screen.findByText(/what does this word mean in this context/i);
-      expect(
-        screen.getByText(researchCard.targetText, { selector: "mark" })
-      ).toBeInTheDocument();
+      expect(screen.getByText(researchCard.targetText, { selector: "mark" })).toBeInTheDocument();
       fireEvent.keyDown(window, { key: " ", code: "Space" });
 
       expect(await screen.findByText(researchCard.meaningEn)).toBeInTheDocument();
       expect(screen.queryByText(/what does the highlighted word mean/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/what does this word mean in this context/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/what does this word mean in this context/i)
+      ).not.toBeInTheDocument();
       const anchor = document.getElementById("context-sentence-anchor");
       expect(anchor).toHaveTextContent(researchCard.contextSentence);
       expect(anchor).toHaveTextContent(researchCard.ipa);

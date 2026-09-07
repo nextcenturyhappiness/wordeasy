@@ -11,9 +11,7 @@ describe("ContextCard", () => {
   it("implements the context-first front without leaking any answer", () => {
     const { container } = render(<ContextCard card={researchCard} revealed={false} />);
 
-    expect(
-      screen.getByRole("heading", { level: 1, name: researchCard.lemma })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: researchCard.lemma })).toBeInTheDocument();
     expect(screen.getByText(/what does this word mean in this context/i)).toBeInTheDocument();
     expect(screen.queryByText(/missing word/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/what does the highlighted word mean/i)).not.toBeInTheDocument();
