@@ -17,15 +17,23 @@ import {
   ORIGINAL_BATCH_CARD_KEYS,
   RESEARCH_CONTEXT_GENRES,
   RESEARCH_COUNTS,
+  ESSENTIAL_DATASET_KEY,
+  ESSENTIAL_MEDICAL_MIN_TOTAL,
   addStableIdentity,
   contentUuid,
   parseCsv
 } from "../../scripts/lib/content-contract.mjs";
-import { validateDataset, validateImportTemplate } from "../../scripts/lib/content-validator.mjs";
+import {
+  validateDataset,
+  validateEssentialDataset,
+  validateImportTemplate
+} from "../../scripts/lib/content-validator.mjs";
 
 const seedPath = resolve(process.cwd(), "data/seed-data.json");
+const essentialPath = resolve(process.cwd(), "data/essential-medical/cards.json");
 const templatePath = resolve(process.cwd(), "data/import-template.csv");
 const dataset = JSON.parse(readFileSync(seedPath, "utf8"));
+const essentialDataset = JSON.parse(readFileSync(essentialPath, "utf8"));
 const template = readFileSync(templatePath, "utf8");
 
 function copyDataset() {
@@ -301,5 +309,30 @@ describe("strict content validation failures", () => {
       { enforceCounts: false }
     );
     expect(result.errors).toEqual([]);
+  });
+});
+
+describe("essential medical dataset", () => {
+  it("covers the classroom lemma list with empty collocations", () => {
+    const result = validateEssentialDataset(essentialDataset);
+    expect(result.errors).toEqual([]);
+    expect(essentialDataset.dataset_key).toBe(ESSENTIAL_DATASET_KEY);
+    expect(result.counts.essential).toBeGreaterThanOrEqual(ESSENTIAL_MEDICAL_MIN_TOTAL);
+    expect(essentialDataset.cards.every((card) => card.module === "essential_medical")).toBe(true);
+    expect(essentialDataset.cards.every((card) => card.collocations.length === 0)).toBe(true);
+    expect(essentialDataset.cards.every((card) => card.source_type === "original_example")).toBe(
+      true
+    );
+    expect(
+      essentialDataset.cards.every((card) =>
+        [card.source_title, card.source_url, card.doi, card.pmid].every((value) => value === null)
+      )
+    ).toBe(true);
+  });
+
+  it("rejects a non-empty collocation on an essential card", () => {
+    const invalid = structuredClone(essentialDataset);
+    invalid.cards[0].collocations = ["abdomen wall"];
+    expect(issueCodes(validateEssentialDataset(invalid))).toContain("collocations_count");
   });
 });

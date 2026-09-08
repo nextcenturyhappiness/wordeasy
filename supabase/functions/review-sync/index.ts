@@ -56,7 +56,11 @@ function integer(value: unknown, label: string): number {
 }
 
 function moduleSlug(value: unknown): ReconciliationBundle["module"] {
-  if (value !== "research_english" && value !== "medical_english") {
+  if (
+    value !== "research_english" &&
+    value !== "medical_english" &&
+    value !== "essential_medical"
+  ) {
     throw new Error("bundle.module is invalid.");
   }
   return value;

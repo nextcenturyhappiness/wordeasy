@@ -28,7 +28,11 @@ export interface SeedCard {
 }
 
 export function normalizeSeedCard(seed: SeedCard): NormalizedContextCard {
-  if (seed.module !== "research_english" && seed.module !== "medical_english") {
+  if (
+    seed.module !== "research_english" &&
+    seed.module !== "medical_english" &&
+    seed.module !== "essential_medical"
+  ) {
     throw new Error(`Unsupported module in local seed: ${seed.module}`);
   }
   if (seed.source_type !== "original_example" && seed.source_type !== "verified_source") {

@@ -38,7 +38,7 @@ bundle size check
 - target text 可见并被高亮，不得挖空；
 - 提问问该词在当前语境中的意思，不得写 missing word；
 - 正面无中文答案、英文释义或 paraphrase；
-- reveal 后背面信息完整，但不重复正面语境提问；IPA 出现在 sticky 原句区域，该行可点按朗读 lemma 而非 IPA 字符串；
+- reveal 后背面以中文释义为主视觉、英文 meaning 次之；不显示「句子来源」；collocations / 适用范围仅在非空时出现；
 - 未揭示正面与 Reveal 本身不自动朗读；
 - reveal 后语境原句（或高亮 target）仍在文档中，并以稳定顶部锚点保持在首屏，不得滚向评分按钮；
 - Review state 绑定 card，不只绑定 lemma。
@@ -72,6 +72,10 @@ bundle size check
 
 合计仍是 10 个新卡。任一池不足时整组 shortage。
 
+### TEST-044 · 必备医学英语 10
+
+同一用户、同一日期的 必备医学英语 assignment 必须是 10 张 `core` 新卡。不足时整组 shortage。不得改动 Research 5+2+3 或 Medical 7+3。
+
 ### TEST-005 · New / Review
 
 New 与 Review 分开，Again 重复步骤不重复增加完成卡片数。
@@ -83,9 +87,10 @@ New 与 Review 分开，Again 重复步骤不重复增加完成卡片数。
 ```text
 Research 6 / 10
 Medical 3 / 10
+必备医学英语 0 / 10
 ```
 
-继续 Research 后，Medical 保持 3 / 10。
+继续 Research 后，Medical 与 必备医学英语 保持不变。
 
 ---
 
@@ -355,11 +360,12 @@ Research = 60
 General = 30
 Statistics = 12
 Bioinformatics = 18
-Medical = 60
-Total = current canonical catalog, including deactivated specialty cards
+Medical = current canonical Medical catalog, including deactivated specialty cards
+必备医学英语 >= 660, covering every lemma in data/essential-medical/lemmas.txt
+Total Research+Medical = current canonical catalog
 ```
 
-两批已发布卡身份保持不变；Medical 另含停用专科卡、病历用语替换和词根构词卡。每日分配仍是 Research 5 + 2 + 3、Medical 7 词根构词 + 3 病历用语。
+两批已发布卡身份保持不变；Medical 另含停用专科卡、病历用语替换和词根构词卡。每日分配仍是 Research 5 + 2 + 3、Medical 7 词根构词 + 3 病历用语、必备医学英语 10 个 `core` 新词。
 
 ### TEST-035 · 来源
 
@@ -367,7 +373,7 @@ Total = current canonical catalog, including deactivated specialty cards
 
 ### TEST-036 · 内容字段
 
-每张卡必填字段完整，target text 出现在 context 中，collocations 非空。
+每张卡必填字段完整，target text 出现在 context 中。Research / Medical 的 collocations 非空；必备医学英语 collocations 必须为空。
 
 ### TEST-037 · 人工抽查
 

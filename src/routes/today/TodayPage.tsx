@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 
 import type { ModuleSlug, QueueKind, TodaySnapshot } from "../../application/contracts";
 import { preloadStudyRoute } from "../../app/lazyRoutes";
-import { medicalQuotaCopy } from "../../app/categoryLabels";
+import { essentialMedicalQuotaCopy, medicalQuotaCopy } from "../../app/categoryLabels";
 import { getModuleName, getModuleRoute, parseModuleRoute } from "../../app/moduleRoutes";
 import { useLearningApp } from "../../app/LearningAppContext";
 import { ProgressBreakdown } from "../../components/ProgressBreakdown";
@@ -190,6 +190,11 @@ export function TodayPage() {
           {module === "medical_english" ? (
             <p className="muted-copy" lang="zh-CN">
               {medicalQuotaCopy()}
+            </p>
+          ) : null}
+          {module === "essential_medical" ? (
+            <p className="muted-copy" lang="zh-CN">
+              {essentialMedicalQuotaCopy()}
             </p>
           ) : null}
           <p className="queue-card__count">

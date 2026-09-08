@@ -10,6 +10,8 @@ import medicalReshapeSql from "../../supabase/migrations/20260907000800_medical_
 import medicalQuotaSql from "../../supabase/migrations/20260907000900_medical_assignment_quotas.sql?raw";
 import medicalPdfExpansionSql from "../../supabase/migrations/20260907001000_medical_pdf_expansion.sql?raw";
 import medicalQuotaFlipSql from "../../supabase/migrations/20260907001100_medical_assignment_quota_flip.sql?raw";
+import essentialAssignmentSql from "../../supabase/migrations/20260908001300_essential_medical_assignment.sql?raw";
+import essentialSeedSql from "../../supabase/migrations/20260908001400_essential_medical_seed.sql?raw";
 import medicalChartMidlevelSql from "../../supabase/migrations/20260907001200_medical_chart_midlevel.sql?raw";
 import syncSql from "../../supabase/migrations/20260826000300_review_sync_rpcs.sql?raw";
 import edgeFsrs from "../../supabase/functions/_shared/fsrs.ts?raw";
@@ -21,7 +23,9 @@ const HARDENING = hardeningSql.toLowerCase();
 const SYNC = syncSql.toLowerCase();
 const MEDICAL_QUOTAS = medicalQuotaSql.toLowerCase();
 const MEDICAL_QUOTA_FLIP = medicalQuotaFlipSql.toLowerCase();
-const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}\n${MEDICAL_QUOTA_FLIP}`;
+const ESSENTIAL_ASSIGNMENT = essentialAssignmentSql.toLowerCase();
+const ESSENTIAL_SEED = essentialSeedSql.toLowerCase();
+const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}\n${MEDICAL_QUOTA_FLIP}\n${ESSENTIAL_ASSIGNMENT}`;
 const EFFECTIVE_SYNC = `${SYNC}\n${HARDENING}\n${MEDICAL_QUOTAS}`;
 const SEED_PDF_EXPANSION = medicalPdfExpansionSql.toLowerCase();
 const SEED_CHART_MIDLEVEL = medicalChartMidlevelSql.toLowerCase();
@@ -121,6 +125,8 @@ describe("Supabase migration contracts", () => {
     expect(body).toContain("('bioinformatics'::text, 'bioinformatics'::text, 3)");
     expect(body).toContain("('clinical'::text, 'medical chart / class'::text, 3)");
     expect(body).toContain("('morphology'::text, '词根构词'::text, 7)");
+    expect(body).toContain("p_module_slug = 'essential_medical'");
+    expect(body).toContain("not enough new 必备医学英语 cards are available.");
     expect(body).toContain("status,\n          assigned_count");
     expect(body).toContain("'shortage',\n          0");
     expect(body).toContain(
@@ -269,6 +275,7 @@ describe("Supabase migration contracts", () => {
     expect(HARDENING).toContain("to service_role;");
     expect(edgeHandler).toContain("service.auth.getUser(token)");
     expect(edgeHandler).toContain("commit_reconciled_review_state_trusted");
+    expect(edgeHandler).toContain("essential_medical");
     expect(edgeHandler).not.toContain("p_scheduler_state: payload");
     expect(edgeFsrs).toContain('from "npm:ts-fsrs@5.4.1"');
     expect(edgeFsrs).toContain('"ts-fsrs@5.4.1/default-v1"');
@@ -345,5 +352,28 @@ describe("Supabase migration contracts", () => {
     expect(SEED_CHART_MIDLEVEL).toContain("med-pharmacology-insulin-001");
     expect(SEED_CHART_MIDLEVEL).toContain("begin;");
     expect(SEED_CHART_MIDLEVEL).toContain("commit;");
+  });
+
+  it("adds Essential Medical daily assignment of 10 from the core pool", () => {
+    expect(ESSENTIAL_ASSIGNMENT).toContain("ensure_daily_assignment_v1_unlocked");
+    expect(ESSENTIAL_ASSIGNMENT).toContain("'essential_medical'");
+    expect(ESSENTIAL_ASSIGNMENT).toContain("'core'");
+    expect(ESSENTIAL_ASSIGNMENT).toContain("v_required := 10");
+    expect(ESSENTIAL_ASSIGNMENT).toContain("ranked.card_position <= 10");
+    expect(ESSENTIAL_ASSIGNMENT).toContain("'research_english'");
+    expect(ESSENTIAL_ASSIGNMENT).toContain("'medical_english'");
+    expect(ESSENTIAL_ASSIGNMENT).toContain("category.slug = 'core'");
+  });
+
+  it("upserts Essential Medical cards with empty collocations", () => {
+    expect(ESSENTIAL_SEED).toContain("generated from data/essential-medical");
+    expect(ESSENTIAL_SEED).toContain("drop constraint if exists contexts_collocations_not_empty");
+    expect(ESSENTIAL_SEED).toContain("modules_supported_slug");
+    expect(ESSENTIAL_SEED).toContain("'essential_medical'");
+    expect(ESSENTIAL_SEED).toContain("必备医学英语");
+    expect(ESSENTIAL_SEED).toContain("ess-core-abdomen-001");
+    expect(ESSENTIAL_SEED.match(/'context_recall', true\)/g)?.length).toBeGreaterThanOrEqual(660);
+    expect(ESSENTIAL_SEED).toContain("begin;");
+    expect(ESSENTIAL_SEED).toContain("commit;");
   });
 });

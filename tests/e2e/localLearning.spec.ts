@@ -5,6 +5,7 @@ test("renders both isolated modules without horizontal overflow", async ({ page 
 
   await expect(page.getByRole("heading", { name: "Research English" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Medical English" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "必备医学英语" })).toBeVisible();
   await expect(page.getByText("1 change pending")).toHaveCount(0);
   expect(
     await page.evaluate(
@@ -73,15 +74,16 @@ test("keeps the revealed context sentence in view at desktop size", async ({ pag
   await expect(page.getByText(/what does this word mean in this context/iu)).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "IPA / part of speech" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "适用范围" })).toBeAttached();
-  await expect(page.getByRole("heading", { name: "句子来源" })).toBeAttached();
-  await expect(page.getByText("为本词表撰写的例句")).toBeAttached();
+  await expect(page.getByRole("heading", { name: "句子来源" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "中文释义" })).toBeVisible();
+  await expect(page.getByText("为本词表撰写的例句")).toHaveCount(0);
 
-  await page.getByRole("heading", { name: "句子来源" }).evaluate((element) => {
+  await page.getByRole("heading", { name: "适用范围" }).evaluate((element) => {
     element.scrollIntoView({ block: "center" });
   });
   await expect(sentence).toBeInViewport();
   await expect(page.locator("mark")).toBeInViewport();
-  await expect(page.getByRole("heading", { name: "句子来源" })).toBeInViewport();
+  await expect(page.getByRole("heading", { name: "适用范围" })).toBeInViewport();
 });
 
 test("keeps primary study actions usable at 320 CSS pixels", async ({ page }) => {

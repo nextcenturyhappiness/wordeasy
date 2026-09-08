@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 export const CONTENT_SCHEMA_VERSION = 1;
 export const CONTENT_DATASET_KEY = "wordeasy-seed-v1";
+export const ESSENTIAL_DATASET_KEY = "wordeasy-essential-medical-v1";
 export const UUID_NAMESPACE = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
 export const UUID_NAME_PREFIX = "https://github.com/nextcenturyhappiness/wordeasy/content/v1/";
 
@@ -40,6 +41,11 @@ export const MEDICAL_COUNTS = Object.freeze({
 export const MEDICAL_MORPHOLOGY_CATEGORY = "morphology";
 export const MEDICAL_CLINICAL_DAILY_QUOTA = 3;
 export const MEDICAL_MORPHOLOGY_DAILY_QUOTA = 7;
+
+export const ESSENTIAL_MEDICAL_MODULE = "essential_medical";
+export const ESSENTIAL_MEDICAL_CATEGORY = "core";
+export const ESSENTIAL_MEDICAL_DAILY_QUOTA = 10;
+export const ESSENTIAL_MEDICAL_MIN_TOTAL = 660;
 
 export const CULLED_SPECIALTY_MEDICAL_CARD_KEYS = Object.freeze([
   "med-anatomy-hilum-001",

@@ -5,6 +5,10 @@ import {
   CONTENT_SCHEMA_VERSION,
   CSV_FIELDS,
   DEACTIVATED_MEDICAL_CARD_KEYS,
+  ESSENTIAL_DATASET_KEY,
+  ESSENTIAL_MEDICAL_CATEGORY,
+  ESSENTIAL_MEDICAL_MIN_TOTAL,
+  ESSENTIAL_MEDICAL_MODULE,
   MEDICAL_CONTEXT_GENRES,
   MEDICAL_COUNTS,
   MEDICAL_MORPHOLOGY_CATEGORY,
@@ -274,7 +278,10 @@ function ensureNoDuplicateLexemes(cards, errors) {
   });
 }
 
-export function validateDataset(dataset, { enforceCounts = true } = {}) {
+export function validateDataset(
+  dataset,
+  { enforceCounts = true, datasetKey = CONTENT_DATASET_KEY } = {}
+) {
   const errors = [];
   const warnings = [];
 
@@ -301,12 +308,12 @@ export function validateDataset(dataset, { enforceCounts = true } = {}) {
       message: `schema_version must be ${CONTENT_SCHEMA_VERSION}.`
     });
   }
-  if (dataset.dataset_key !== CONTENT_DATASET_KEY) {
+  if (dataset.dataset_key !== datasetKey) {
     errors.push({
       cardId: "dataset",
       cardKey: null,
       code: "dataset_key",
-      message: `dataset_key must be ${CONTENT_DATASET_KEY}.`
+      message: `dataset_key must be ${datasetKey}.`
     });
   }
   if (dataset.uuid_namespace !== UUID_NAMESPACE) {
@@ -353,6 +360,13 @@ export function validateDataset(dataset, { enforceCounts = true } = {}) {
       }
     }
     for (const field of REQUIRED_STRING_FIELDS) {
+      if (
+        field === "usage_note" &&
+        card.module === ESSENTIAL_MEDICAL_MODULE &&
+        card.usage_note === ""
+      ) {
+        continue;
+      }
       if (typeof card[field] !== "string" || card[field].trim().length === 0) {
         errors.push(
           makeIssue(card, index, "invalid_string", `${field} must be a non-empty string.`)
@@ -374,7 +388,13 @@ export function validateDataset(dataset, { enforceCounts = true } = {}) {
       }
     }
 
-    if (
+    const essentialEmptyCollocations =
+      card.module === ESSENTIAL_MEDICAL_MODULE &&
+      Array.isArray(card.collocations) &&
+      card.collocations.length === 0;
+    if (essentialEmptyCollocations) {
+      // 必备医学英语 omits collocations by product decision.
+    } else if (
       !Array.isArray(card.collocations) ||
       card.collocations.length < 2 ||
       card.collocations.length > 4
@@ -510,6 +530,27 @@ export function validateDataset(dataset, { enforceCounts = true } = {}) {
           );
         }
       }
+    } else if (card.module === ESSENTIAL_MEDICAL_MODULE) {
+      if (card.category !== ESSENTIAL_MEDICAL_CATEGORY) {
+        errors.push(
+          makeIssue(
+            card,
+            index,
+            "category_module",
+            `${card.category} is not an 必备医学英语 category.`
+          )
+        );
+      }
+      if (!MEDICAL_CONTEXT_GENRES.includes(card.context_genre)) {
+        errors.push(
+          makeIssue(
+            card,
+            index,
+            "context_genre",
+            `${card.context_genre} is not a Medical context genre.`
+          )
+        );
+      }
     } else {
       errors.push(makeIssue(card, index, "module", `Illegal module ${String(card.module)}.`));
     }
@@ -577,7 +618,11 @@ export function validateDataset(dataset, { enforceCounts = true } = {}) {
     if (typeof card.meaning_zh === "string" && !hasCjk(card.meaning_zh)) {
       errors.push(makeIssue(card, index, "meaning_zh", "meaning_zh must contain Chinese text."));
     }
-    if (typeof card.usage_note === "string" && !hasCjk(card.usage_note)) {
+    if (
+      typeof card.usage_note === "string" &&
+      card.usage_note.length > 0 &&
+      !hasCjk(card.usage_note)
+    ) {
       errors.push(
         makeIssue(card, index, "usage_note", "usage_note must be Chinese strength-of-use guidance.")
       );
@@ -846,6 +891,45 @@ export function validateImportTemplate(csvText, referenceCard) {
     });
   }
   return errors;
+}
+
+export function validateEssentialDataset(dataset) {
+  const result = validateDataset(dataset, {
+    enforceCounts: false,
+    datasetKey: ESSENTIAL_DATASET_KEY
+  });
+  if (!Array.isArray(dataset?.cards)) {
+    return result;
+  }
+  if (dataset.cards.length < ESSENTIAL_MEDICAL_MIN_TOTAL) {
+    result.errors.push({
+      cardId: "dataset",
+      cardKey: null,
+      code: "essential_total",
+      message: `必备医学英语 has ${String(dataset.cards.length)} cards; expected at least ${String(ESSENTIAL_MEDICAL_MIN_TOTAL)}.`
+    });
+  }
+  for (const [index, card] of dataset.cards.entries()) {
+    if (card?.module !== ESSENTIAL_MEDICAL_MODULE) {
+      result.errors.push(
+        makeIssue(
+          card,
+          index,
+          "module",
+          "Essential medical seed may only contain essential_medical cards."
+        )
+      );
+    }
+    if (Array.isArray(card?.collocations) && card.collocations.length !== 0) {
+      result.errors.push(
+        makeIssue(card, index, "collocations_count", "必备医学英语 collocations must be empty.")
+      );
+    }
+  }
+  result.counts.essential = dataset.cards.filter(
+    (card) => card?.module === ESSENTIAL_MEDICAL_MODULE && card.active === true
+  ).length;
+  return result;
 }
 
 export function formatIssues(issues) {

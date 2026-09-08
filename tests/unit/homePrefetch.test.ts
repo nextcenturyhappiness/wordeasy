@@ -36,6 +36,12 @@ describe("Home idle prefetch", () => {
               new: { completed: 9, total: 10 },
               review: { completed: 2, total: 4 },
               wordsLearned: 74
+            },
+            essential_medical: {
+              module: "essential_medical",
+              new: { completed: 10, total: 10 },
+              review: { completed: 0, total: 0 },
+              wordsLearned: 0
             }
           }
         })

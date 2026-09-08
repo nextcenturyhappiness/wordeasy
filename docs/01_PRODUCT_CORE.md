@@ -75,36 +75,35 @@ Review state 绑定到具体 card，而不是只绑定到单词拼写。
 
 ### CORE-004 · P0 · 背面结构
 
-卡片背面至少包含：
+卡片背面以释义为视觉焦点，稳定顺序为：
 
 ```text
-Meaning in this context
-Plain-English paraphrase
-中文释义
-完整句子翻译
-Common collocations
-适用范围
-句子来源
+中文释义（主视觉）
+English meaning（次主视觉，无独立 h2）
+plain paraphrase + 完整句子翻译（弱化次要文本）
+Common collocations（仅非空时；必备医学英语不显示）
+适用范围（仅非空时）
 ```
 
-Reveal 后 IPA 与词性固定在 sticky 语境原句区域，写成 `/…/ · verb` 这一行，不在释义堆叠里再重复一块。正面既有的 IPA/词性展示保持不变。Reveal 后该 IPA 行可点按，用本机 `speechSynthesis` 朗读 lemma（`en-US`），不得朗读 IPA 字符串；正面与 Reveal 本身不得自动播放。
+不显示「句子来源」。Reveal 后 IPA 与词性固定在 sticky 语境原句区域，写成 `/…/ · verb` 这一行，不在释义堆叠里再重复一块。正面既有的 IPA/词性展示保持不变。Reveal 后该 IPA 行可点按，用本机 `speechSynthesis` 朗读 lemma（`en-US`），不得朗读 IPA 字符串；正面与 Reveal 本身不得自动播放。
 
-中文用于辅助理解，但不能成为唯一学习内容。
+中文用于辅助理解，但不能成为唯一学习内容；英文 meaning 仍须可读，只是排在中文释义之后。
 
 ---
 
-## 3. 两个学习模块
+## 3. 三个学习模块
 
 ### CORE-005 · P0 · 模块隔离
 
-首页必须有两个独立入口：
+首页必须有三个独立入口：
 
 ```text
 Research English
 Medical English
+必备医学英语
 ```
 
-两个模块分别维护：
+三个模块分别维护：
 
 - 每日新词分配；
 - 今日新词进度；
@@ -114,7 +113,11 @@ Medical English
 - 模块级统计；
 - 本地缓存。
 
-Research 的操作不能修改 Medical 的进度，反之亦然。
+一个模块的操作不能修改另外两个模块的进度。Medical English（含词根构词）与 必备医学英语 并存，不得互相替换或删除。
+
+### CORE-011 · P0 · 必备医学英语
+
+`essential_medical` 是第三个顶层学习选项，显示名「必备医学英语」。词库覆盖 `data/essential-medical/lemmas.txt` 中的全部 lemma。每日分配 10 个新词，来自单一 `core`（课堂词汇）池。本模块 Context Card 不提供 collocations；例句为 `original_example`，不得编造 DOI/PMID。Medical English 的 7 词根构词 + 3 病历用语配额不变。
 
 ---
 
@@ -213,7 +216,7 @@ morphology
 
 ### UI-001 · P0 · 简单首页
 
-首页保持简单。打开应用的主因是检索自己学过的 Context Card，而不是清掉到期队列。主表面是个人词库搜索；Next Session 仍在，但降为搜索（及搜索结果）下方的次级一键入口。模块入口继续作为更次一级的摘要。不得把两个模块 Continue 拉回同等英雄位。参考：
+首页保持简单。打开应用的主因是检索自己学过的 Context Card，而不是清掉到期队列。主表面是个人词库搜索；Next Session 仍在，但降为搜索（及搜索结果）下方的次级一键入口。模块入口继续作为更次一级的摘要。不得把三个模块 Continue 拉回同等英雄位。参考：
 
 ```text
 Good morning                         Synced
@@ -225,10 +228,10 @@ Research English · Review
 The association was substantially attenuated after adjustment for age and BMI.
 [ Start next session ]
 
-Research English    Medical English
-6 / 10 new today    3 / 10 new today
-128 words learned   74 words learned
-[ Continue ]        [ Continue ]
+Research English    Medical English    必备医学英语
+6 / 10 new today    3 / 10 new today    0 / 10 new today
+128 words learned   74 words learned    0 words learned
+[ Continue ]        [ Continue ]        [ Continue ]
 
 Streak: 12 days
 ```

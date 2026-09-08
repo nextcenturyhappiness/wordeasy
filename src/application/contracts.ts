@@ -1,5 +1,5 @@
-export type ModuleSlug = "research_english" | "medical_english";
-export type ModuleRouteParam = "research" | "medical";
+export type ModuleSlug = "research_english" | "medical_english" | "essential_medical";
+export type ModuleRouteParam = "research" | "medical" | "essential";
 export type QueueKind = "new" | "review";
 export type ReviewRating = "again" | "hard" | "good" | "easy";
 export type ThemePreference = "system" | "light" | "dark";

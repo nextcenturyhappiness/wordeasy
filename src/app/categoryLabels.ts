@@ -17,7 +17,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   pharmacology: "Pharmacology",
   surgery_procedures: "Surgery / Procedures",
   clinical_expressions: "Clinical expressions",
-  [MEDICAL_MORPHOLOGY_CATEGORY]: "词根构词"
+  [MEDICAL_MORPHOLOGY_CATEGORY]: "词根构词",
+  core: "课堂词汇"
 };
 
 export function categoryLabel(category: string): string {
@@ -26,4 +27,8 @@ export function categoryLabel(category: string): string {
 
 export function medicalQuotaCopy(): string {
   return "7 词根构词 + 3 病历用语";
+}
+
+export function essentialMedicalQuotaCopy(): string {
+  return "每天 10 个新词";
 }

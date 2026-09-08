@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 import type { ModuleSummary } from "../application/contracts";
-import { medicalQuotaCopy } from "../app/categoryLabels";
+import { essentialMedicalQuotaCopy, medicalQuotaCopy } from "../app/categoryLabels";
 import { getModuleName, getModuleRoute } from "../app/moduleRoutes";
 import { preloadTodayRoute } from "../app/lazyRoutes";
 
@@ -23,7 +23,12 @@ export function ModuleSummaryCard({ summary }: ModuleSummaryCardProps) {
     <article className="module-card module-card--compact" aria-labelledby={`${route}-module-title`}>
       <div>
         <p className="eyebrow">Module</p>
-        <h2 id={`${route}-module-title`}>{moduleName}</h2>
+        <h2
+          id={`${route}-module-title`}
+          lang={summary.module === "essential_medical" ? "zh-CN" : undefined}
+        >
+          {moduleName}
+        </h2>
       </div>
       <p className="module-card__progress">
         <strong>
@@ -37,6 +42,11 @@ export function ModuleSummaryCard({ summary }: ModuleSummaryCardProps) {
       {summary.module === "medical_english" ? (
         <p className="muted-copy" lang="zh-CN">
           {medicalQuotaCopy()}
+        </p>
+      ) : null}
+      {summary.module === "essential_medical" ? (
+        <p className="muted-copy" lang="zh-CN">
+          {essentialMedicalQuotaCopy()}
         </p>
       ) : null}
       <Link

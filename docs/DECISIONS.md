@@ -295,7 +295,7 @@ Tests/docs affected: `LexiconSearch`, Home UI tests, `docs/01_PRODUCT_CORE.md`, 
 ### DEC-035 · Reveal 后语境原句钉在首屏；适用范围与句子来源用中文
 
 Date: 2026-09-01
-Status: Accepted
+Status: Accepted — 「句子来源」heading superseded by DEC-047
 Related requirements: CORE-004, UI-008, UI-009, CONTENT-007, TEST-002; DEC-002
 Context: Mac 学习窗在 Reveal 后背面堆叠过高，`focus()` 把答案区滚进视口，语境原句（含高亮 target）被切到窗口上方。USAGE NOTE 是抽象英文，SOURCE 看不出是例句来源。所有者写科研/医学英文，需要知道这个词有多硬才用得诚实。
 Decision:
@@ -436,7 +436,7 @@ Decision:
 ### DEC-043 · Medical 内开词根构词配额，停用过难专科卡
 
 Date: 2026-09-07
-Status: Accepted
+Status: Accepted — “不新增第三个顶层模块” superseded by DEC-047; morphology remains inside Medical
 Related requirements: MED-001/002/003, ASSIGN-004, CONTENT-002/007/011, TEST-004/034; DEC-013/018/040
 Context: 所有者不是应试学习者，用 -itis、-osis、derm、hemat、leuko 等语素读医学词。当前不少 Medical seed（preload、bioavailability、transaminitis、dysplasia、anastomosis、hemolyze 及同类专科写作词）对他们无用。他们要求「医学里面再开一个模块」学构词，并点名 endocarditis（正确拼写，不是 endocardiacitis）。
 Decision:
@@ -455,7 +455,7 @@ Tests/docs affected: seed JSON/SQL, validator/counts, assignment selector/RPC/pa
 ### DEC-044 · Medical 配额改为 7 词根构词 + 3 病历用语，并以所有者教材词表扩卡
 
 Date: 2026-09-07
-Status: Accepted
+Status: Accepted — “不新开第三个顶层模块” superseded by DEC-047; Medical 7+3 quota unchanged
 Related requirements: MED-001/002/003, ASSIGN-004, CONTENT-002/007/011, TEST-004/034; DEC-013/018/040/043
 Context: 所有者反馈 PR #15：他们主要靠词根构词学医学英语，病历用语只需少量陪练。指定 PDF《医学专业英语的重点单词终结版》为 Medical 主词源，并要求每日配额翻转为 7 词根 + 3 病历。
 Decision:
@@ -506,6 +506,26 @@ Reason: Context-first 的学习对象是 sense-in-context，不是默写词形�
 Alternatives rejected: 保留挖空只改提问文案；正面只显示 lemma 不显示原句；Reveal 前高亮但隐藏 lemma。
 Consequences: CORE-003 / UI-008 / TEST-002 从 “target 隐藏” 改为 “lemma + 可见原句”；答案仍是释义而不是词形。
 Tests/docs affected: `ContextCard`, Study UI/E2E tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
+
+### DEC-047 · 第三个模块「必备医学英语」；Reveal 以释义为焦点并去掉句子来源
+
+Date: 2026-09-08
+Status: Accepted
+Related requirements: CORE-004/005/011, UI-009, ASSIGN-008, CONTENT-008/013, TEST-002/006/034/044; DEC-035/043/044/046
+Context: 所有者要把教材《医学专业英语的重点单词终结版》做成可独立选择的第三套学习，而不是并进现有 Medical（词根构词）轨道。同时反馈 Reveal 背面层级过平、难找到释义，「句子来源」对学习无帮助。
+Decision:
+
+1. 新增顶层模块 `essential_medical`，中文显示名「必备医学英语」。Home 三个 Continue 入口与既有 Research / Medical 相同；Settings 仍无模块开关（现有 UX 也没有）。本决策取代 DEC-043/044 中「不新增第三个顶层模块」的条款；词根构词仍留在 Medical 内，Research 5+2+3 与 Medical 7+3 不变。
+2. 每日新卡 10 张，全部来自 `core`。本地选择器、`ensure_daily_assignment_v1_unlocked`、cloud parser 同步该配额。不足则整组 shortage。
+3. 词库覆盖 `data/essential-medical/lemmas.txt` 全部 lemma（生成自 `scripts/lib/essential-medical-raw.tsv` 课堂词表，不少于 660）。独立 JSON/SQL，不改写 `data/seed-data.json` 或已应用 Research/Medical seed migration。`collocations` 为空；`usage_note` 可空；例句仅为 `original_example`，不编造 DOI/PMID。
+4. 全部模块 Reveal 去掉「句子来源」/ SourceDetails。必备医学英语另外隐藏 Common collocations。其余模块 collocations 非空时仍显示，但视觉降权。适用范围仅非空时显示。
+5. Reveal 主视觉改为中文释义（大号），英文 meaning 紧随其后仍突出；paraphrase 与句子翻译降为次要灰字，不再用并列 h2。sticky 语境原句与 IPA tap-to-speak 不变。
+6. catalog 版本 `canonical-essential-medical-v1`。云端 Postgres 必须另行 apply `20260908001300` 与 `20260908001400`；仓库落地不等于远程已迁移。
+
+Reason: 所有者要学完整课堂词表，且与构词课分开；Reveal 的学习点是 sense，不是来源或一排同等权重的区块。
+Alternatives rejected: 把 660+ 词并进 Medical 配额；手写 600 行 SQL；为 collocations 编造课堂搭配；保留句子来源只改文案；缩短词表。
+Consequences: 未冻结 Day-1 出现第三套 10 新卡；standalone/personal catalog 变为 937 张；Demo 仍 20 张 Research+Medical，必备医学英语在 Demo 中 shortage（newTotal 0）。DEC-035 第 3 条（背面第 8 层「句子来源」）由本决策取代。
+Tests/docs affected: domain/routes/Home/Today/ContextCard, assignment RPC/parser, essential seed script/SQL, content validator, UI/E2E/content tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
 

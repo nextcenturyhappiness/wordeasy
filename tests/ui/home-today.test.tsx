@@ -121,16 +121,20 @@ describe("Home and Today", () => {
     );
     expect(screen.getByRole("link", { name: "Continue Research English" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Continue Medical English" })).toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: /continue/i })).toHaveLength(2);
+    expect(screen.getByRole("link", { name: "Continue 必备医学英语" })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /continue/i })).toHaveLength(3);
 
     const research = screen.getByRole("article", { name: "Research English" });
     const medical = screen.getByRole("article", { name: "Medical English" });
+    const essential = screen.getByRole("article", { name: "必备医学英语" });
 
     expect(within(research).getByText("6 / 10")).toBeInTheDocument();
     expect(within(research).getByText("128 words learned")).toBeInTheDocument();
     expect(within(medical).getByText("3 / 10")).toBeInTheDocument();
     expect(within(medical).getByText("74 words learned")).toBeInTheDocument();
     expect(within(medical).getByText("7 词根构词 + 3 病历用语")).toBeInTheDocument();
+    expect(within(essential).getByText("0 / 10")).toBeInTheDocument();
+    expect(within(essential).getByText("每天 10 个新词")).toBeInTheDocument();
     expect(screen.getByText("12").closest(".streak-line")).toHaveTextContent(
       "12 days in your current streak"
     );
@@ -253,6 +257,12 @@ describe("Home and Today", () => {
             new: { completed: 10, total: 10 },
             review: { completed: 4, total: 4 },
             wordsLearned: 74
+          },
+          essential_medical: {
+            module: "essential_medical",
+            new: { completed: 10, total: 10 },
+            review: { completed: 0, total: 0 },
+            wordsLearned: 0
           }
         }
       })
@@ -265,6 +275,7 @@ describe("Home and Today", () => {
     expect(screen.queryByRole("link", { name: "Start next session" })).not.toBeInTheDocument();
     expect(screen.getByRole("article", { name: "Research English" })).toBeInTheDocument();
     expect(screen.getByRole("article", { name: "Medical English" })).toBeInTheDocument();
+    expect(screen.getByRole("article", { name: "必备医学英语" })).toBeInTheDocument();
   });
 
   it("waits until after Home paint and browser idle before prefetching the likely module", () => {

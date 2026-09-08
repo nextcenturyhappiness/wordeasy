@@ -237,7 +237,7 @@ describe("StudyPage", () => {
       expect(anchor).toHaveTextContent(researchCard.partOfSpeech);
       expect(screen.getByText(researchCard.targetText, { selector: "mark" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "适用范围" })).toBeInTheDocument();
-      expect(screen.getByRole("heading", { name: "句子来源" })).toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: "句子来源" })).not.toBeInTheDocument();
       expect(
         screen.queryByRole("heading", { name: "IPA / part of speech" })
       ).not.toBeInTheDocument();

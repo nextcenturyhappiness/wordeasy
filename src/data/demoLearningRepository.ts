@@ -31,8 +31,10 @@ export class DemoLearningRepository extends IndexedDbLearningRepository {
         const assignments = new LocalAssignmentService(database, userId);
         await assignments.ensureResearchNew(studyDate, initializedAt);
         await assignments.ensureMedicalNew(studyDate, initializedAt);
+        await assignments.ensureEssentialMedicalNew(studyDate, initializedAt);
         await assignments.ensureEmptyReviewSet("research_english", studyDate, initializedAt);
         await assignments.ensureEmptyReviewSet("medical_english", studyDate, initializedAt);
+        await assignments.ensureEmptyReviewSet("essential_medical", studyDate, initializedAt);
       }
     });
   }

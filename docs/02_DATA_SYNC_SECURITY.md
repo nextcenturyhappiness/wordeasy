@@ -295,6 +295,10 @@ RPC 必须：
 
 这样 `Review total` 在同一天内保持可解释，不因不断产生 Again/relearning 步骤而无限变化。
 
+### ASSIGN-008 · P0 · 必备医学英语配额
+
+必备医学英语每日严格分配 10 个新词，全部来自 `core`。不足 10 张时整组 shortage，不得从 Research 或 Medical 池补足。
+
 ---
 
 ## 5. Scheduler

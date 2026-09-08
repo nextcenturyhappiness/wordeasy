@@ -1,5 +1,9 @@
 import type { ReviewScheduler } from "../application/contracts";
-import type { NormalizedContextCard } from "../domain/learning";
+import {
+  MODULE_SLUGS,
+  type DomainModuleSlug,
+  type NormalizedContextCard
+} from "../domain/learning";
 import type { LearningDatabase } from "../db/learningDatabase";
 import {
   IndexedDbLearningRepository,
@@ -8,17 +12,19 @@ import {
 } from "./indexedDbLearningRepository";
 import { LocalAssignmentService } from "./localAssignmentService";
 
-const MODULES = ["research_english", "medical_english"] as const;
-const PERSONAL_CATALOG_SIZE = {
+const MODULES = MODULE_SLUGS;
+const PERSONAL_CATALOG_SIZE: Record<DomainModuleSlug, number> = {
   research_english: 60,
-  medical_english: 177
-} as const;
-const PERSONAL_ACTIVE_NEW_POOL = {
+  medical_english: 177,
+  essential_medical: 700
+};
+const PERSONAL_ACTIVE_NEW_POOL: Record<DomainModuleSlug, number> = {
   research_english: 60,
-  medical_english: 140
-} as const;
+  medical_english: 140,
+  essential_medical: 700
+};
 const PERSONAL_DAILY_QUOTA = 10;
-const PERSONAL_CATALOG_VERSION = "canonical-medical-morphology-v3";
+const PERSONAL_CATALOG_VERSION = "canonical-essential-medical-v1";
 const PERSONAL_CATALOG_VERSION_KEY = "personal-catalog-version";
 const REVIEW_QUEUE_MIGRATION_KEY = "personal-review-queues-v1";
 
@@ -112,6 +118,7 @@ async function prepareDailyAssignments(
   if (catalogIsComplete) {
     await assignments.ensureResearchNew(context.studyDate, context.initializedAt);
     await assignments.ensureMedicalNew(context.studyDate, context.initializedAt);
+    await assignments.ensureEssentialMedicalNew(context.studyDate, context.initializedAt);
   } else {
     await assignments.ensureProvisionalNewSummary(
       "research_english",
@@ -127,19 +134,22 @@ async function prepareDailyAssignments(
       PERSONAL_DAILY_QUOTA,
       context.initializedAt
     );
+    await assignments.ensureProvisionalNewSummary(
+      "essential_medical",
+      context.studyDate,
+      PERSONAL_ACTIVE_NEW_POOL.essential_medical,
+      PERSONAL_DAILY_QUOTA,
+      context.initializedAt
+    );
   }
-  await assignments.ensureDueReviewSet(
-    "research_english",
-    context.studyDate,
-    context.timezone,
-    context.initializedAt
-  );
-  await assignments.ensureDueReviewSet(
-    "medical_english",
-    context.studyDate,
-    context.timezone,
-    context.initializedAt
-  );
+  for (const module of MODULES) {
+    await assignments.ensureDueReviewSet(
+      module,
+      context.studyDate,
+      context.timezone,
+      context.initializedAt
+    );
+  }
 }
 
 export class PersonalLearningRepository extends IndexedDbLearningRepository {

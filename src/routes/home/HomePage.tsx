@@ -147,6 +147,7 @@ export function HomePage() {
       <div className="module-grid">
         <ModuleSummaryCard summary={snapshot.modules.research_english} />
         <ModuleSummaryCard summary={snapshot.modules.medical_english} />
+        <ModuleSummaryCard summary={snapshot.modules.essential_medical} />
       </div>
 
       <p className="streak-line">
