@@ -235,15 +235,17 @@ Asia/Shanghai
 
 ### ASSIGN-002 · P0 · 幂等
 
-同一用户、模块和 `study_date` 首次生成后永久保持稳定。
+同一用户、模块和 `study_date` 首次生成 **ready** assignment 后永久保持稳定。
 
-以下操作不能改变当天卡片：
+以下操作不能改变当天 **ready** 卡片：
 
 - 刷新；
 - 重新登录；
 - 关闭再打开；
 - 换设备；
 - 重复 API 调用。
+
+空的 `shortage` set（`assigned_count = 0`）不是已完成分配。词库后来达到该模块当日配额时，`ensure_daily_assignment` 删除该 shortage set 并按原确定性规则生成 ready set（DEC-048）。词库仍不足时保持原 shortage，不改写、不跨分类补足。
 
 ### ASSIGN-003 · P0 · Research 配额
 
@@ -480,6 +482,8 @@ failed
 5. 更新 local state 和 summary。
 6. 预取今日卡片。
 ```
+
+日缓存按模块隔离刷新：单个模块失败不得把整个 Sync 标为 failed，除非关键步骤（auth / preferences / coordinator）失败，或全部模块刷新失败（DEC-048）。
 
 同步失败不能阻止继续使用已缓存内容。
 

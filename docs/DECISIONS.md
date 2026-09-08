@@ -55,9 +55,9 @@ MVP 使用系统字体栈。
 ### DEC-013 · Assignment shortage 原子化
 
 Date: 2026-08-26
-Status: Accepted
+Status: Accepted — empty-shortage freeze narrowed by DEC-048 when catalog later fills the quota
 Related requirements: RES-001, RES-003, MED-001, ASSIGN-003–006
-Decision: 任一必需分类不足时，当日该模块的新卡 assignment 整组不创建；返回并冻结结构化 shortage。不得部分分配、跨分类补足或重复旧卡。
+Decision: 任一必需分类不足时，当日该模块的新卡 assignment 整组不创建；返回并冻结结构化 shortage。不得部分分配、跨分类补足或重复旧卡。词库后来补足时，空 shortage set 可由 DEC-048 替换为 ready set。
 Reason: 只有 all-or-nothing 才能同时保持 Research 5+2+3、Medical 7+3（现为 7 词根 + 3 病历）和同日稳定。
 
 ### DEC-014 · Review 日队列截止点
@@ -526,6 +526,23 @@ Reason: 所有者要学完整课堂词表，且与构词课分开；Reveal 的�
 Alternatives rejected: 把 660+ 词并进 Medical 配额；手写 600 行 SQL；为 collocations 编造课堂搭配；保留句子来源只改文案；缩短词表。
 Consequences: 未冻结 Day-1 出现第三套 10 新卡；standalone/personal catalog 变为 900 张（60+177+663）；Demo 仍 20 张 Research+Medical，必备医学英语在 Demo 中 shortage（newTotal 0）。DEC-035 第 3 条（背面第 8 层「句子来源」）由本决策取代。
 Tests/docs affected: domain/routes/Home/Today/ContextCard, assignment RPC/parser, essential seed script/SQL, content validator, UI/E2E/content tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
+
+### DEC-048 · 空 shortage set 可在词库补足后自愈；模块日缓存隔离刷新
+
+Date: 2026-09-08
+Status: Accepted
+Related requirements: ASSIGN-002/006/008, SYNC-006, RES-003, TEST-013; DEC-006/013
+Context: 必备医学英语上线前，某日可能已写入 `status='shortage'` 的空 assignment set。词库 seed 之后 `ensure_daily_assignment` 仍直接返回该 set，当天永远无法分配。同时 `AccountCloudDayCache` 用 `Promise.all` 刷新全部模块，任一模块抛错会把整个 Sync 标为 failed。
+Decision:
+
+1. `ensure_daily_assignment_v1_unlocked` 对已存在的 **ready** set 仍立即返回；DEC-006 对已分配卡片的冻结不变。
+2. 已存在且 `status='shortage'` 且 `assigned_count=0` 的 set：若当前目录仍不足配额，原样返回、不改写；若现已足够，删除该空 shortage set 后按原确定性规则生成 ready set。适用于全部模块，不仅 `essential_medical`。
+3. 客户端按模块隔离刷新 day cache。单个模块失败只记录警告；仅当偏好 / coordinator 等关键步骤失败，或全部模块刷新都失败时，整体 Sync 才为 failed。
+
+Reason: shortage 不是已完成的当日卡片集合；冻结它会在 catalog 迟到时永久锁死该学习日。一个模块的刷新失败不应株连 Research / Medical 等其他轨道。
+Alternatives rejected: 手工删除 shortage 行；只对 `essential_medical` 自愈；部分模块失败也标 Sync failed；用 Service Worker 代替本地重试。
+Consequences: 同一用户同一日在 catalog 从不足变为足够之后，shortage 可变成 ready；ready 一旦写入仍不可变。远程 Postgres 必须另行 apply `20260908001500`。DEC-013「冻结结构化 shortage」收窄为：词库仍不足时冻结；词库补足后允许用 ready set 替换空 shortage。
+Tests/docs affected: `accountSyncGateway`, assignment RPC migration, SQL/gateway tests, `docs/02_DATA_SYNC_SECURITY.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
 
