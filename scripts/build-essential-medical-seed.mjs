@@ -151,8 +151,7 @@ function mergeGloss(lemma, sourceMap, pdfMap, rawMap) {
   const sourceIpa = source?.ipa && /^\/.+\/$/u.test(source.ipa) ? source.ipa : "";
   const ipa = sourceIpa || tsv?.ipa;
   const zh = source?.zh || tsv?.zh;
-  const meaningEn =
-    tsv?.meaningEn ?? `the classroom medical sense recorded as ${zh ?? lemma}`;
+  const meaningEn = tsv?.meaningEn ?? `the classroom medical sense recorded as ${zh ?? lemma}`;
   if (!ALLOWED_POS.has(pos) || !ipa || !zh) {
     throw new Error(`Incomplete gloss for canonical lemma: ${lemma}`);
   }
@@ -194,7 +193,8 @@ function buildContext(entry, index) {
   let frames = NOUN_SENTENCES;
   if (pos === "adjective") frames = ADJ_SENTENCES;
   else if (pos === "verb" || pos === "phrasal verb") frames = VERB_SENTENCES;
-  else if (pos === "phrase" || lemma.includes(" ") || lemma.includes("\\")) frames = PHRASE_SENTENCES;
+  else if (pos === "phrase" || lemma.includes(" ") || lemma.includes("\\"))
+    frames = PHRASE_SENTENCES;
   else if (pos === "adverb") frames = ADJ_SENTENCES;
 
   const candidates = [

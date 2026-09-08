@@ -9,12 +9,7 @@ export function isPlaceholderSource(text) {
 }
 
 export function normalizeLemmaKey(value) {
-  return value
-    .normalize("NFKC")
-    .toLowerCase()
-    .replace(/\\+/gu, " ")
-    .replace(/\s+/gu, " ")
-    .trim();
+  return value.normalize("NFKC").toLowerCase().replace(/\\+/gu, " ").replace(/\s+/gu, " ").trim();
 }
 
 function toDirUrl(dataDir) {
@@ -28,12 +23,7 @@ function toDirUrl(dataDir) {
 export async function assembleEssentialSource(dataDir, { write = false } = {}) {
   const dirUrl = toDirUrl(dataDir);
   const sourceUrl = new URL("source.txt", dirUrl);
-  let sourceText = "";
-  try {
-    sourceText = await readFile(sourceUrl, "utf8");
-  } catch {
-    sourceText = "";
-  }
+  const sourceText = await readFile(sourceUrl, "utf8").catch(() => "");
 
   const names = await readdir(dirUrl);
   const partFiles = names
@@ -48,7 +38,7 @@ export async function assembleEssentialSource(dataDir, { write = false } = {}) {
   for (const { name } of partFiles) {
     const text = await readFile(new URL(name, dirUrl), "utf8");
     if (!isPlaceholderSource(text)) {
-      parts.push(text.replace(/\u000c/gu, "\n").trimEnd());
+      parts.push(text.replaceAll("\f", "\n").trimEnd());
     }
   }
 
@@ -73,8 +63,10 @@ export function parseSourceGlosses(sourceText) {
     return glosses;
   }
 
-  const pattern =
-    /(?:^|[;\n]|\d+\.)\s*([A-Za-z][A-Za-z0-9' \-\/\\]*)\s*(\/[^/\n]+\/)?\s*[（(]([^）)\n]+)[）)]/gu;
+  const pattern = new RegExp(
+    String.raw`(?:^|[;\n]|\d+\.)\s*([A-Za-z][A-Za-z0-9' \-/\\]*)\s*(/[^/\n]+/)?\s*[（(]([^）)\n]+)[）)]`,
+    "gu"
+  );
   for (const match of sourceText.matchAll(pattern)) {
     const lemma = match[1].trim().replace(/\s+/gu, " ");
     if (lemma.length < 2) {
