@@ -123,7 +123,11 @@ export const essentialCard: ContextCardView = {
 
 const searchableCards = [researchCard, secondResearchCard, medicalCard];
 
-export function buildHomeSnapshot(overrides: Partial<HomeSnapshot> = {}): HomeSnapshot {
+export function buildHomeSnapshot(
+  overrides: Omit<Partial<HomeSnapshot>, "modules"> & {
+    modules?: Partial<HomeSnapshot["modules"]>;
+  } = {}
+): HomeSnapshot {
   const base: HomeSnapshot = {
     userId: "demo-user",
     studyDate: "2026-08-26",
@@ -223,6 +227,7 @@ interface RenderWithLearningAppOptions {
   repository?: LearningRepository;
   initialHome?: HomeSnapshot | null;
   syncState?: SyncState;
+  syncGateway?: SyncGateway;
   initialEntries?: string[];
 }
 
@@ -239,6 +244,7 @@ export function renderWithLearningApp(
     repository,
     initialHome,
     initialSyncState: syncState,
+    ...(options.syncGateway === undefined ? {} : { syncGateway: options.syncGateway }),
     children: router
   });
 

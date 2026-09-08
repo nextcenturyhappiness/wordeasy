@@ -380,7 +380,7 @@ clear all tables
 
 ### LOCAL-004 · P0 · 本地摘要
 
-首页读取 `daily_summary`，不得每次扫描全部 Review history。
+首页读取 `daily_summary`，不得每次扫描全部 Review history。至少一个模块的当日 summary 即可构成可用 Home；缺失模块以 0/0 占位，不编造 assignment（DEC-049）。三个模块都没有当日 summary 时仍视为未缓存。
 
 建议字段：
 
@@ -485,7 +485,7 @@ failed
 
 日缓存按模块隔离刷新：单个模块失败不得把整个 Sync 标为 failed，除非关键步骤（auth / preferences / coordinator）失败，或全部模块刷新失败（DEC-048）。
 
-同步失败不能阻止继续使用已缓存内容。
+同步失败不能阻止继续使用已缓存内容。部分模块刷新成功、整体 Sync 为 synced 时，Home 必须显示已缓存模块，不得因另一模块缺少 `daily_summary` 而整页 empty（DEC-049）。
 
 ---
 

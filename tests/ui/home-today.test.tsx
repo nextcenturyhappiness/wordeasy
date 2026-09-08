@@ -1,7 +1,12 @@
 import { useLearningApp } from "../../src/app/LearningAppContext";
 import { HomePage } from "../../src/routes/home/HomePage";
 import { TodayPage } from "../../src/routes/today/TodayPage";
-import type { LearningRepository } from "../../src/application/contracts";
+import type {
+  HomeSnapshot,
+  LearningRepository,
+  SyncGateway,
+  SyncState
+} from "../../src/application/contracts";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { Route, Routes } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
@@ -84,6 +89,123 @@ describe("Home and Today", () => {
     expect(getCachedHome).toHaveBeenCalledTimes(1);
     expect(getToday).not.toHaveBeenCalled();
     expect(getStudyQueue).not.toHaveBeenCalled();
+  });
+
+  it("upgrades the empty Home after Sync when only some modules have a cached day", async () => {
+    const snapshot = buildHomeSnapshot({
+      modules: {
+        essential_medical: {
+          module: "essential_medical",
+          new: { completed: 0, total: 0 },
+          review: { completed: 0, total: 0 },
+          wordsLearned: 0
+        }
+      }
+    });
+    let cachedHome: HomeSnapshot | null = null;
+    const getCachedHome = vi.fn<LearningRepository["getCachedHome"]>(() =>
+      Promise.resolve(cachedHome)
+    );
+    let state: SyncState = { status: "syncing", pendingCount: 0 };
+    const listeners = new Set<(nextState: SyncState) => void>();
+    const syncGateway: SyncGateway = {
+      getState: () => state,
+      sync: vi.fn(() => Promise.resolve(state)),
+      subscribe: (listener) => {
+        listeners.add(listener);
+        return () => {
+          listeners.delete(listener);
+        };
+      }
+    };
+    const repository = createRepository({ getCachedHome });
+
+    renderWithLearningApp(<HomePage />, {
+      repository,
+      initialHome: null,
+      syncState: state,
+      syncGateway
+    });
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "No learning day is cached on this device."
+      })
+    ).toBeInTheDocument();
+
+    cachedHome = snapshot;
+    act(() => {
+      state = { status: "synced", pendingCount: 0 };
+      for (const listener of listeners) {
+        listener(state);
+      }
+    });
+
+    expect(await screen.findByRole("article", { name: "Research English" })).toBeInTheDocument();
+    expect(screen.getByRole("article", { name: "Medical English" })).toBeInTheDocument();
+    const essential = screen.getByRole("article", { name: "必备医学英语" });
+    expect(within(essential).getByText("0 / 0")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "No learning day is cached on this device." })
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Synced");
+    expect(getCachedHome).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not replace a post-sync Home with a later null cache read", async () => {
+    const snapshot = buildHomeSnapshot();
+    let resolveHydrate: ((value: HomeSnapshot | null) => void) | undefined;
+    const hydrateRead = new Promise<HomeSnapshot | null>((resolve) => {
+      resolveHydrate = resolve;
+    });
+    let reads = 0;
+    const getCachedHome = vi.fn<LearningRepository["getCachedHome"]>(() => {
+      reads += 1;
+      return reads === 1 ? hydrateRead : Promise.resolve(snapshot);
+    });
+    let state: SyncState = { status: "syncing", pendingCount: 0 };
+    const listeners = new Set<(nextState: SyncState) => void>();
+    const syncGateway: SyncGateway = {
+      getState: () => state,
+      sync: vi.fn(() => Promise.resolve(state)),
+      subscribe: (listener) => {
+        listeners.add(listener);
+        return () => {
+          listeners.delete(listener);
+        };
+      }
+    };
+
+    renderWithLearningApp(<HomePage />, {
+      repository: createRepository({ getCachedHome }),
+      initialHome: null,
+      syncState: state,
+      syncGateway
+    });
+
+    expect(await screen.findByText("Opening your learning day…")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getCachedHome).toHaveBeenCalledTimes(1);
+    });
+
+    act(() => {
+      state = { status: "synced", pendingCount: 0 };
+      for (const listener of listeners) {
+        listener(state);
+      }
+    });
+
+    expect(await screen.findByRole("article", { name: "Research English" })).toBeInTheDocument();
+
+    await act(async () => {
+      resolveHydrate?.(null);
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole("article", { name: "Research English" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "No learning day is cached on this device." })
+    ).not.toBeInTheDocument();
   });
 
   it("shows the passed local Home snapshot with lexicon search first and a secondary next session", async () => {

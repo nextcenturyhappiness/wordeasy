@@ -132,7 +132,15 @@ export function LearningAppProvider({
           return;
         }
 
-        setHome(snapshot === null ? { status: "empty" } : { status: "ready", snapshot });
+        setHome((current) => {
+          if (snapshot === null) {
+            return current.status === "ready" ? current : { status: "empty" };
+          }
+          if (current.status === "ready" && current.snapshot.userId !== snapshot.userId) {
+            return current;
+          }
+          return { status: "ready", snapshot };
+        });
       } catch (error) {
         if (active && initialHome === null) {
           setHome({ status: "error", message: errorMessage(error) });

@@ -48,7 +48,7 @@ inputmode="numeric"
 
 首页先读取本地 summary，再后台同步。
 
-本地缓存可用时，Supabase 慢或断网不能造成白屏或长时间全屏 loading。
+本地缓存可用时，Supabase 慢或断网不能造成白屏或长时间全屏 loading。后台 Sync 标为 synced 后，只要本地已有任一模块的当日 summary，Home 就必须从 empty 升级为模块卡；不得因另一模块缺失而保持整页 empty（DEC-049）。
 
 首页先显示个人词库搜索主表面，再显示次级 Next Session 和两个更次一级的模块摘要。模块卡至少显示：
 

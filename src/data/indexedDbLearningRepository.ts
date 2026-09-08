@@ -121,6 +121,15 @@ function toModuleSummary(row: DailySummaryRow): ModuleSummary {
   };
 }
 
+function uncachedModuleSummary(module: ModuleSlug): ModuleSummary {
+  return {
+    module,
+    new: { completed: 0, total: 0 },
+    review: { completed: 0, total: 0 },
+    wordsLearned: 0
+  };
+}
+
 function validateRepeatedAction(existing: LocalReviewEventRow, input: RateCardInput): void {
   if (
     existing.cardId !== input.cardId ||
@@ -312,28 +321,34 @@ export class IndexedDbLearningRepository implements LearningRepository {
         this.#database.daily_summary.get([this.#userId, module, studyDate])
       )
     );
-    if (summaries.some((summary) => summary === undefined)) {
+    const present = summaries.filter(
+      (summary): summary is DailySummaryRow => summary !== undefined
+    );
+    const [firstPresent] = present;
+    if (firstPresent === undefined) {
       return null;
     }
-    const [research, medical, essential] = summaries;
-    if (research === undefined || medical === undefined || essential === undefined) {
-      return null;
-    }
+    const modules = Object.fromEntries(
+      MODULE_SLUGS.map((module, index) => {
+        const summary = summaries[index];
+        return [
+          module,
+          summary === undefined ? uncachedModuleSummary(module) : toModuleSummary(summary)
+        ];
+      })
+    ) as HomeSnapshot["modules"];
     return {
       userId: this.#userId,
       studyDate,
       timezone,
-      streak: Math.max(research.streak, medical.streak, essential.streak),
-      modules: {
-        research_english: toModuleSummary(research),
-        medical_english: toModuleSummary(medical),
-        essential_medical: toModuleSummary(essential)
-      },
-      pendingSyncCount:
-        research.pendingSyncCount + medical.pendingSyncCount + essential.pendingSyncCount,
+      streak: Math.max(...present.map((summary) => summary.streak)),
+      modules,
+      pendingSyncCount: present.reduce((total, summary) => total + summary.pendingSyncCount, 0),
       cachedAt:
-        [research.updatedAt, medical.updatedAt, essential.updatedAt].sort().at(-1) ??
-        research.updatedAt
+        present
+          .map((summary) => summary.updatedAt)
+          .sort()
+          .at(-1) ?? firstPresent.updatedAt
     };
   }
 
