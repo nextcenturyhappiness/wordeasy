@@ -158,7 +158,7 @@ describe("PersonalLearningRepository", () => {
 
     expect(loadCards).toHaveBeenCalledTimes(1);
     expect(loadScheduler).not.toHaveBeenCalled();
-    expect(await database.cached_cards.count()).toBe(937);
+    expect(await database.cached_cards.count()).toBe(900);
     expect(first.cards).toHaveLength(10);
     expect(second.cards.map((card) => card.cardId)).toEqual(first.cards.map((card) => card.cardId));
     expect(categories).toEqual({
@@ -229,7 +229,7 @@ describe("PersonalLearningRepository", () => {
 
     await repository.getStudyQueue("research_english", "new");
 
-    expect(await database.cached_cards.count()).toBe(937);
+    expect(await database.cached_cards.count()).toBe(900);
     expect(await database.cached_cards.get([USER_ID, "stale-card"])).toBeUndefined();
   });
 

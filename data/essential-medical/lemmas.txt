@@ -1,700 +1,663 @@
 anatomy
-physiology
-pathology
-histology
+function
 embryology
+nourishment
+histology
+nutrient
 hematology
+blood vessel
 immunology
-cytology
-endocrinology
-psychology
+cardiovascular system
 biology
-cardiovascular
-lymphatic
-circulatory
-respiratory
-urinary
-endocrine
-reproductive
-gastrointestinal
-stomatitis
-colitis
-hepatitis
-pathogen
-asymptomatic
-symptomatic
-apnea
-atonia
-subacute
-epidemic
-endemic
-antigen
-antibody
-immunoglobulin
-phagocyte
-degeneration
-malfunction
-malnutrition
-sublingual
-epiglottis
-peristalsis
-ingestion
-cardiac
-paralysis
+cytology
 artery
-vein
+physiology
 capillary
-spleen
-esophagus
-trachea
-gallbladder
-pancreas
-cartilage
-ureter
-thyroid
-lymph node
-hormone
-absorption
-elimination
-enzyme
-bile
-hereditary
-abscess
-obesity
-prolapse
-insulin
-adrenaline
-glucagon
-sodium
-potassium
-symptom
-sign
-diagnose
-acute
-chronic
-abdomen
-airway
-hypoxia
-pulse
-infection
-fever
-culture
-elevated
-dose
-allergy
-side effect
-incision
-procedure
-suture
-discharge
-endocarditis
-dermatitis
-gastritis
-arthritis
-leukemia
-anemia
-hyperglycemia
-hypoglycemia
-hypertension
-hypotension
-tachycardia
-bradycardia
-neuropathy
-myopathy
-osteoporosis
-hematoma
-hemorrhage
-intravenous
-subcutaneous
-neoplasm
-carcinoma
-metastasis
-biopsy
-prognosis
-diagnosis
-antibiotic
-antipyretic
+endocrinology
+vein
+psychology
 lymphatic system
+skeletal system
 lymph vessel
+muscular system
+lymph nodes
+circulatory system
+spleen
+respiratory system
 expel
+urinary system
 carbon dioxide
+endocrine system
 oxygen
+reproductive system
 larynx
-throat
 windpipe
-saliva
-kidney
-urine
-urethra
-bladder
-pituitary
-adrenal gland
-cortisone
-collar bone
-spinal column
-spinal cord
-sperm
-ovum
-testis
-ovary
-testosterone
-progesterone
-estrogen
-tactile
-accessory
-pharynx
-epidemic disease
-endemic disease
-airborne droplets
-pus
-boils
-pimples
-armpit
-sepsis
-opsonization
-complement
-molecule
-exhale
-inhale
-cell
-tissue
-organ
-system
-nucleus
-cytoplasm
-membrane
-chromosome
-gene
-DNA
-RNA
-protein
-receptor
-epithelium
-endothelium
-connective tissue
-muscle
-nerve
-bone
+principal
+esophagus
 joint
-ligament
-tendon
-fascia
-mucosa
-cavity
-lumen
-valve
-sphincter
-duct
-gland
-neuron
-axon
-synapse
-collagen
-erythrocyte
-leukocyte
-platelet
-plasma
-serum
-hemoglobin
-homeostasis
-metabolism
-osmosis
-diffusion
-filtration
-electrolyte
-cholesterol
-glucose
-albumin
-bilirubin
-urea
-creatinine
-heart
-atrium
-ventricle
-aorta
-myocardium
-pericardium
-endocardium
-coronary
-blood pressure
-murmur
-ischemia
-infarction
-thrombosis
-embolism
-atherosclerosis
-angina
-shock
-edema
-cyanosis
-palpitation
-syncope
-arrhythmia
-heart failure
-pulmonary
-myocarditis
-pericarditis
-lung
-bronchus
-alveolus
-pleura
-diaphragm
-inspiration
-expiration
-ventilation
-intubation
-dyspnea
-cough
-sputum
-hemoptysis
-pneumonia
-bronchitis
-asthma
-pneumothorax
-effusion
-tachypnea
-orthopnea
-wheeze
-stridor
-rhinitis
-sinusitis
-tonsillitis
-laryngitis
-pharyngitis
-atelectasis
-aspiration
-tuberculosis
-bronchodilator
-stomach
-colon
-liver
-intestine
-appendix
-constipation
-diarrhea
-nausea
-vomiting
-anorexia
-dysphagia
-jaundice
-ascites
-cirrhosis
-ulcer
-appendicitis
-pancreatitis
-cholecystitis
-peritonitis
-gastroenteritis
-enteritis
-esophagitis
-gastric
-hepatic
-biliary
-diverticulitis
-polyp
-cholecystectomy
-appendectomy
-anastomosis
-resection
-ligation
-oral
-nephron
-glomerulus
-renal
-prostate
-uterus
-menstruation
-pregnancy
-fetus
-embryo
-placenta
-hematuria
-oliguria
-polyuria
-dysuria
-incontinence
-dialysis
-nephritis
-pyelonephritis
-cystitis
-urethritis
-glomerulonephritis
-prostatitis
-mastitis
-catheterization
-urinalysis
-ovulation
-breast
-pelvis
-diuretic
-brain
-cerebrum
-cerebellum
-brainstem
-meninges
-autonomic
-sympathetic
-parasympathetic
-reflex
-seizure
-epilepsy
-stroke
-coma
-headache
-dizziness
-vertigo
-tremor
-spasm
-meningitis
-encephalitis
-myelitis
-neuritis
-migraine
-dementia
-delirium
-aphasia
-hemiplegia
-hypothalamus
-parathyroid
-thymus
-diabetes
-goiter
-hyperthyroidism
-hypothyroidism
-cortisol
-aldosterone
-thyroxine
-ketoacidosis
-thyroiditis
-epinephrine
-calcium
-bicarbonate
-acidosis
-alkalosis
-skeleton
+cartilage
+exhale
+bone marrow
+molecule
+cube-shaped
+saliva
+interior
+enzyme
+external
+kidney
+hinge joint
+urine
+pivot joint
+ureter
+socket
+urethra
 skull
-vertebra
-rib
-sternum
-femur
-fracture
-dislocation
-osteoarthritis
-osteomyelitis
-atrophy
-hypertrophy
-hyperplasia
-gout
-skin
-epidermis
-dermis
-rash
-pruritus
-erythema
-pallor
-petechia
-purpura
-gangrene
-necrosis
-fistula
-cellulitis
-melanoma
-topical
-exudate
-transudate
-debridement
-cornea
-retina
-cochlea
-otitis
-conjunctivitis
-immunity
-inflammation
-inflammatory
-vaccine
-vaccination
-lymphocyte
-neutrophil
-macrophage
-anaphylaxis
-hypersensitivity
-heparin
-transfusion
-septic
-virus
+bile
+elbow
+gallbladder
+breast
+sodium
+hip joints
+potassium
+cushioning
+bladder
+striated muscles
+pancreas
+smooth muscles
+hormone
+voluntary muscles
+pituitary
+thyroid
+ovum
+adrenal gland
+testis
+cortisone
+ovary
+adrenaline
+testosterone
+insulin
+progesterone
+glucagon
+estrogen
+collar bone
+tactile
+spinal column
+accessory
+spinal cord
+pharynx
+sperm
+pathology
+stomatitis
+pathogen
+prolapse
+fungus
+malfunction
+obesity
 bacterium
-chill
-malaise
-fatigue
-microorganism
-infectious
-complication
-exacerbation
-remission
-recovery
-hematocrit
-nosocomial
-sterile
-aseptic
-fibrosis
-metaplasia
-dysplasia
-apoptosis
-congestion
-granuloma
-adhesion
-calcification
-suppuration
-rupture
-perforation
-cyst
-benign
-malignant
-tumor
-sarcoma
-adenoma
-lymphoma
-idiopathic
-iatrogenic
-congenital
-acquired
-weight loss
-night sweats
-cachexia
-clubbing
-paresthesia
-chest pain
-hoarseness
-palpable
-tender
-bilateral
-unilateral
-proximal
-distal
-anterior
-posterior
-superior
-inferior
-medial
-lateral
-ventral
-dorsal
-superficial
-deep
-ipsilateral
-contralateral
-sagittal
-coronal
-transverse
-empiric
-prophylactic
-palliative
-supportive
-refractory
-diffuse
-focal
-generalized
-localized
-systemic
-progressive
-recurrent
-intermittent
-persistent
-severe
-mild
-moderate
-primary
-secondary
-febrile
-afebrile
-patent
-intact
-dilated
-inflamed
-infected
-elective
-emergency
-intramuscular
-preoperative
-postoperative
-outpatient
-inpatient
-adjuvant
-therapeutic
-diagnostic
-resistant
-sensitive
-indicated
-contraindicated
-palpate
-auscultate
-percuss
-inspect
-administer
-prescribe
-discontinue
-monitor
-confirm
-exclude
-admit
-refer
-resolve
-deteriorate
-stabilize
-relieve
-prevent
-treat
-radiograph
-ultrasound
-CT
-MRI
-contrast
-opacity
-X-ray
-electrocardiogram
-ECG
-echocardiography
-infiltrate
-consolidation
-mass
-lesion
-specimen
-smear
-stain
-troponin
-transaminase
-lactate
-analgesic
-antiinflammatory
-antiviral
-antifungal
-antihistamine
-anticoagulant
-antiplatelet
-thrombolytic
-steroid
-corticosteroid
-opioid
-sedative
-anesthetic
-chemotherapy
-radiotherapy
-physiotherapy
-rehabilitation
-hydration
-oxygen therapy
-mechanical ventilation
-rule out
-follow up
-work up
-flare up
-orally
-intravenously
-subcutaneously
-intramuscularly
-vasculitis
-lymphadenitis
-mitochondrion
-ligand
-serosa
-septum
-follicle
-cortex
-medulla
-dendrite
-fibroblast
-stem cell
-interstitial
-extracellular
-intracellular
-organelle
-ribosome
-lysosome
-mitosis
-meiosis
-differentiation
-matrix
-basement membrane
-adipose
-visceral
-parietal
-somatic
-catabolism
-anabolism
-active transport
-permeability
-ion
-buffer
-acid
-base
-ATP
-amino acid
-lipid
-carbohydrate
+malnutrition
+hereditary
+virus
+mental retardation
+diagnose
+paralysis
+venereal disease
+symptom
+hepatitis
+sign
+colitis
+symptomatic
+cholera
+asymptomatic
+typhoid fever
+acute disease
+boils
+chronic disease
+pimples
+subacute disease
+pus
+fatal
+abscess
+rheumatic fever
+armpit
+subarachnoid
+blood poisoning\sepsis
+epidemic disease
+phagocyte
+endemic disease
+antigen
+airborne droplets
+antibody
+apnea
+immunoglobulin
+atonia
+opsonization
+degeneration
+complement
+negative feedback control
+gastrointestinal tract
+cardiac sphincter
+ingestion
+pyloric sphincter
+absorption
+digestive
+chyme
+elimination
+duodenum
+oral cavity \buccal cavity
+jejunum
+palate
+ileum
+chewing
+cecum
+swallowing
+rectum
+incisor
+colon
+cuspid
+sigmoid colon
+ileocecal valve
+molar
+ascending colon
+cementum
+transverse colon
+descending colon
+appendix
+pulp
+stool
+enamel
+anus
+periodontium
+hydrochloric acid
+deciduous dentition
+abdomen
+cholesterol
+permanent dentition
+bile pigment
+lower jaw
+bilirubin
+papillae
+blood protein
+taste bud
+erythrocyte
+uvula
 glycogen
-triglyceride
-lobe
-segment
-fiber
-viscera
-systole
-diastole
-systolic
-diastolic
-heartbeat
-fibrin
-clot
-plaque
-stenosis
-occlusion
-perfusion
-vasoconstriction
-vasodilation
-aneurysm
-phlebitis
-thrombus
-embolus
-infarct
-cardiac output
-stroke volume
-vena cava
-mitral
-tricuspid
-aortic
-regurgitation
-cardiomyopathy
-fibrillation
-asystole
-cardiac arrest
-arteriole
-venule
-collateral
-hypertensive
-hypotensive
-stethoscope
-sphygmomanometer
-orthostatic
-bypass
-stent
-pacemaker
-angioplasty
-defibrillation
-cardioversion
-resuscitation
-atheroma
-ischemic
-hemorrhagic
-congestive
-preload
-afterload
-contractility
-bronchiole
-emphysema
-hypoxemia
-hypercapnia
-bradypnea
-crackle
-surfactant
-intercostal
+parotid gland
+cilia
+submandibular gland
+amylase
+lipase
+hepatic duct
+epiglottis
+cystic duct
+nasal cavity
+common bile duct
+peristalsis
+detoxification
+fundus
+emulsification
+antrum
+bile acid
+gingivitis
+laparoscope
+peptic ulcer
+pancreatitis
+vomiting
+paralytic ileus
+perforation
+barium
+autodigestion
+hiatal
+necrosis
+hernia
+epigastric
+endoscopy
+appendicitis
+hemorrhage
+navel
+histamine
+peritonitis
+chest cavity
+ulcerative colitis
+diaphragm
+antibiotic
+gastritis
+fistula
+diverticulum
+cirrhosis
+diverticulitis
+hepatomegaly
+diverticulosis
+edema
+polyps
+jaundice
+diarrhea
+architecture
+occult blood
+nodule
+proctoscope
+micronodular
+sigmoidoscope
+macronodular
+colonoscope
+lobular
+ileostomy
+cholelithiasis
+colostomy
+cholecystitis
+gastroduodenostomy
+biliary colic
+nausea
+coloproctostomy
+cholecystectomy
+pulmonary veins
+maxillary sinus
+irritant
+paranasal sinus
+frontal sinus
+ethmoidal sinus
+nostril
+sphenoid sinus
+nasopharynx
+oropharynx
+apex
+hypopharynx
+hilum
+laryngopharynx
+collarbone
+adenoids
+hypopharyngeal
 mediastinum
-asphyxia
+pharyngeal tonsils
+thoracic cavity
+abdominal cavity
+palatine tonsils
+inhalation
+tongue tonsil
+vocal cords
+exhalation
+mucous membrane
+brainstem
+fibrous connective tissue
+phrenic nerve
+acid
+bronchi
+acidity
+bronchiole
+acidosis
+alkalinity
+alveoli
+alkali
+epithelium
+alkalosis
+parietal pleura
+hyperventilation
+visceral pleura
+hypoventilation
+horizontal fissure
+mucus
+oblique fissure
+pneumonia
+exudates
+tuberculosis
+solidification
+asthma
+consolidation
+allergic
+dyspnea
+emphysema
+cyanosis
+influenza
+wheeze
+pneumonitis
+steroids
+lobar pneumonia
+allergen
+polio
+bronchopneumonia
+paralyze
+pleurisy
+mature
+tubercle
+prematurely
+hemoptysis
+digitalis
+phlegm
+diuretics
+atrium
+bronchospasm
+hypercapnia
+simple chronic bronchitis
+pneumothorax
+pneumoconiosis
+chronic obstructive bronchitis
+silicosis
+anthracosilicosis
+asthmatic bronchitis
+bronchitis
+noxious
+bronchiectasis
+atherosclerosis
+systolic pressure
+diastolic pressure
+lumen
+congestive heart failure
+ischemia
+coronary heart disease
+vegetation
+angina pectoris
+essential hypertension
+clot
+thrombosis
+secondary hypertension
+thrombus
+myocardial infarction
+endocarditis
+pericardial tamponade
+arhythmia
+fibrillation
+pericarditis
+embolism
+shock
+embolus
+plasma
+stroke
+dextran
+subcutaneous
+vomitus
+syncope
+spermatic cord
+glomerulonephritis
+ligament
+pyelonephritis
+uterus
+rheumatic heart disease
+piles
+varix
+valvular murmur
+phlebitis
+etiology
+hemocyte
+leukocyte
+thymus gland
+platelets
+lymphoid organs
+thrombocytes
+debris
+clotting cells
+cytotoxic
+interferon
+fibrinogen
+interleukins
+fibrin
+anemia
+albumin
+fatigue
+globulin
+heart palpitation
+prothrombin
+pallor
+globin
+irritation
+hemoglobin
+aplastic anemia
+pigment
+pancytopenia
+heme
+hemolytic anemia
+electrolyte
+clotting factors
+spherocytosis
+nucleus
+erythropoietin
+pernicious
+granulocytes
+megaloblast
+eosinophil
+sickle cell anemia
+basophil
+neutrophil
+arthralgias
+agranulocyte
+extremities
+monocyte
+ulceration
+lymphocyte
+thalassemia
+polymorphonuclear
+thrombocytopenia
+detoxify
+petechiae
+heparin
+ecchymosis
+phagocytic
+purpura
+macrophages
+hemophilia
+intramuscular
+phagocytosis
+autoimmune disease
+megakaryocyte
+hemostasis
+hematuria
+hemarthrosis
+myeloblast
+leukemia
+neoplasms
+lymphoblast
+acute myelogenous leukemia
+hypercalcemia
+itching
+acute lymphocytic leukemia
+rash
+sneezing
+chronic myelogenous leukemia
+urticaria
+immunodeficiency
+dysgammaglobulinemia
+multiple myeloma
+plasma cells
+extrinsic
+osteolytic
+intrinsic
+lymphadenopathy
+zygote
+quadruplet
+oviduct
+dissimilar
+endometrium
+abort
+embryo
+vagina
+chorionic sac
+cervix
+chorion
+fallopian tubes
+gonadotropin
+fertilization
+corpus luteum
+pregnancy tests
+placenta
+fetus
+amniotic sac
+umbilical cord
+amniorrhea
+amnion
+trimester
+menstrual
+parturition
+birth canal
+dystocia
+gravida
+cesarean birth
+primigravida
+oxytocin
+para
+prostaglandin
+inheritable
+meiosis
+offspring
+mitosis
+dominant
+triplet
+recessive
+cell division
+rearrangement
+identical
+fragment
+preeclampsia
+cleft palate
+diabetes mellitus
+toxemia
+amniocentesis
+proteinuria
+ectopic
+karyotype
+salpingitis
+chorionic villus
+endometriosis
+transmit
+mendelian fashion
+laparoscopic
+miscarriage
+immunogenetics
+incompetence
+induced abortion
+incur
+suction
+mutagen
+birth defect
+mutagenic
+teratogen
+carcinogen
+malformation
+albinism
+rubella
+pigmentation
+homozygote
+measles
+progeny
+herpes simplex
+schizophrenia
+syphilis
+counselor
+atresia
+mutant
+anencephalus
+prenatal
+spina bifida
+lethal
+cleft lip
+euphenics
+euphenic
+endocrine
+reproduction
+dwarf
+metabolism
+nutrien
+target tissue
+gland
+receptor
+glandular
+hormonal
+steroid
+epinephrine
+lipid
+norepinephrine
+protein
+proteinlike compound
+gonad
+exocrine
+cortex
+islets of langerhans
+ovarian
+estradiol
+renin
+calcium
+pregnancy
+phosphorus
+malatonin
+puberty
+circadian rhythms
+parathyroid
+parathyroid hormone
+pineal
+calcitonin
+sphenoid
+anterior lobe
+primary aldosteronism
+adenohypophysis
+posterior lobe
+pheochromocytoma
+neurohypophysis
+gigantism
+hypothalamus
+acromegaly
+mammary
+diabetes insipidus
+antidiuretic
+hyperthyroidism
+uterine
+isthmus
+hyperparathyroidism
+thyroxine
+hypoparathyroidism
+triiodothyronine
+hyperglycemia
+homeostasis
+medullar
+corticosteroid
+glucose
+glucocorticoid
+ketoacidosis
+cortisol
+endemic goiter
+mineralocorticoid
+aldosterone
+nodular goiter
+bruit
+myxedema
+ptosis
+neuron
+diencephalon
+pons
+neurology
+cerebellum
+acetylcholine
+brain stem
+efferent
+medulla oblongata
+afferent
+meninx
+parasympathetic
+cauda equina
+dura
+sympathetic
+mater
+arachnoid
+ganglion
+pia mater
+plexus
+lumbar puncture
+dendrite
+electrical charge
+axon
+myelin
+neurilemma
+synapse
+white matter
+gray matter
+neurotransmitter
+neuroglia
+astrocyte
+glioma
+microglia
+oligodendroglia
+cerebrum
+convolution
+peripheral nervous system
+autonomic nervous system
+visceral nervous system
+groove
+fissure
+sulcus
+thalamus

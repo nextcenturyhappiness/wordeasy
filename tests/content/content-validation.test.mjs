@@ -314,10 +314,17 @@ describe("strict content validation failures", () => {
 
 describe("essential medical dataset", () => {
   it("covers the classroom lemma list with empty collocations", () => {
+    const lemmas = readFileSync(resolve(process.cwd(), "data/essential-medical/lemmas.txt"), "utf8")
+      .split(/\r?\n/u)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
     const result = validateEssentialDataset(essentialDataset);
     expect(result.errors).toEqual([]);
     expect(essentialDataset.dataset_key).toBe(ESSENTIAL_DATASET_KEY);
     expect(result.counts.essential).toBeGreaterThanOrEqual(ESSENTIAL_MEDICAL_MIN_TOTAL);
+    expect(essentialDataset.cards).toHaveLength(lemmas.length);
+    expect(essentialDataset.cards.map((card) => card.lemma)).toEqual(lemmas);
+    expect(essentialDataset.cards.every((card) => card.target_text === card.lemma)).toBe(true);
     expect(essentialDataset.cards.every((card) => card.module === "essential_medical")).toBe(true);
     expect(essentialDataset.cards.every((card) => card.collocations.length === 0)).toBe(true);
     expect(essentialDataset.cards.every((card) => card.source_type === "original_example")).toBe(

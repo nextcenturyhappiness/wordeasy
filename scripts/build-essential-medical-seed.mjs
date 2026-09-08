@@ -6,13 +6,21 @@ import {
   addStableIdentity,
   CONTENT_SCHEMA_VERSION,
   contentUuid,
+  ESSENTIAL_DATASET_KEY,
+  ESSENTIAL_MEDICAL_MIN_TOTAL,
   slugify,
   UUID_NAMESPACE
 } from "./lib/content-contract.mjs";
 import { formatIssues, validateEssentialDataset } from "./lib/content-validator.mjs";
+import {
+  assembleEssentialSource,
+  normalizeLemmaKey,
+  parseSourceGlosses
+} from "./lib/essential-medical-source.mjs";
 import { contentEntityStatements, sqlText, tuple, valuesStatement } from "./lib/seed-sql.mjs";
 
 const rawUrl = new URL("./lib/essential-medical-raw.tsv", import.meta.url);
+const pdfGlossesUrl = new URL("./lib/essential-medical-pdf-glosses.tsv", import.meta.url);
 const dataDir = new URL("../data/essential-medical/", import.meta.url);
 const cardsUrl = new URL("../data/essential-medical/cards.json", import.meta.url);
 const lemmasUrl = new URL("../data/essential-medical/lemmas.txt", import.meta.url);
@@ -24,7 +32,8 @@ const migrationUrl = new URL(
 
 const MODULE = "essential_medical";
 const CATEGORY = "core";
-const MIN_LEMMAS = 660;
+const ALLOWED_POS = new Set(["noun", "adjective", "verb", "phrase", "adverb", "phrasal verb"]);
+const checkOnly = process.argv.includes("--check");
 
 const NOUN_SENTENCES = [
   (lemma) => `In class the tutor pointed to the ${lemma} while explaining the adjacent organ.`,
@@ -66,20 +75,88 @@ const PHRASE_SENTENCES = [
   (lemma) => `The textbook treats the ${lemma} as core vocabulary, not exam trivia.`
 ];
 
-function parseTsv(text) {
+function parseTsv(text, pathLabel) {
   const lines = text.trim().split(/\r?\n/u);
   const header = lines[0]?.split("\t") ?? [];
   if (header.join("\t") !== "lemma\tpos\tipa\tzh\tmeaning_en") {
-    throw new Error(`Unexpected TSV header: ${header.join("\\t")}`);
+    throw new Error(`Unexpected TSV header in ${pathLabel}: ${header.join("\\t")}`);
   }
-  return lines.slice(1).map((line, index) => {
+  const map = new Map();
+  for (const [index, line] of lines.slice(1).entries()) {
     const cells = line.split("\t");
     if (cells.length !== 5) {
-      throw new Error(`TSV row ${String(index + 2)} has ${String(cells.length)} columns.`);
+      throw new Error(
+        `TSV row ${String(index + 2)} in ${pathLabel} has ${String(cells.length)} columns.`
+      );
     }
     const [lemma, pos, ipa, zh, meaningEn] = cells.map((cell) => cell.trim());
-    return { lemma, pos, ipa, zh, meaningEn };
-  });
+    if (!ALLOWED_POS.has(pos)) {
+      throw new Error(`Unsupported POS "${pos}" in ${pathLabel} for ${lemma}`);
+    }
+    if (!/^\/.+\/$/u.test(ipa)) {
+      throw new Error(`Invalid IPA in ${pathLabel} for ${lemma}`);
+    }
+    const key = normalizeLemmaKey(lemma);
+    if (!map.has(key)) {
+      map.set(key, { lemma, pos, ipa, zh, meaningEn });
+    }
+  }
+  return map;
+}
+
+function loadLemmas(text) {
+  const lemmas = text
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  if (lemmas.length < ESSENTIAL_MEDICAL_MIN_TOTAL) {
+    throw new Error(
+      `Canonical lemmas.txt has ${String(lemmas.length)} entries; expected >= ${String(ESSENTIAL_MEDICAL_MIN_TOTAL)}. Do not shrink the list.`
+    );
+  }
+  return lemmas;
+}
+
+function inferPos(lemma) {
+  if (lemma.includes(" ") || lemma.includes("\\") || lemma.includes("/")) {
+    return "phrase";
+  }
+  return "noun";
+}
+
+function lookupGloss(lemma, maps) {
+  const key = normalizeLemmaKey(lemma);
+  for (const map of maps) {
+    const hit = map.get(key);
+    if (hit) return hit;
+  }
+  for (const piece of lemma.split(/\s*[/\\]\s*/u)) {
+    const pieceKey = normalizeLemmaKey(piece);
+    if (pieceKey.length === 0) continue;
+    for (const map of maps) {
+      const hit = map.get(pieceKey);
+      if (hit) return hit;
+    }
+  }
+  return null;
+}
+
+function mergeGloss(lemma, sourceMap, pdfMap, rawMap) {
+  const source = lookupGloss(lemma, [sourceMap]);
+  const tsv = lookupGloss(lemma, [pdfMap, rawMap]);
+  if (source == null && tsv == null) {
+    throw new Error(`Missing gloss for canonical lemma: ${lemma}`);
+  }
+  const pos = tsv?.pos ?? inferPos(lemma);
+  const sourceIpa = source?.ipa && /^\/.+\/$/u.test(source.ipa) ? source.ipa : "";
+  const ipa = sourceIpa || tsv?.ipa;
+  const zh = source?.zh || tsv?.zh;
+  const meaningEn =
+    tsv?.meaningEn ?? `the classroom medical sense recorded as ${zh ?? lemma}`;
+  if (!ALLOWED_POS.has(pos) || !ipa || !zh) {
+    throw new Error(`Incomplete gloss for canonical lemma: ${lemma}`);
+  }
+  return { lemma, pos, ipa, zh, meaningEn };
 }
 
 function countLiteralOccurrences(text, target) {
@@ -117,7 +194,7 @@ function buildContext(entry, index) {
   let frames = NOUN_SENTENCES;
   if (pos === "adjective") frames = ADJ_SENTENCES;
   else if (pos === "verb" || pos === "phrasal verb") frames = VERB_SENTENCES;
-  else if (pos === "phrase" || lemma.includes(" ")) frames = PHRASE_SENTENCES;
+  else if (pos === "phrase" || lemma.includes(" ") || lemma.includes("\\")) frames = PHRASE_SENTENCES;
   else if (pos === "adverb") frames = ADJ_SENTENCES;
 
   const candidates = [
@@ -152,8 +229,20 @@ function buildContext(entry, index) {
   return { sentence, paraphrase, translation };
 }
 
-function toCard(entry, index) {
-  const slug = slugify(entry.lemma);
+function uniqueSlug(lemma, used) {
+  const base = slugify(lemma) || "lemma";
+  let slug = base;
+  let n = 2;
+  while (used.has(slug)) {
+    slug = `${base}-${String(n)}`;
+    n += 1;
+  }
+  used.add(slug);
+  return slug;
+}
+
+function toCard(entry, index, usedSlugs) {
+  const slug = uniqueSlug(entry.lemma, usedSlugs);
   const { sentence, paraphrase, translation } = buildContext(entry, index);
   return addStableIdentity({
     card_key: `ess-core-${slug}-001`,
@@ -181,12 +270,6 @@ function toCard(entry, index) {
     card_type: "context_recall",
     active: true
   });
-}
-
-function sourceDump(entries) {
-  return entries
-    .map((entry, index) => `${String(index + 1)}.${entry.lemma}（${entry.zh}）`)
-    .join(" ");
 }
 
 function generateMigration(cards) {
@@ -229,26 +312,17 @@ function generateMigration(cards) {
   ].join("\n\n");
 }
 
-const raw = parseTsv(await readFile(rawUrl, "utf8"));
-if (raw.length < MIN_LEMMAS) {
-  throw new Error(
-    `Essential medical TSV has ${String(raw.length)} lemmas; expected >= ${String(MIN_LEMMAS)}.`
-  );
-}
-
-const seen = new Set();
-for (const entry of raw) {
-  const key = entry.lemma.toLowerCase();
-  if (seen.has(key)) {
-    throw new Error(`Duplicate lemma ${entry.lemma}.`);
-  }
-  seen.add(key);
-}
-
-const cards = raw.map((entry, index) => toCard(entry, index));
+const lemmas = loadLemmas(await readFile(lemmasUrl, "utf8"));
+const assembled = await assembleEssentialSource(dataDir, { write: !checkOnly });
+const sourceMap = parseSourceGlosses(assembled.text);
+const pdfMap = parseTsv(await readFile(pdfGlossesUrl, "utf8"), "essential-medical-pdf-glosses.tsv");
+const rawMap = parseTsv(await readFile(rawUrl, "utf8"), "essential-medical-raw.tsv");
+const glosses = lemmas.map((lemma) => mergeGloss(lemma, sourceMap, pdfMap, rawMap));
+const usedSlugs = new Set();
+const cards = glosses.map((entry, index) => toCard(entry, index, usedSlugs));
 const dataset = {
   schema_version: CONTENT_SCHEMA_VERSION,
-  dataset_key: "wordeasy-essential-medical-v1",
+  dataset_key: ESSENTIAL_DATASET_KEY,
   uuid_namespace: UUID_NAMESPACE,
   cards
 };
@@ -257,31 +331,28 @@ if (validation.errors.length > 0) {
   throw new Error(`Essential medical validation failed:\n${formatIssues(validation.errors)}`);
 }
 
-const lemmasText = `${raw.map((entry) => entry.lemma).join("\n")}\n`;
-const sourceText = `${sourceDump(raw)}\n`;
 const generatedSql = generateMigration(cards);
+const generatedCards = `${JSON.stringify(dataset, null, 2)}\n`;
 
-if (process.argv.includes("--check")) {
+if (checkOnly) {
   const existingCards = await readFile(cardsUrl, "utf8");
   const existingSql = await readFile(migrationUrl, "utf8");
-  const existingLemmas = await readFile(lemmasUrl, "utf8");
   const existingSource = await readFile(sourceUrl, "utf8");
-  if (
-    existingCards !== `${JSON.stringify(dataset, null, 2)}\n` ||
-    existingSql !== generatedSql ||
-    existingLemmas !== lemmasText ||
-    existingSource !== sourceText
-  ) {
+  const sourceMismatch = assembled.assembledFromParts && existingSource !== assembled.text;
+  if (existingCards !== generatedCards || existingSql !== generatedSql || sourceMismatch) {
     throw new Error("Essential medical seed is stale. Run npm run content:essential-medical.");
   }
-  console.log(`Essential medical seed is current: ${String(cards.length)} cards.`);
+  for (const [index, card] of cards.entries()) {
+    if (card.lemma !== lemmas[index] || card.target_text !== lemmas[index]) {
+      throw new Error(`Lemma order mismatch at ${String(index)}: ${card.lemma}`);
+    }
+  }
+  console.log(`Essential medical seed is current: ${String(cards.length)} cards from lemmas.txt.`);
 } else {
   await mkdir(dataDir, { recursive: true });
-  await writeFile(lemmasUrl, lemmasText, "utf8");
-  await writeFile(sourceUrl, sourceText, "utf8");
-  await writeFile(cardsUrl, `${JSON.stringify(dataset, null, 2)}\n`, "utf8");
+  await writeFile(cardsUrl, generatedCards, "utf8");
   await writeFile(migrationUrl, generatedSql, "utf8");
   console.log(
-    `Wrote ${String(cards.length)} 必备医学英语 cards, lemmas.txt, source.txt, and seed SQL.`
+    `Wrote ${String(cards.length)} 必备医学英语 cards from canonical lemmas.txt (${assembled.assembledFromParts ? "source assembled from parts" : "source.txt used as-is"}).`
   );
 }

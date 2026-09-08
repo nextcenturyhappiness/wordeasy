@@ -194,7 +194,7 @@ assert(
   "Standalone origin is missing its local-only security headers."
 );
 assert(activeCardIds.length === 200, "Canonical standalone catalog must contain 200 active cards.");
-assert(essentialCardIds.length === 700, "Standalone catalog must include 700 必备医学英语 cards.");
+assert(essentialCardIds.length === 663, "Standalone catalog must include 663 必备医学英语 cards.");
 assert(
   cardCatalogFiles.length === 1,
   `Expected one dedicated standalone catalog chunk; found ${String(cardCatalogFiles.length)}.`

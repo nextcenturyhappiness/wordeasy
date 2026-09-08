@@ -16,15 +16,15 @@ const MODULES = MODULE_SLUGS;
 const PERSONAL_CATALOG_SIZE: Record<DomainModuleSlug, number> = {
   research_english: 60,
   medical_english: 177,
-  essential_medical: 700
+  essential_medical: 663
 };
 const PERSONAL_ACTIVE_NEW_POOL: Record<DomainModuleSlug, number> = {
   research_english: 60,
   medical_english: 140,
-  essential_medical: 700
+  essential_medical: 663
 };
 const PERSONAL_DAILY_QUOTA = 10;
-const PERSONAL_CATALOG_VERSION = "canonical-essential-medical-v1";
+const PERSONAL_CATALOG_VERSION = "canonical-essential-medical-v2";
 const PERSONAL_CATALOG_VERSION_KEY = "personal-catalog-version";
 const REVIEW_QUEUE_MIGRATION_KEY = "personal-review-queues-v1";
 

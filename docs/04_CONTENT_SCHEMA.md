@@ -44,8 +44,8 @@
 
 第三个模块 `essential_medical` 使用独立数据集 `data/essential-medical/`，不得并入 `data/seed-data.json` 以免破坏 Research/Medical 的 237 张契约。
 
-- 覆盖 `lemmas.txt` 中的每一个 lemma（不少于 660 张 Context Card）；
-- 可解析的中文释义来自 `source.txt` / 课堂词表；缺省释义按教材医学义补全，不是应试trivia；
+- 覆盖 `lemmas.txt` 中的每一个 lemma（当前 663 张 Context Card，不少于 660，不得缩短词表）；
+- 可解析的中文释义优先来自完整 `source.txt`；若 `source.txt` 仍是占位，则按 `source.part1.txt`…`source.part5.txt` 顺序拼接后再解析；缺项按教材医学义补全，不是应试 trivia；生成脚本不得覆写 `lemmas.txt`；
 - `collocations` 必须为空；`usage_note` 可为空；
 - `source_type` 仅为 `original_example`，citation 字段为 null；
 - 生成脚本写出幂等 SQL migration，按 stable_key upsert。Research / Medical 既有 seed migration 不重写。
@@ -241,6 +241,7 @@ data/seed-data.json
 data/essential-medical/cards.json
 data/essential-medical/lemmas.txt
 data/essential-medical/source.txt
+data/essential-medical/source.part1.txt … source.part5.txt
 data/import-template.csv
 scripts/validate-content.*
 scripts/build-essential-medical-seed.mjs

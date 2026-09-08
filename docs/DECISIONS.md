@@ -517,14 +517,14 @@ Decision:
 
 1. 新增顶层模块 `essential_medical`，中文显示名「必备医学英语」。Home 三个 Continue 入口与既有 Research / Medical 相同；Settings 仍无模块开关（现有 UX 也没有）。本决策取代 DEC-043/044 中「不新增第三个顶层模块」的条款；词根构词仍留在 Medical 内，Research 5+2+3 与 Medical 7+3 不变。
 2. 每日新卡 10 张，全部来自 `core`。本地选择器、`ensure_daily_assignment_v1_unlocked`、cloud parser 同步该配额。不足则整组 shortage。
-3. 词库覆盖 `data/essential-medical/lemmas.txt` 全部 lemma（生成自 `scripts/lib/essential-medical-raw.tsv` 课堂词表，不少于 660）。独立 JSON/SQL，不改写 `data/seed-data.json` 或已应用 Research/Medical seed migration。`collocations` 为空；`usage_note` 可空；例句仅为 `original_example`，不编造 DOI/PMID。
+3. 词库覆盖 `data/essential-medical/lemmas.txt` 全部 lemma（当前 663 条，不得缩短）。释义优先解析 `source.txt`（若仍是占位则按 `source.part1.txt`…`source.part5.txt` 顺序拼接非占位片段）；缺项用课堂/教材义补全。独立 JSON/SQL，不改写 `data/seed-data.json` 或已应用 Research/Medical seed migration。`collocations` 为空；`usage_note` 可空；例句仅为 `original_example`，不编造 DOI/PMID。生成脚本不得覆写 `lemmas.txt`。
 4. 全部模块 Reveal 去掉「句子来源」/ SourceDetails。必备医学英语另外隐藏 Common collocations。其余模块 collocations 非空时仍显示，但视觉降权。适用范围仅非空时显示。
 5. Reveal 主视觉改为中文释义（大号），英文 meaning 紧随其后仍突出；paraphrase 与句子翻译降为次要灰字，不再用并列 h2。sticky 语境原句与 IPA tap-to-speak 不变。
-6. catalog 版本 `canonical-essential-medical-v1`。云端 Postgres 必须另行 apply `20260908001300` 与 `20260908001400`；仓库落地不等于远程已迁移。
+6. catalog 版本 `canonical-essential-medical-v2`。云端 Postgres 必须另行 apply `20260908001300` 与 `20260908001400`；仓库落地不等于远程已迁移。
 
 Reason: 所有者要学完整课堂词表，且与构词课分开；Reveal 的学习点是 sense，不是来源或一排同等权重的区块。
 Alternatives rejected: 把 660+ 词并进 Medical 配额；手写 600 行 SQL；为 collocations 编造课堂搭配；保留句子来源只改文案；缩短词表。
-Consequences: 未冻结 Day-1 出现第三套 10 新卡；standalone/personal catalog 变为 937 张；Demo 仍 20 张 Research+Medical，必备医学英语在 Demo 中 shortage（newTotal 0）。DEC-035 第 3 条（背面第 8 层「句子来源」）由本决策取代。
+Consequences: 未冻结 Day-1 出现第三套 10 新卡；standalone/personal catalog 变为 900 张（60+177+663）；Demo 仍 20 张 Research+Medical，必备医学英语在 Demo 中 shortage（newTotal 0）。DEC-035 第 3 条（背面第 8 层「句子来源」）由本决策取代。
 Tests/docs affected: domain/routes/Home/Today/ContextCard, assignment RPC/parser, essential seed script/SQL, content validator, UI/E2E/content tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
