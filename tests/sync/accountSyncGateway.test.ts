@@ -159,4 +159,108 @@ describe("account sync gateway", () => {
     expect(coordinatorSync).toHaveBeenCalledTimes(1);
     expect(refreshDay).not.toHaveBeenCalled();
   });
+
+  it("keeps overall sync successful when one module day-cache refresh fails", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const refreshDay = vi.fn<AccountDayCachePort["refresh"]>((module) => {
+      if (module === "essential_medical") {
+        return Promise.reject(new Error("essential_medical snapshot escaped its requested scope."));
+      }
+      return Promise.resolve(undefined);
+    });
+    const coordinatorSync = vi
+      .fn<AccountSyncCoordinatorPort["sync"]>()
+      .mockResolvedValue({ status: "synced", pendingCount: 0 });
+    const syncSettings = vi
+      .fn<AccountSettingsSyncPort["syncRemote"]>()
+      .mockResolvedValue({ timezone: "Asia/Shanghai", theme: "system" });
+    const gateway = new AccountSyncGateway(
+      "account-a",
+      localStore(),
+      {
+        userId: "account-a",
+        sync: coordinatorSync,
+        dispose: vi.fn().mockResolvedValue(undefined)
+      },
+      { userId: "account-a", refresh: refreshDay },
+      { userId: "account-a", syncRemote: syncSettings },
+      {
+        isOnline: () => true,
+        now: () => new Date("2026-08-26T08:00:00.000Z")
+      }
+    );
+
+    await expect(gateway.sync()).resolves.toEqual({ status: "synced", pendingCount: 0 });
+    expect(refreshDay).toHaveBeenCalledTimes(3);
+    expect(coordinatorSync).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledWith(
+      "Cloud day cache refresh failed for essential_medical: essential_medical snapshot escaped its requested scope."
+    );
+    warn.mockRestore();
+  });
+
+  it("fails sync only when every module day-cache refresh fails", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const refreshDay = vi.fn<AccountDayCachePort["refresh"]>((module) =>
+      Promise.reject(new Error(`${module} unavailable`))
+    );
+    const coordinatorSync = vi
+      .fn<AccountSyncCoordinatorPort["sync"]>()
+      .mockResolvedValue({ status: "synced", pendingCount: 0 });
+    const gateway = new AccountSyncGateway(
+      "account-a",
+      localStore(2),
+      {
+        userId: "account-a",
+        sync: coordinatorSync,
+        dispose: vi.fn().mockResolvedValue(undefined)
+      },
+      { userId: "account-a", refresh: refreshDay },
+      {
+        userId: "account-a",
+        syncRemote: vi.fn().mockResolvedValue({ timezone: "UTC", theme: "system" })
+      },
+      {
+        isOnline: () => true,
+        now: () => new Date("2026-08-26T08:00:00.000Z")
+      }
+    );
+
+    await expect(gateway.sync()).resolves.toEqual({
+      status: "failed",
+      pendingCount: 2,
+      message:
+        "Cloud day cache refresh failed for every module (research_english: research_english unavailable; medical_english: medical_english unavailable; essential_medical: essential_medical unavailable)."
+    });
+    expect(refreshDay).toHaveBeenCalledTimes(3);
+    expect(coordinatorSync).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledTimes(3);
+    warn.mockRestore();
+  });
+
+  it("still fails overall sync when preferences or coordinator fail", async () => {
+    const refreshDay = vi.fn().mockResolvedValue(undefined);
+    const gateway = new AccountSyncGateway(
+      "account-a",
+      localStore(),
+      {
+        userId: "account-a",
+        sync: vi.fn().mockRejectedValue(new Error("coordinator unavailable")),
+        dispose: vi.fn().mockResolvedValue(undefined)
+      },
+      { userId: "account-a", refresh: refreshDay },
+      {
+        userId: "account-a",
+        syncRemote: vi.fn().mockRejectedValue(new Error("preferences unavailable"))
+      },
+      { isOnline: () => true }
+    );
+
+    await expect(gateway.sync()).resolves.toEqual({
+      status: "failed",
+      pendingCount: 0,
+      message: "preferences unavailable"
+    });
+    expect(refreshDay).not.toHaveBeenCalled();
+  });
 });

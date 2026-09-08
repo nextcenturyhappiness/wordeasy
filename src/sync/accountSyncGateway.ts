@@ -119,7 +119,7 @@ export class AccountSyncGateway implements SyncGateway {
         return this.#setState(beforeAssignments);
       }
       const studyDate = studyDateFor(this.#now(), preferences.timezone);
-      await Promise.all(LEARNING_MODULES.map((module) => this.dayCache.refresh(module, studyDate)));
+      await this.#refreshDayCaches(studyDate);
       const afterAssignments = await this.coordinator.sync();
       return this.#setState(afterAssignments);
     } catch (error: unknown) {
@@ -132,6 +132,40 @@ export class AccountSyncGateway implements SyncGateway {
         pendingCount: latestPendingCount,
         message: error instanceof Error ? error.message : "Cloud sync failed."
       });
+    }
+  }
+
+  async #refreshDayCaches(studyDate: string): Promise<void> {
+    const outcomes = await Promise.allSettled(
+      LEARNING_MODULES.map((module) => this.dayCache.refresh(module, studyDate))
+    );
+
+    const failures: Array<{ module: ModuleSlug; error: unknown }> = [];
+    for (const [index, outcome] of outcomes.entries()) {
+      const module = LEARNING_MODULES[index];
+      if (module === undefined || outcome.status !== "rejected") {
+        continue;
+      }
+      failures.push({ module, error: outcome.reason });
+    }
+
+    if (failures.length === 0) {
+      return;
+    }
+
+    for (const failure of failures) {
+      const detail = failure.error instanceof Error ? failure.error.message : "Unknown error";
+      console.warn(`Cloud day cache refresh failed for ${failure.module}: ${detail}`);
+    }
+
+    if (failures.length === LEARNING_MODULES.length) {
+      const detail = failures
+        .map((failure) => {
+          const message = failure.error instanceof Error ? failure.error.message : "Unknown error";
+          return `${failure.module}: ${message}`;
+        })
+        .join("; ");
+      throw new Error(`Cloud day cache refresh failed for every module (${detail}).`);
     }
   }
 

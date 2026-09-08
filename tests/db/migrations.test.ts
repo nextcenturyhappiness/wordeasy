@@ -12,6 +12,7 @@ import medicalPdfExpansionSql from "../../supabase/migrations/20260907001000_med
 import medicalQuotaFlipSql from "../../supabase/migrations/20260907001100_medical_assignment_quota_flip.sql?raw";
 import essentialAssignmentSql from "../../supabase/migrations/20260908001300_essential_medical_assignment.sql?raw";
 import essentialSeedSql from "../../supabase/migrations/20260908001400_essential_medical_seed.sql?raw";
+import shortageSelfHealSql from "../../supabase/migrations/20260908001500_assignment_shortage_self_heal.sql?raw";
 import medicalChartMidlevelSql from "../../supabase/migrations/20260907001200_medical_chart_midlevel.sql?raw";
 import syncSql from "../../supabase/migrations/20260826000300_review_sync_rpcs.sql?raw";
 import edgeFsrs from "../../supabase/functions/_shared/fsrs.ts?raw";
@@ -25,7 +26,8 @@ const MEDICAL_QUOTAS = medicalQuotaSql.toLowerCase();
 const MEDICAL_QUOTA_FLIP = medicalQuotaFlipSql.toLowerCase();
 const ESSENTIAL_ASSIGNMENT = essentialAssignmentSql.toLowerCase();
 const ESSENTIAL_SEED = essentialSeedSql.toLowerCase();
-const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}\n${MEDICAL_QUOTA_FLIP}\n${ESSENTIAL_ASSIGNMENT}`;
+const SHORTAGE_SELF_HEAL = shortageSelfHealSql.toLowerCase();
+const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}\n${MEDICAL_QUOTA_FLIP}\n${ESSENTIAL_ASSIGNMENT}\n${SHORTAGE_SELF_HEAL}`;
 const EFFECTIVE_SYNC = `${SYNC}\n${HARDENING}\n${MEDICAL_QUOTAS}`;
 const SEED_PDF_EXPANSION = medicalPdfExpansionSql.toLowerCase();
 const SEED_CHART_MIDLEVEL = medicalChartMidlevelSql.toLowerCase();
@@ -136,6 +138,10 @@ describe("Supabase migration contracts", () => {
     expect(body).toContain("if v_inserted <> 10 then");
     expect(body).toContain("bucket_slug = 'clinical' and bucket_position <= 3");
     expect(body).toContain("bucket_slug = 'morphology' and bucket_position <= 7");
+    expect(body).toContain("v_existing_status is distinct from 'shortage'");
+    expect(body).toContain("delete from public.daily_assignment_sets");
+    expect(body).toContain("assignment_set.status = 'shortage'");
+    expect(body).toContain("assignment_set.assigned_count = 0");
   });
 
   it("freezes even an empty Review queue at the next profile-local midnight", () => {
@@ -352,6 +358,21 @@ describe("Supabase migration contracts", () => {
     expect(SEED_CHART_MIDLEVEL).toContain("med-pharmacology-insulin-001");
     expect(SEED_CHART_MIDLEVEL).toContain("begin;");
     expect(SEED_CHART_MIDLEVEL).toContain("commit;");
+  });
+
+  it("replaces empty shortage sets once the catalog can fill the quota", () => {
+    expect(SHORTAGE_SELF_HEAL).toContain("ensure_daily_assignment_v1_unlocked");
+    expect(SHORTAGE_SELF_HEAL).toContain("ready sets stay frozen");
+    expect(SHORTAGE_SELF_HEAL).toContain("v_existing_status is distinct from 'shortage'");
+    expect(SHORTAGE_SELF_HEAL).toContain("delete from public.daily_assignment_sets");
+    expect(SHORTAGE_SELF_HEAL).toContain("and assignment_set.status = 'shortage'");
+    expect(SHORTAGE_SELF_HEAL).toContain("and assignment_set.assigned_count = 0");
+    expect(SHORTAGE_SELF_HEAL).toContain("if v_deleted <> 1 then");
+    expect(SHORTAGE_SELF_HEAL).toContain("'essential_medical'");
+    expect(SHORTAGE_SELF_HEAL).toContain("'research_english'");
+    expect(SHORTAGE_SELF_HEAL).toContain("p_module_slug = 'research_english'");
+    expect(SHORTAGE_SELF_HEAL).not.toContain("drop function");
+    expect(SHORTAGE_SELF_HEAL).not.toContain("drop table");
   });
 
   it("adds Essential Medical daily assignment of 10 from the core pool", () => {
