@@ -122,9 +122,10 @@ describe("account sync gateway", () => {
 
     await expect(startup).resolves.toEqual(synced);
     expect(syncSettings).toHaveBeenCalledTimes(1);
-    expect(refreshDay).toHaveBeenCalledTimes(2);
+    expect(refreshDay).toHaveBeenCalledTimes(3);
     expect(calls[0]).toBe("push-reconcile");
-    expect(calls.slice(1, 3).sort()).toEqual([
+    expect(calls.slice(1, 4).sort()).toEqual([
+      "essential_medical:2026-08-26",
       "medical_english:2026-08-26",
       "research_english:2026-08-26"
     ]);

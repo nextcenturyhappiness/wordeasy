@@ -109,6 +109,19 @@ describe("IndexedDbLearningRepository", () => {
         streak: 0,
         pendingSyncCount: 0,
         updatedAt: "2026-08-26T08:00:00.000Z"
+      },
+      {
+        userId: "cloud-account-a",
+        module: "essential_medical",
+        studyDate: "2026-08-26",
+        newCompleted: 0,
+        newTotal: 0,
+        reviewCompleted: 0,
+        reviewTotal: 0,
+        totalLearned: 0,
+        streak: 0,
+        pendingSyncCount: 0,
+        updatedAt: "2026-08-26T08:00:00.000Z"
       }
     ]);
 

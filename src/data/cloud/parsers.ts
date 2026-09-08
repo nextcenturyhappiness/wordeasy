@@ -155,10 +155,7 @@ export function parseNewAssignmentSet(value: unknown): CloudNewAssignmentSet {
       throw new CloudPayloadError("assignment.assignments", "Research 5+2+3 quota");
     }
   } else if (module === "essential_medical") {
-    if (
-      assignments.some((assignment) => assignment.category !== "core") ||
-      assignments.length !== 10
-    ) {
+    if (assignments.some((assignment) => assignment.category !== "core")) {
       throw new CloudPayloadError("assignment.assignments", "必备医学英语 10-card quota");
     }
   } else {

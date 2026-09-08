@@ -361,7 +361,7 @@ describe("Supabase migration contracts", () => {
     expect(ESSENTIAL_ASSIGNMENT).toContain("v_required := 10");
     expect(ESSENTIAL_ASSIGNMENT).toContain("ranked.card_position <= 10");
     expect(ESSENTIAL_ASSIGNMENT).toContain("'research_english'");
-    expect(ESSENTIAL_ASSIGNMENT).toContain("'medical_english'");
+    expect(ESSENTIAL_ASSIGNMENT).toContain("medical 7+3 unchanged");
     expect(ESSENTIAL_ASSIGNMENT).toContain("category.slug = 'core'");
   });
 
