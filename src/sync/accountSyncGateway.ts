@@ -143,7 +143,7 @@ export class AccountSyncGateway implements SyncGateway {
     const failures: Array<{ module: ModuleSlug; error: unknown }> = [];
     for (const [index, outcome] of outcomes.entries()) {
       const module = LEARNING_MODULES[index];
-      if (module === undefined || outcome === undefined || outcome.status !== "rejected") {
+      if (module === undefined || outcome.status !== "rejected") {
         continue;
       }
       failures.push({ module, error: outcome.reason });
