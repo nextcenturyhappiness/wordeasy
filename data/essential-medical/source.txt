@@ -1,1 +1,1 @@
-LOAD_FROM:/workspace/push-essential-payload.json:files[1].content
+file:///workspace/SOURCE_CONTENT_FOR_MCP.txt
