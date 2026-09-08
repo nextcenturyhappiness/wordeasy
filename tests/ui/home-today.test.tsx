@@ -199,6 +199,7 @@ describe("Home and Today", () => {
 
     await act(async () => {
       resolveHydrate?.(null);
+      await Promise.resolve();
     });
 
     expect(screen.getByRole("article", { name: "Research English" })).toBeInTheDocument();

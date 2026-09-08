@@ -123,7 +123,11 @@ export const essentialCard: ContextCardView = {
 
 const searchableCards = [researchCard, secondResearchCard, medicalCard];
 
-export function buildHomeSnapshot(overrides: Partial<HomeSnapshot> = {}): HomeSnapshot {
+export function buildHomeSnapshot(
+  overrides: Omit<Partial<HomeSnapshot>, "modules"> & {
+    modules?: Partial<HomeSnapshot["modules"]>;
+  } = {}
+): HomeSnapshot {
   const base: HomeSnapshot = {
     userId: "demo-user",
     studyDate: "2026-08-26",
