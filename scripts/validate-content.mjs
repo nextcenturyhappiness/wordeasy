@@ -2,9 +2,15 @@
 
 import { readFile } from "node:fs/promises";
 
-import { formatIssues, validateDataset, validateImportTemplate } from "./lib/content-validator.mjs";
+import {
+  formatIssues,
+  validateDataset,
+  validateEssentialDataset,
+  validateImportTemplate
+} from "./lib/content-validator.mjs";
 
 const seedUrl = new URL("../data/seed-data.json", import.meta.url);
+const essentialUrl = new URL("../data/essential-medical/cards.json", import.meta.url);
 const templateUrl = new URL("../data/import-template.csv", import.meta.url);
 
 let dataset;
@@ -47,6 +53,31 @@ if (dataset) {
     console.log(`Medical categories: ${JSON.stringify(result.counts.medicalCategories)}.`);
     console.log(
       `Source audit: ${result.counts.total} original examples with null citation metadata.`
+    );
+  }
+}
+
+let essentialDataset;
+try {
+  essentialDataset = JSON.parse(await readFile(essentialUrl, "utf8"));
+} catch (error) {
+  console.error(
+    `[seed_read] data/essential-medical/cards.json: ${error instanceof Error ? error.message : String(error)}`
+  );
+  process.exitCode = 1;
+}
+
+if (essentialDataset) {
+  const essentialResult = validateEssentialDataset(essentialDataset);
+  if (essentialResult.errors.length > 0) {
+    console.error(formatIssues(essentialResult.errors));
+    console.error(
+      `Essential medical validation failed with ${essentialResult.errors.length} error(s).`
+    );
+    process.exitCode = 1;
+  } else {
+    console.log(
+      `Essential medical validation passed: total=${String(essentialResult.counts.essential)}.`
     );
   }
 }

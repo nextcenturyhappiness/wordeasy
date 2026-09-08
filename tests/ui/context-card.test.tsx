@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ContextCard } from "../../src/components/ContextCard";
 import { SPEECH_UNAVAILABLE_MESSAGE, type SpeakWordResult } from "../../src/speech/systemTts";
-import { researchCard } from "./fixtures";
+import { essentialCard, researchCard } from "./fixtures";
 
 describe("ContextCard", () => {
   it("implements the context-first front without leaking any answer", () => {
@@ -48,19 +48,19 @@ describe("ContextCard", () => {
       .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent);
 
-    expect(headings).toEqual([
-      "Meaning in this context",
-      "Plain-English paraphrase",
-      "中文释义",
-      "完整句子翻译",
-      "Common collocations",
-      "适用范围",
-      "句子来源"
-    ]);
+    expect(headings).toEqual(["中文释义", "Common collocations", "适用范围"]);
     expect(screen.queryByText(/what does this word mean in this context/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/what does the highlighted word mean/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/missing word/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "IPA / part of speech" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "句子来源" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Meaning in this context" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Plain-English paraphrase" })
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "完整句子翻译" })).not.toBeInTheDocument();
     expect(screen.getByText(researchCard.meaningEn)).toBeInTheDocument();
     expect(screen.getByText(researchCard.plainEnglishParaphrase)).toBeInTheDocument();
     expect(screen.getByText(researchCard.meaningZh).closest('[lang="zh-CN"]')).not.toBeNull();
@@ -68,7 +68,14 @@ describe("ContextCard", () => {
       screen.getByText(researchCard.sentenceTranslationZh).closest('[lang="zh-CN"]')
     ).not.toBeNull();
     expect(screen.getByText(researchCard.usageNote).closest('[lang="zh-CN"]')).not.toBeNull();
-    expect(screen.getByText("为本词表撰写的例句")).toBeInTheDocument();
+    expect(screen.queryByText("为本词表撰写的例句")).not.toBeInTheDocument();
+    const meaningZh = screen.getByText(researchCard.meaningZh);
+    const meaningEn = screen.getByText(researchCard.meaningEn);
+    expect(meaningZh.compareDocumentPosition(meaningEn) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(meaningZh).toHaveClass("answer-meaning-zh");
+    expect(meaningEn).toHaveClass("answer-meaning-en");
     const sentenceAnchor = document.getElementById("context-sentence-anchor");
     expect(sentenceAnchor).toHaveTextContent(researchCard.contextSentence);
     const pronunciation = sentenceAnchor?.querySelector(".context-card__pronunciation");
@@ -120,5 +127,16 @@ describe("ContextCard", () => {
       rules: { "color-contrast": { enabled: false } }
     });
     expect(result.violations).toEqual([]);
+  });
+
+  it("hides collocations and usage when the essential module leaves them empty", () => {
+    render(<ContextCard card={essentialCard} revealed />);
+
+    expect(screen.getByRole("heading", { name: "中文释义" })).toBeInTheDocument();
+    expect(screen.getByText(essentialCard.meaningZh)).toHaveClass("answer-meaning-zh");
+    expect(screen.getByText(essentialCard.meaningEn)).toHaveClass("answer-meaning-en");
+    expect(screen.queryByRole("heading", { name: "Common collocations" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "适用范围" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "句子来源" })).not.toBeInTheDocument();
   });
 });

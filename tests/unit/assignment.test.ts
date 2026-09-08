@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { selectMedicalAssignment, selectResearchAssignment } from "../../src/domain/assignment";
+import {
+  selectEssentialMedicalAssignment,
+  selectMedicalAssignment,
+  selectResearchAssignment
+} from "../../src/domain/assignment";
 
 function cards(categories: Array<[string, number]>): Array<{ cardId: string; category: string }> {
   const result: Array<{ cardId: string; category: string }> = [];
@@ -100,6 +104,26 @@ describe("daily assignment quotas", () => {
     ]);
     const first = selectMedicalAssignment(candidates, "user-a", "2026-09-07");
     const second = selectMedicalAssignment(candidates, "user-a", "2026-09-07");
+    expect(first).toEqual(second);
+  });
+
+  it("selects 10 必备医学英语 cards from the core pool and freezes a shortage", () => {
+    const ready = selectEssentialMedicalAssignment(cards([["core", 12]]), "user-a", "2026-09-08");
+    expect(ready.status).toBe("ready");
+    if (ready.status === "ready") {
+      expect(ready.cards).toHaveLength(10);
+      expect(ready.cards.every((card) => card.category === "core")).toBe(true);
+    }
+
+    expect(
+      selectEssentialMedicalAssignment(cards([["core", 9]]), "user-a", "2026-09-08")
+    ).toMatchObject({
+      status: "shortage",
+      shortage: { category: "core", required: 10, available: 9 }
+    });
+
+    const first = selectEssentialMedicalAssignment(cards([["core", 20]]), "user-a", "2026-09-08");
+    const second = selectEssentialMedicalAssignment(cards([["core", 20]]), "user-a", "2026-09-08");
     expect(first).toEqual(second);
   });
 });

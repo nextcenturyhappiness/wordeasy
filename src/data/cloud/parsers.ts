@@ -72,7 +72,11 @@ function isoString(value: unknown, path: string): string {
 }
 
 function moduleSlug(value: unknown, path: string): ModuleSlug {
-  if (value !== "research_english" && value !== "medical_english") {
+  if (
+    value !== "research_english" &&
+    value !== "medical_english" &&
+    value !== "essential_medical"
+  ) {
     throw new CloudPayloadError(path, "known module slug");
   }
   return value;
@@ -149,6 +153,10 @@ export function parseNewAssignmentSet(value: unknown): CloudNewAssignmentSet {
       counts.size !== 3
     ) {
       throw new CloudPayloadError("assignment.assignments", "Research 5+2+3 quota");
+    }
+  } else if (module === "essential_medical") {
+    if (assignments.some((assignment) => assignment.category !== "core")) {
+      throw new CloudPayloadError("assignment.assignments", "必备医学英语 10-card quota");
     }
   } else {
     let morphology = 0;

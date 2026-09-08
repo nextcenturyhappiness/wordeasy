@@ -40,6 +40,16 @@
 
 词根构词卡的学习点是 prefix + root + suffix 拆解，而不是只给中文翻译。不得几乎全部集中在疾病、药物或解剖名词。已发布卡若不再适合学习者，必须 `active = false`，不得回收 UUID 改写成另一个 lemma。
 
+### CONTENT-013 · P0 · 必备医学英语
+
+第三个模块 `essential_medical` 使用独立数据集 `data/essential-medical/`，不得并入 `data/seed-data.json` 以免破坏 Research/Medical 的 237 张契约。
+
+- 覆盖 `lemmas.txt` 中的每一个 lemma（当前 663 张 Context Card，不少于 660，不得缩短词表）；
+- 可解析的中文释义优先来自完整 `source.txt`；若 `source.txt` 仍是占位，则按 `source.part1.txt`…`source.part5.txt` 顺序拼接后再解析；缺项按教材医学义补全，不是应试 trivia；生成脚本不得覆写 `lemmas.txt`；
+- `collocations` 必须为空；`usage_note` 可为空；
+- `source_type` 仅为 `original_example`，citation 字段为 null；
+- 生成脚本写出幂等 SQL migration，按 stable_key upsert。Research / Medical 既有 seed migration 不重写。
+
 ---
 
 ## 2. Card 字段
@@ -228,8 +238,13 @@ context_sentence
 
 ```text
 data/seed-data.json
+data/essential-medical/cards.json
+data/essential-medical/lemmas.txt
+data/essential-medical/source.txt
+data/essential-medical/source.part1.txt … source.part5.txt
 data/import-template.csv
 scripts/validate-content.*
+scripts/build-essential-medical-seed.mjs
 ```
 
 CSV 至少包含与 JSON 对应的扁平列。
@@ -259,7 +274,7 @@ attenuate the association|attenuate an effect|attenuate inflammation
 - 总数不是当前 canonical 全量（含停用卡）；
 - 重复 ID；
 - 完全重复 context；
-- collocations 为空；
+- collocations 为空（`essential_medical` 除外，该模块必须为空）；
 - 原创例句带有伪造 DOI / PMID；
 - usage_note 不是中文使用强度说明。
 

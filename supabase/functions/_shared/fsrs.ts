@@ -8,7 +8,7 @@ export type ReviewRating = "again" | "hard" | "good" | "easy";
 export interface ReconciliationEvent {
   eventId: string;
   cardId: string;
-  module: "research_english" | "medical_english";
+  module: "research_english" | "medical_english" | "essential_medical";
   rating: ReviewRating;
   orderingAt: string;
   deviceId: string;
@@ -17,7 +17,7 @@ export interface ReconciliationEvent {
 
 export interface ReconciliationBundle {
   cardId: string;
-  module: "research_english" | "medical_english";
+  module: "research_english" | "medical_english" | "essential_medical";
   events: ReconciliationEvent[];
   expectedRevision: number;
   eventSetHash: string;

@@ -12,6 +12,7 @@ import type {
   TodaySnapshot
 } from "../application/contracts";
 import { searchLocalLexicon } from "../domain/lexiconSearch";
+import { MODULE_SLUGS } from "../domain/learning";
 import { calculateStreak, studyDateFor, systemIanaTimezone } from "../domain/time";
 import type { LearningDatabase } from "../db/learningDatabase";
 import { openLearningDatabase } from "../db/learningDatabase";
@@ -275,7 +276,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
           await this.#database.study_days.where("userId").equals(this.#userId).toArray()
         ).map((day) => day.studyDate);
         const streak = calculateStreak(studiedDates, studyDate);
-        for (const module of ["research_english", "medical_english"] as const) {
+        for (const module of MODULE_SLUGS) {
           const summary = await this.#database.daily_summary.get([this.#userId, module, studyDate]);
           if (summary === undefined) {
             continue;
@@ -306,24 +307,33 @@ export class IndexedDbLearningRepository implements LearningRepository {
     const studyDate = this.#studyDate();
     const timezone = this.#studyTimezone();
     await this.#ensureDailyBootstrap(this.#bootstrapContext(this.#now().toISOString()));
-    const [research, medical] = await Promise.all([
-      this.#database.daily_summary.get([this.#userId, "research_english", studyDate]),
-      this.#database.daily_summary.get([this.#userId, "medical_english", studyDate])
-    ]);
-    if (research === undefined || medical === undefined) {
+    const summaries = await Promise.all(
+      MODULE_SLUGS.map((module) =>
+        this.#database.daily_summary.get([this.#userId, module, studyDate])
+      )
+    );
+    if (summaries.some((summary) => summary === undefined)) {
+      return null;
+    }
+    const [research, medical, essential] = summaries;
+    if (research === undefined || medical === undefined || essential === undefined) {
       return null;
     }
     return {
       userId: this.#userId,
       studyDate,
       timezone,
-      streak: Math.max(research.streak, medical.streak),
+      streak: Math.max(research.streak, medical.streak, essential.streak),
       modules: {
         research_english: toModuleSummary(research),
-        medical_english: toModuleSummary(medical)
+        medical_english: toModuleSummary(medical),
+        essential_medical: toModuleSummary(essential)
       },
-      pendingSyncCount: research.pendingSyncCount + medical.pendingSyncCount,
-      cachedAt: research.updatedAt > medical.updatedAt ? research.updatedAt : medical.updatedAt
+      pendingSyncCount:
+        research.pendingSyncCount + medical.pendingSyncCount + essential.pendingSyncCount,
+      cachedAt:
+        [research.updatedAt, medical.updatedAt, essential.updatedAt].sort().at(-1) ??
+        research.updatedAt
     };
   }
 
@@ -421,20 +431,18 @@ export class IndexedDbLearningRepository implements LearningRepository {
       return [];
     }
     await this.#ensureDeferredBootstrap();
-    const [cards, researchLearned, medicalLearned] = await Promise.all([
+    const [cards, ...learnedRows] = await Promise.all([
       this.#database.cached_cards.where("userId").equals(this.#userId).toArray(),
-      this.#database.learned_word_senses
-        .where("[userId+module]")
-        .equals([this.#userId, "research_english"])
-        .toArray(),
-      this.#database.learned_word_senses
-        .where("[userId+module]")
-        .equals([this.#userId, "medical_english"])
-        .toArray()
+      ...MODULE_SLUGS.map((module) =>
+        this.#database.learned_word_senses
+          .where("[userId+module]")
+          .equals([this.#userId, module])
+          .toArray()
+      )
     ]);
     return searchLocalLexicon(
       cards,
-      new Set([...researchLearned, ...medicalLearned].map((row) => row.wordSenseId)),
+      new Set(learnedRows.flat().map((row) => row.wordSenseId)),
       query
     );
   }

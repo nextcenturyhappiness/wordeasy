@@ -1,4 +1,4 @@
-export const MODULE_SLUGS = ["research_english", "medical_english"] as const;
+export const MODULE_SLUGS = ["research_english", "medical_english", "essential_medical"] as const;
 
 export type DomainModuleSlug = (typeof MODULE_SLUGS)[number];
 export type DomainQueueKind = "new" | "review";
@@ -15,6 +15,9 @@ export const MEDICAL_CLINICAL_DAILY_QUOTA = 3;
 export const MEDICAL_MORPHOLOGY_DAILY_QUOTA = 7;
 export const MEDICAL_DAILY_NEW_QUOTA =
   MEDICAL_CLINICAL_DAILY_QUOTA + MEDICAL_MORPHOLOGY_DAILY_QUOTA;
+
+export const ESSENTIAL_MEDICAL_CATEGORY = "core" as const;
+export const ESSENTIAL_MEDICAL_DAILY_NEW_QUOTA = 10;
 
 export type ResearchCategory = keyof typeof RESEARCH_CATEGORY_QUOTAS;
 export type MedicalAssignmentBucket = "clinical" | typeof MEDICAL_MORPHOLOGY_CATEGORY;
@@ -89,7 +92,7 @@ export function assertNormalizedContextCard(value: NormalizedContextCard): void 
   if (!value.context.contextSentence.includes(value.context.targetText)) {
     throw new Error(`Card ${value.card.id} target text is absent from its context.`);
   }
-  if (value.context.collocations.length === 0) {
+  if (value.sense.module !== "essential_medical" && value.context.collocations.length === 0) {
     throw new Error(`Card ${value.card.id} must include collocations.`);
   }
 }

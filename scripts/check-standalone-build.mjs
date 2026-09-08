@@ -89,13 +89,15 @@ function sourcesFor(files, javascriptByName) {
   return [...files].map((name) => javascriptByName.get(name)).join("\n");
 }
 
-const [manifestText, indexHtml, securityHeaders, assetNames, canonicalSeed] = await Promise.all([
-  readFile(join(output, "manifest.webmanifest"), "utf8"),
-  readFile(join(output, "index.html"), "utf8"),
-  readFile(join(output, "_headers"), "utf8"),
-  readdir(join(output, "assets")),
-  readFile(join(root, "data", "seed-data.json"), "utf8").then(JSON.parse)
-]);
+const [manifestText, indexHtml, securityHeaders, assetNames, canonicalSeed, essentialSeed] =
+  await Promise.all([
+    readFile(join(output, "manifest.webmanifest"), "utf8"),
+    readFile(join(output, "index.html"), "utf8"),
+    readFile(join(output, "_headers"), "utf8"),
+    readdir(join(output, "assets")),
+    readFile(join(root, "data", "seed-data.json"), "utf8").then(JSON.parse),
+    readFile(join(root, "data", "essential-medical", "cards.json"), "utf8").then(JSON.parse)
+  ]);
 const manifest = JSON.parse(manifestText);
 const javascriptFiles = assetNames.filter((name) => name.endsWith(".js"));
 const javascriptByName = new Map(
@@ -175,7 +177,9 @@ const compressedPrecache = (await Promise.all(precacheFiles.map((path) => gzipSi
   0
 );
 const activeCardIds = canonicalSeed.cards.filter((card) => card.active).map((card) => card.id);
-const cardCatalogFiles = filesContainingEvery(javascriptByName, activeCardIds);
+const essentialCardIds = essentialSeed.cards.map((card) => card.id);
+const catalogCardIds = [...activeCardIds, ...essentialCardIds];
+const cardCatalogFiles = filesContainingEvery(javascriptByName, catalogCardIds);
 const fsrsMarkers = ["ts-fsrs@5.4.1/default-v1", "wordeasy-fsrs-card-v1"];
 const fsrsFiles = filesContainingEvery(javascriptByName, fsrsMarkers);
 
@@ -189,24 +193,25 @@ assert(
     securityHeaders.includes("X-Robots-Tag: noindex"),
   "Standalone origin is missing its local-only security headers."
 );
-assert(activeCardIds.length === 148, "Canonical standalone catalog must contain 148 active cards.");
+assert(activeCardIds.length === 200, "Canonical standalone catalog must contain 200 active cards.");
+assert(essentialCardIds.length === 663, "Standalone catalog must include 663 必备医学英语 cards.");
 assert(
   cardCatalogFiles.length === 1,
   `Expected one dedicated standalone catalog chunk; found ${String(cardCatalogFiles.length)}.`
 );
 const cardCatalogFile = cardCatalogFiles[0];
-assert(cardCatalogFile !== undefined, "Standalone 120-card chunk could not be identified.");
+assert(cardCatalogFile !== undefined, "Standalone deferred catalog chunk could not be identified.");
 assert(
   [...javascriptByName].every(
     ([name, source]) =>
-      name === cardCatalogFile || activeCardIds.every((cardId) => !source.includes(cardId))
+      name === cardCatalogFile || catalogCardIds.every((cardId) => !source.includes(cardId))
   ),
   "Standalone card IDs escaped their dedicated deferred catalog chunk."
 );
 assert(
   !homeFiles.has(cardCatalogFile) &&
-    activeCardIds.every((cardId) => !homeJavaScript.includes(cardId)),
-  "Standalone initial + Home reachable JavaScript contains canonical vocabulary data."
+    catalogCardIds.every((cardId) => !homeJavaScript.includes(cardId)),
+  "Standalone initial + Home reachable JavaScript contains vocabulary data."
 );
 assert(
   fsrsFiles.length === 1,

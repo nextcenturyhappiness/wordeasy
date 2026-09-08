@@ -135,7 +135,8 @@ describe("PersonalLearningRepository", () => {
       studyDate: DAY_ONE,
       modules: {
         research_english: { new: { completed: 0, total: 10 }, review: { completed: 0, total: 0 } },
-        medical_english: { new: { completed: 0, total: 10 }, review: { completed: 0, total: 0 } }
+        medical_english: { new: { completed: 0, total: 10 }, review: { completed: 0, total: 0 } },
+        essential_medical: { new: { completed: 0, total: 10 }, review: { completed: 0, total: 0 } }
       }
     });
     expect(await repository.peekNextSessionCard("research_english", "new")).toBeNull();
@@ -157,7 +158,7 @@ describe("PersonalLearningRepository", () => {
 
     expect(loadCards).toHaveBeenCalledTimes(1);
     expect(loadScheduler).not.toHaveBeenCalled();
-    expect(await database.cached_cards.count()).toBe(237);
+    expect(await database.cached_cards.count()).toBe(900);
     expect(first.cards).toHaveLength(10);
     expect(second.cards.map((card) => card.cardId)).toEqual(first.cards.map((card) => card.cardId));
     expect(categories).toEqual({
@@ -228,7 +229,7 @@ describe("PersonalLearningRepository", () => {
 
     await repository.getStudyQueue("research_english", "new");
 
-    expect(await database.cached_cards.count()).toBe(237);
+    expect(await database.cached_cards.count()).toBe(900);
     expect(await database.cached_cards.get([USER_ID, "stale-card"])).toBeUndefined();
   });
 
@@ -397,7 +398,8 @@ describe("PersonalLearningRepository", () => {
       studyDate: DAY_TWO,
       modules: {
         research_english: { new: { completed: 0, total: 10 } },
-        medical_english: { new: { completed: 0, total: 10 } }
+        medical_english: { new: { completed: 0, total: 10 } },
+        essential_medical: { new: { completed: 0, total: 10 } }
       }
     });
     expect(loadCards).not.toHaveBeenCalled();

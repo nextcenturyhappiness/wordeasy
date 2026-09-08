@@ -1,4 +1,6 @@
 import {
+  ESSENTIAL_MEDICAL_CATEGORY,
+  ESSENTIAL_MEDICAL_DAILY_NEW_QUOTA,
   MEDICAL_CLINICAL_DAILY_QUOTA,
   MEDICAL_DAILY_NEW_QUOTA,
   MEDICAL_MORPHOLOGY_CATEGORY,
@@ -135,4 +137,34 @@ export function selectMedicalAssignment(
   }
 
   return { status: "ready", cards: selected };
+}
+
+export function selectEssentialMedicalAssignment(
+  candidates: AssignmentCandidate[],
+  userId: string,
+  studyDate: string
+): ResearchSelectionResult {
+  const available = deterministicOrder(
+    candidates.filter((candidate) => candidate.category === ESSENTIAL_MEDICAL_CATEGORY),
+    userId,
+    studyDate
+  );
+
+  if (available.length < ESSENTIAL_MEDICAL_DAILY_NEW_QUOTA) {
+    return {
+      status: "shortage",
+      shortage: {
+        code: "content_shortage",
+        category: ESSENTIAL_MEDICAL_CATEGORY,
+        required: ESSENTIAL_MEDICAL_DAILY_NEW_QUOTA,
+        available: available.length,
+        message: "Not enough new 必备医学英语 cards are available."
+      }
+    };
+  }
+
+  return {
+    status: "ready",
+    cards: available.slice(0, ESSENTIAL_MEDICAL_DAILY_NEW_QUOTA)
+  };
 }

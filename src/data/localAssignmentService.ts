@@ -1,5 +1,6 @@
 import type { ContentShortage } from "../application/contracts";
 import {
+  selectEssentialMedicalAssignment,
   selectMedicalAssignment,
   selectResearchAssignment,
   type AssignmentCandidate,
@@ -52,6 +53,18 @@ export class LocalAssignmentService {
 
   async ensureMedicalNew(studyDate: string, createdAt: string): Promise<EnsureAssignmentResult> {
     return this.ensureNew("medical_english", studyDate, createdAt, selectMedicalAssignment);
+  }
+
+  async ensureEssentialMedicalNew(
+    studyDate: string,
+    createdAt: string
+  ): Promise<EnsureAssignmentResult> {
+    return this.ensureNew(
+      "essential_medical",
+      studyDate,
+      createdAt,
+      selectEssentialMedicalAssignment
+    );
   }
 
   async ensureProvisionalNewSummary(

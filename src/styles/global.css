@@ -898,23 +898,69 @@ mark {
   line-height: 1.55;
 }
 
-.answer-section--primary p {
+.answer-section--primary p,
+.answer-meaning-zh {
   font-size: clamp(1.15rem, 3.4vw, 1.35rem);
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.4;
 }
 
-.collocation-list {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-  padding-left: 1.15rem;
+.answer-section--meaning {
+  gap: var(--space-1);
 }
 
-.source-details {
-  display: grid;
+.answer-section--meaning h2 {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.answer-meaning-zh {
+  margin: 0;
+  font-size: clamp(1.45rem, 4.6vw, 1.95rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+}
+
+.answer-meaning-en {
+  margin: 0;
+  color: var(--color-text);
+  font-size: clamp(1.12rem, 3.3vw, 1.32rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
+}
+
+.answer-section--quiet {
   gap: var(--space-2);
+}
+
+.answer-section--quiet h2 {
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+.answer-secondary {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  font-weight: 450;
+  line-height: 1.5;
+}
+
+.collocation-list {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: 1.15rem;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  font-weight: 450;
+  line-height: 1.45;
 }
 
 .study-actions {

@@ -52,6 +52,8 @@
     "build:performance-fixture": "tsc -b && vite build --mode performance",
     "build:cloud-performance-fixture": "tsc -b && vite build --mode cloud-performance",
     "content:validate": "node scripts/validate-content.mjs",
+    "content:essential-medical": "node scripts/build-essential-medical-seed.mjs",
+    "content:essential-medical:check": "node scripts/build-essential-medical-seed.mjs --check",
     "content:seed-sql": "node scripts/generate-seed-sql.mjs",
     "content:seed-sql:check": "node scripts/generate-seed-sql.mjs --check",
     "tauri": "tauri",

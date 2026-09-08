@@ -6,7 +6,8 @@ import { normalizeSeedCard, type SeedCard } from "../local/seedCardNormalization
 const seedCards = standaloneSeedCards as SeedCard[];
 const EXPECTED_CARD_COUNTS: Record<DomainModuleSlug, number> = {
   research_english: 60,
-  medical_english: 177
+  medical_english: 177,
+  essential_medical: 663
 };
 
 function requireCompleteCatalog(): NormalizedContextCard[] {
@@ -30,9 +31,9 @@ function requireCompleteCatalog(): NormalizedContextCard[] {
     );
   }
 
-  if (seedCards.length !== 237) {
+  if (seedCards.length !== 900) {
     throw new Error(
-      `Canonical standalone seed has ${String(seedCards.length)} cards; expected 237.`
+      `Canonical standalone seed has ${String(seedCards.length)} cards; expected 900.`
     );
   }
 

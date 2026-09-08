@@ -67,7 +67,7 @@ async function seedCachedHome(now: Date): Promise<void> {
         { userId, key: "timezone", value: timezone, updatedAt }
       ]);
       await database.daily_summary.bulkPut(
-        (["research_english", "medical_english"] as const).map((module) => ({
+        (["research_english", "medical_english", "essential_medical"] as const).map((module) => ({
           userId,
           module,
           studyDate,

@@ -48,28 +48,6 @@ function HighlightedContext({ card }: { card: ContextCardView }) {
   );
 }
 
-function SourceDetails({ card }: { card: ContextCardView }) {
-  const { source } = card;
-
-  if (source.type === "original_example") {
-    return <p>为本词表撰写的例句</p>;
-  }
-
-  return (
-    <div className="source-details">
-      {source.url === null ? (
-        <p>{source.title ?? "Verified source"}</p>
-      ) : (
-        <a href={source.url} rel="noreferrer" target="_blank">
-          {source.title ?? "Open verified source"}
-        </a>
-      )}
-      {source.doi === null ? null : <p>DOI: {source.doi}</p>}
-      {source.pmid === null ? null : <p>PMID: {source.pmid}</p>}
-    </div>
-  );
-}
-
 function IpaSpeakLine({
   ipa,
   partOfSpeech,
@@ -188,38 +166,35 @@ export function ContextCard({
           tabIndex={-1}
           aria-label="Answer"
         >
-          <div className="answer-section answer-section--primary">
-            <h2>Meaning in this context</h2>
-            <p>{card.meaningEn}</p>
-          </div>
-          <div className="answer-section">
-            <h2>Plain-English paraphrase</h2>
-            <p>{card.plainEnglishParaphrase}</p>
-          </div>
-          <div className="answer-section" lang="zh-CN">
+          <div className="answer-section answer-section--meaning" lang="zh-CN">
             <h2>中文释义</h2>
-            <p>{card.meaningZh}</p>
+            <p className="answer-meaning-zh">{card.meaningZh}</p>
           </div>
-          <div className="answer-section" lang="zh-CN">
-            <h2>完整句子翻译</h2>
-            <p>{card.sentenceTranslationZh}</p>
+          <div className="answer-section answer-section--meaning-en">
+            <p className="answer-meaning-en">{card.meaningEn}</p>
           </div>
-          <div className="answer-section">
-            <h2>Common collocations</h2>
-            <ul className="collocation-list">
-              {card.collocations.map((collocation) => (
-                <li key={collocation}>{collocation}</li>
-              ))}
-            </ul>
+          <div className="answer-section answer-section--quiet">
+            <p className="answer-secondary">{card.plainEnglishParaphrase}</p>
+            <p className="answer-secondary" lang="zh-CN">
+              {card.sentenceTranslationZh}
+            </p>
           </div>
-          <div className="answer-section" lang="zh-CN">
-            <h2>适用范围</h2>
-            <p>{card.usageNote}</p>
-          </div>
-          <div className="answer-section" lang="zh-CN">
-            <h2>句子来源</h2>
-            <SourceDetails card={card} />
-          </div>
+          {card.collocations.length === 0 ? null : (
+            <div className="answer-section answer-section--quiet">
+              <h2>Common collocations</h2>
+              <ul className="collocation-list">
+                {card.collocations.map((collocation) => (
+                  <li key={collocation}>{collocation}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {card.usageNote.trim() === "" ? null : (
+            <div className="answer-section answer-section--quiet" lang="zh-CN">
+              <h2>适用范围</h2>
+              <p>{card.usageNote}</p>
+            </div>
+          )}
         </section>
       ) : null}
     </article>

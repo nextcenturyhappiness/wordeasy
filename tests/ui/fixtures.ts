@@ -95,10 +95,36 @@ export const medicalCard: ContextCardView = {
   }
 };
 
+export const essentialCard: ContextCardView = {
+  cardId: "card-essential-1",
+  wordSenseId: "sense-abdomen",
+  module: "essential_medical",
+  category: "core",
+  lemma: "abdomen",
+  displayForm: "abdomen",
+  partOfSpeech: "noun",
+  ipa: "/ˈæbdəmən/",
+  contextSentence: "In class the tutor pointed to the abdomen while explaining the adjacent organ.",
+  targetText: "abdomen",
+  meaningEn: "the part of the trunk between the chest and the pelvis",
+  meaningZh: "腹部",
+  usageNote: "",
+  plainEnglishParaphrase: "The teaching example named the belly area between chest and pelvis.",
+  sentenceTranslationZh: "课堂上老师指着腹部讲解邻近器官。",
+  collocations: [],
+  source: {
+    type: "original_example",
+    title: null,
+    url: null,
+    doi: null,
+    pmid: null
+  }
+};
+
 const searchableCards = [researchCard, secondResearchCard, medicalCard];
 
 export function buildHomeSnapshot(overrides: Partial<HomeSnapshot> = {}): HomeSnapshot {
-  return {
+  const base: HomeSnapshot = {
     userId: "demo-user",
     studyDate: "2026-08-26",
     timezone: "Asia/Shanghai",
@@ -115,11 +141,24 @@ export function buildHomeSnapshot(overrides: Partial<HomeSnapshot> = {}): HomeSn
         new: { completed: 3, total: 10 },
         review: { completed: 2, total: 4 },
         wordsLearned: 74
+      },
+      essential_medical: {
+        module: "essential_medical",
+        new: { completed: 0, total: 10 },
+        review: { completed: 0, total: 0 },
+        wordsLearned: 0
       }
     },
     pendingSyncCount: 0,
-    cachedAt: "2026-08-26T08:00:00.000Z",
-    ...overrides
+    cachedAt: "2026-08-26T08:00:00.000Z"
+  };
+  return {
+    ...base,
+    ...overrides,
+    modules: {
+      ...base.modules,
+      ...(overrides.modules ?? {})
+    }
   };
 }
 

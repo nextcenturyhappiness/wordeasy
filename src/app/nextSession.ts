@@ -1,6 +1,10 @@
 import type { HomeSnapshot, ModuleSlug, Progress, QueueKind } from "../application/contracts";
 
-const MODULE_ORDER: readonly ModuleSlug[] = ["research_english", "medical_english"];
+const MODULE_ORDER: readonly ModuleSlug[] = [
+  "research_english",
+  "medical_english",
+  "essential_medical"
+];
 
 export interface NextSessionTarget {
   module: ModuleSlug;

@@ -1,9 +1,10 @@
 import type { ModuleSlug, SyncGateway, SyncState } from "../application/contracts";
+import { MODULE_SLUGS } from "../domain/learning";
 import type { AccountPreferences } from "../data/cloud/accountPreferences";
 import { studyDateFor } from "../domain/time";
 import type { AccountLocalSyncStore } from "./contracts";
 
-const LEARNING_MODULES: readonly ModuleSlug[] = ["research_english", "medical_english"];
+const LEARNING_MODULES: readonly ModuleSlug[] = MODULE_SLUGS;
 
 export interface AccountSyncGatewayOptions {
   now?: () => Date;

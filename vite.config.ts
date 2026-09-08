@@ -46,6 +46,15 @@ function loadCanonicalSeed(): { cards: BuildSeedCard[] } {
   ) as { cards: BuildSeedCard[] };
 }
 
+function loadEssentialSeed(): { cards: BuildSeedCard[] } {
+  return JSON.parse(
+    readFileSync(
+      fileURLToPath(new URL("./data/essential-medical/cards.json", import.meta.url)),
+      "utf8"
+    )
+  ) as { cards: BuildSeedCard[] };
+}
+
 function loadDemoSeedModule(): string {
   const seed = loadCanonicalSeed();
   const researchQuotas = new Map([
@@ -81,10 +90,10 @@ function loadDemoSeedModule(): string {
 }
 
 function loadStandaloneSeedModule(): string {
-  const selected = loadCanonicalSeed().cards;
-  if (selected.length !== 237) {
+  const selected = [...loadCanonicalSeed().cards, ...loadEssentialSeed().cards];
+  if (selected.length !== 900) {
     throw new Error(
-      `Canonical seed produced ${String(selected.length)} catalog cards; expected 237.`
+      `Canonical seed produced ${String(selected.length)} catalog cards; expected 900.`
     );
   }
   return `export default ${JSON.stringify(selected)};`;

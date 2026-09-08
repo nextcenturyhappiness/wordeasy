@@ -109,15 +109,13 @@ Reveal 后展开背面。正面不显示中文答案或释义。Reveal 后语境
 
 Reveal 后 sticky 语境原句区域显示 IPA，可与词性同一行（`/…/ · verb`）。该行在 Reveal 后是可点按的朗读控件：点击用本机系统 TTS 朗读 lemma（lemma 为空时回退 displayForm），不得把 IPA 符号送进 TTS。背面释义堆叠按稳定层级显示：
 
-1. Meaning in this context；
-2. Plain-English paraphrase；
-3. 中文释义；
-4. 完整句子翻译；
-5. Common collocations；
-6. 适用范围；
-7. 句子来源。
+1. 中文释义（主视觉）；
+2. English meaning（次主视觉，无独立 h2）；
+3. paraphrase 与完整句子翻译（弱化次要文本，无独立 h2）；
+4. Common collocations（仅非空；必备医学英语隐藏）；
+5. 适用范围（仅非空）。
 
-不要在堆叠中重复 IPA / part of speech 区块。
+不要显示「句子来源」。不要在堆叠中重复 IPA / part of speech 区块。
 
 ### UI-016 · P1 · Reveal 后 IPA tap-to-speak
 
