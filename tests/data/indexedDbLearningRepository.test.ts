@@ -164,4 +164,78 @@ describe("IndexedDbLearningRepository", () => {
       ])
     ).toMatchObject({ status: "ready" });
   });
+
+  it("returns a usable Home when only some modules have today's daily_summary", async () => {
+    const database = new LearningDatabase(`wordeasy-partial-home-${crypto.randomUUID()}`);
+    activeDatabase = database;
+    const repository = new IndexedDbLearningRepository({
+      database,
+      userId: "cloud-account-a",
+      email: "account-a@example.invalid",
+      timezone: "Asia/Shanghai",
+      deviceId: "cloud-device-a",
+      scheduler: new FsrsSchedulerAdapter(),
+      syncState: new LocalSyncStateStore(),
+      now: () => new Date("2026-08-26T08:00:00.000Z")
+    });
+    await repository.initialize();
+
+    await database.daily_summary.bulkAdd([
+      {
+        userId: "cloud-account-a",
+        module: "research_english",
+        studyDate: "2026-08-26",
+        newCompleted: 2,
+        newTotal: 10,
+        reviewCompleted: 1,
+        reviewTotal: 4,
+        totalLearned: 40,
+        streak: 5,
+        pendingSyncCount: 1,
+        updatedAt: "2026-08-26T08:00:00.000Z"
+      },
+      {
+        userId: "cloud-account-a",
+        module: "medical_english",
+        studyDate: "2026-08-26",
+        newCompleted: 0,
+        newTotal: 10,
+        reviewCompleted: 0,
+        reviewTotal: 0,
+        totalLearned: 12,
+        streak: 3,
+        pendingSyncCount: 0,
+        updatedAt: "2026-08-26T08:05:00.000Z"
+      }
+    ]);
+
+    await expect(repository.getCachedHome()).resolves.toMatchObject({
+      userId: "cloud-account-a",
+      studyDate: "2026-08-26",
+      timezone: "Asia/Shanghai",
+      streak: 5,
+      pendingSyncCount: 1,
+      cachedAt: "2026-08-26T08:05:00.000Z",
+      modules: {
+        research_english: {
+          module: "research_english",
+          new: { completed: 2, total: 10 },
+          review: { completed: 1, total: 4 },
+          wordsLearned: 40
+        },
+        medical_english: {
+          module: "medical_english",
+          new: { completed: 0, total: 10 },
+          review: { completed: 0, total: 0 },
+          wordsLearned: 12
+        },
+        essential_medical: {
+          module: "essential_medical",
+          new: { completed: 0, total: 0 },
+          review: { completed: 0, total: 0 },
+          wordsLearned: 0
+        }
+      }
+    });
+  });
 });

@@ -223,6 +223,7 @@ interface RenderWithLearningAppOptions {
   repository?: LearningRepository;
   initialHome?: HomeSnapshot | null;
   syncState?: SyncState;
+  syncGateway?: SyncGateway;
   initialEntries?: string[];
 }
 
@@ -239,6 +240,7 @@ export function renderWithLearningApp(
     repository,
     initialHome,
     initialSyncState: syncState,
+    ...(options.syncGateway === undefined ? {} : { syncGateway: options.syncGateway }),
     children: router
   });
 

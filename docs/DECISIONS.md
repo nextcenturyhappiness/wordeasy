@@ -544,6 +544,22 @@ Alternatives rejected: 手工删除 shortage 行；只对 `essential_medical` �
 Consequences: 同一用户同一日在 catalog 从不足变为足够之后，shortage 可变成 ready；ready 一旦写入仍不可变。远程 Postgres 必须另行 apply `20260908001500`。DEC-013「冻结结构化 shortage」收窄为：词库仍不足时冻结；词库补足后允许用 ready set 替换空 shortage。
 Tests/docs affected: `accountSyncGateway`, assignment RPC migration, SQL/gateway tests, `docs/02_DATA_SYNC_SECURITY.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
 
+### DEC-049 · 部分模块日缓存仍构成可用 Home
+
+Date: 2026-09-08
+Status: Accepted
+Related requirements: LOCAL-004, UI-006/007, SYNC-006, TEST-009; DEC-048
+Context: DEC-048 允许单个模块 day-cache 失败时整体 Sync 仍为 synced。`getCachedHome` 却要求当日三个模块的 `daily_summary` 都存在，任一缺失即返回 null。`LearningAppProvider` 在 `status === "synced"` 后只在 snapshot 非 null 时升级 Home，因此部分成功的 Sync 会留下「Synced / Sync now」+ 整页 empty。
+Decision:
+
+1. `getCachedHome` 在至少一个模块有当日 `daily_summary` 时返回 `HomeSnapshot`。缺失模块用 0/0、0 words learned 占位，不写入、不编造 assignment。三个模块都没有当日 summary 时仍返回 null；TEST-009 离线未缓存空态不变。
+2. 首次 hydrate 不得用后来的 null 读取覆盖已经 ready 的 Home。`refreshHomeAfterSync` 仍只在 snapshot 非 null 时升级；在 (1) 之后，部分缓存会使 synced 刷新进入模块卡。
+
+Reason: 模块日缓存按 DEC-048 隔离；一个模块刷新失败不应让用户看不到已缓存的 Research / Medical / 必备医学英语。
+Alternatives rejected: 失败模块也写入假 summary；把 `HomeSnapshot.modules` 改成 partial record；部分失败仍整页 empty。
+Consequences: 未缓存模块在 Home 上显示 0/0，Today 仍按既有缺失 summary 行为处理。必备医学英语继续作为第三模块，不被 Research/Medical 替换。
+Tests/docs affected: `indexedDbLearningRepository`, `LearningAppProvider`, Home/repository tests, `docs/02_DATA_SYNC_SECURITY.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text
