@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { CloudPayloadError, parseNewAssignmentSet } from "../../src/data/cloud/parsers";
+import {
+  CloudPayloadError,
+  parseDailyLearningSnapshot,
+  parseNewAssignmentSet
+} from "../../src/data/cloud/parsers";
 import type { CloudRpcClient } from "../../src/data/cloud/rpcClient";
 import {
   DisposedCloudRepositoryError,
   SupabaseCloudRepository
 } from "../../src/data/cloud/supabaseCloudRepository";
 import type { CloudPushEvent } from "../../src/data/cloud/types";
+import { readyEssentialDailySnapshotPayload } from "./essentialDailySnapshotPayload";
 
 function researchAssignments(): Array<Record<string, unknown>> {
   return [
@@ -120,6 +125,57 @@ describe("Supabase cloud repository boundary", () => {
         }
       })
     ).toThrow("empty shortage assignment");
+  });
+
+  it("accepts a ready 必备医学英语 snapshot with empty collocations and empty usage_note", async () => {
+    const snapshot = parseDailyLearningSnapshot(readyEssentialDailySnapshotPayload());
+    expect(snapshot.newAssignment).toMatchObject({
+      status: "ready",
+      module: "essential_medical",
+      assignments: { length: 10 }
+    });
+    expect(snapshot.cards).toHaveLength(10);
+    expect(snapshot.cards.every((card) => card.usageNote === "")).toBe(true);
+    expect(snapshot.cards.every((card) => card.collocations.length === 0)).toBe(true);
+
+    const rpc = rpcWithResponse(readyEssentialDailySnapshotPayload());
+    const repository = new SupabaseCloudRepository("user-a", rpc);
+    await expect(
+      repository.getDailySnapshot("essential_medical", "2026-09-09")
+    ).resolves.toMatchObject({
+      cards: snapshot.cards
+    });
+    expect(rpc.calls).toEqual([
+      {
+        functionName: "get_daily_learning_snapshot",
+        parameters: {
+          p_module_slug: "essential_medical",
+          p_study_date: "2026-09-09"
+        }
+      }
+    ]);
+  });
+
+  it("still rejects a missing usage_note and empty identity copy on a daily snapshot card", () => {
+    const missingNote = readyEssentialDailySnapshotPayload();
+    const missingCard = (missingNote.cards as Array<Record<string, unknown>>)[0];
+    if (missingCard === undefined) {
+      throw new Error("Expected an essential card fixture.");
+    }
+    delete missingCard.usage_note;
+    expect(() => parseDailyLearningSnapshot(missingNote)).toThrow(
+      "Invalid cloud payload at daily_snapshot.cards[0].usage_note: expected string."
+    );
+
+    const emptyLemma = readyEssentialDailySnapshotPayload();
+    const emptyLemmaCard = (emptyLemma.cards as Array<Record<string, unknown>>)[0];
+    if (emptyLemmaCard === undefined) {
+      throw new Error("Expected an essential card fixture.");
+    }
+    emptyLemmaCard.lemma = "";
+    expect(() => parseDailyLearningSnapshot(emptyLemma)).toThrow(
+      "Invalid cloud payload at daily_snapshot.cards[0].lemma: expected non-empty string."
+    );
   });
 
   it("omits user_id from ingest and refuses cross-account local events", async () => {

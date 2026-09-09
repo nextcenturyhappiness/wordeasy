@@ -373,7 +373,7 @@ Total Research+Medical = current canonical catalog
 
 ### TEST-036 · 内容字段
 
-每张卡必填字段完整，target text 出现在 context 中。Research / Medical 的 collocations 非空；必备医学英语 collocations 必须为空。
+每张卡必填字段完整，target text 出现在 context 中。Research / Medical 的 collocations 非空；必备医学英语 collocations 必须为空，`usage_note` 可为空。云端 daily snapshot 解析不得因空 `usage_note` 拒绝必备医学英语卡片。
 
 ### TEST-037 · 人工抽查
 

@@ -45,6 +45,13 @@ function string(value: unknown, path: string): string {
   return value;
 }
 
+function optionalCopyString(value: unknown, path: string): string {
+  if (typeof value !== "string") {
+    throw new CloudPayloadError(path, "string");
+  }
+  return value;
+}
+
 function nullableString(value: unknown, path: string): string | null {
   return value === null ? null : string(value, path);
 }
@@ -221,7 +228,7 @@ function contextCard(value: unknown, path: string): CloudContextCard {
     partOfSpeech: string(item.part_of_speech, `${path}.part_of_speech`),
     meaningEn: string(item.meaning_en, `${path}.meaning_en`),
     meaningZh: string(item.meaning_zh, `${path}.meaning_zh`),
-    usageNote: string(item.usage_note, `${path}.usage_note`),
+    usageNote: optionalCopyString(item.usage_note, `${path}.usage_note`),
     contextSentence: string(item.context_sentence, `${path}.context_sentence`),
     targetText: string(item.target_text, `${path}.target_text`),
     plainEnglishParaphrase: string(
