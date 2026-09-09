@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ModuleSlug } from "../../src/application/contracts";
 import { AccountCloudDayCache } from "../../src/data/cloud/cloudDayCache";
+import { parseDailyLearningSnapshot } from "../../src/data/cloud/parsers";
 import type {
   CloudContextCard,
   CloudDailyLearningSnapshot,
@@ -14,6 +15,7 @@ import type {
   ReconciledReviewState
 } from "../../src/data/cloud/types";
 import { LearningDatabase, openLearningDatabase } from "../../src/db/learningDatabase";
+import { readyEssentialDailySnapshotPayload } from "./essentialDailySnapshotPayload";
 
 let activeDatabase: LearningDatabase | null = null;
 
@@ -33,12 +35,14 @@ function cloudCard(
     module?: ModuleSlug;
     prefix?: string;
     collocations?: string[];
+    usageNote?: string;
   } = {}
 ): CloudContextCard {
   const module = options.module ?? "research_english";
   const prefix = options.prefix ?? "card";
   const suffix = String(index);
   const lemma = `lemma-${suffix}`;
+  const essential = module === "essential_medical";
   return {
     cardId: `${prefix}-${suffix}`,
     wordId: `word-${suffix}`,
@@ -52,12 +56,12 @@ function cloudCard(
     partOfSpeech: "noun",
     meaningEn: "A contextual meaning.",
     meaningZh: "语境释义",
-    usageNote: "Used in research writing.",
+    usageNote: options.usageNote ?? (essential ? "" : "Used in research writing."),
     contextSentence: `The ${lemma} appears in context.`,
     targetText: lemma,
     plainEnglishParaphrase: "A plain paraphrase.",
     sentenceTranslationZh: "完整句子翻译。",
-    collocations: options.collocations ?? ["test collocation"],
+    collocations: options.collocations ?? (essential ? [] : ["test collocation"]),
     sourceType: "original_example",
     sourceTitle: null,
     sourceUrl: null,
@@ -126,8 +130,7 @@ function snapshotFor(newSet: CloudNewAssignmentSet): CloudDailyLearningSnapshot 
     cards: newSet.assignments.map((assignment, index) =>
       cloudCard(index, assignment.category, {
         module: newSet.module,
-        prefix: assignment.cardId.replace(/-\d+$/, ""),
-        collocations: newSet.module === "essential_medical" ? [] : ["test collocation"]
+        prefix: assignment.cardId.replace(/-\d+$/, "")
       })
     )
   };
@@ -208,10 +211,15 @@ describe("cloud assignment cache integration", () => {
     ).toMatchObject({ newCompleted: 0, newTotal: 10, reviewCompleted: 0, reviewTotal: 0 });
   });
 
-  it("caches a ready 必备医学英语 snapshot with empty collocations as non-zero newTotal", async () => {
+  it("parses a ready 必备医学英语 snapshot with empty collocations and empty usage_note and caches newTotal 10", async () => {
+    const snapshot = parseDailyLearningSnapshot(readyEssentialDailySnapshotPayload());
+    expect(snapshot.cards).toHaveLength(10);
+    expect(snapshot.cards.every((card) => card.usageNote === "")).toBe(true);
+    expect(snapshot.cards.every((card) => card.collocations.length === 0)).toBe(true);
+
     activeDatabase = new LearningDatabase(`wordeasy-cloud-cache-${crypto.randomUUID()}`);
     await openLearningDatabase(activeDatabase);
-    const cloud = new FakeCloudLearningRepository(snapshotFor(readyEssentialAssignments()));
+    const cloud = new FakeCloudLearningRepository(snapshot);
     const cache = new AccountCloudDayCache(
       "user-a",
       activeDatabase,
@@ -225,6 +233,7 @@ describe("cloud assignment cache integration", () => {
     expect(cards).toHaveLength(10);
     expect(cards.every((card) => card.module === "essential_medical")).toBe(true);
     expect(cards.every((card) => card.category === "core")).toBe(true);
+    expect(cards.every((card) => card.usageNote === "")).toBe(true);
     expect(cards.every((card) => card.collocations.length === 0)).toBe(true);
     expect(
       await activeDatabase.daily_summary.get(["user-a", "essential_medical", "2026-09-09"])

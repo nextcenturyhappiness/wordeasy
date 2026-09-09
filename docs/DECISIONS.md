@@ -578,6 +578,23 @@ Alternatives rejected: 继续并行刷新只加 Dexie 超时；冲突时永久�
 Consequences: Sync 的三个模块日缓存 RPC 变为串行，延迟略增。同一日本地与云端 New 集合不一致时以云端为准并丢弃该日本地旧 assignment 行；`totalLearned` / streak 仍由未删除的 `daily_summary` 保留后被覆盖写入。
 Tests/docs affected: `accountSyncGateway`, `cloudDayCache`, gateway/day-cache tests, `docs/02_DATA_SYNC_SECURITY.md`, `docs/TRACEABILITY.md`.
 
+### DEC-051 · 云端卡片解析接受空的可选文案（usage_note）
+
+Date: 2026-09-09
+Status: Accepted
+Related requirements: SYNC-006, CONTENT-003/007/013, CORE-011, ASSIGN-008, TEST-011; DEC-047/048/049/050
+Context: 生产上 clear site data + OTP + Sync 后 Research/Medical 显示 0/10，必备医学英语停在 0/0。服务器当日 `essential_medical` ready set 有 10 张卡。`parseDailyLearningSnapshot` → `contextCard` 用 `string()` 拒绝空字符串；live `get_daily_learning_snapshot` 里 essential seed 的 `usage_note` 为 `""`。`AccountCloudDayCache.refresh('essential_medical')` 每次 Sync 抛 `CloudPayloadError`；DEC-048 隔离让整体 Sync 仍为 synced；DEC-049 把未缓存模块画成 0/0。扫描 `data/essential-medical/cards.json`：663 张卡里唯一空字符串字段是 `usage_note`；`collocations` 是空数组，已由 DEC-047/050 允许。
+Decision:
+
+1. 云端 Context Card 解析对 `usage_note` 接受任意 string，包括 `""`。不得把空 usage note 改写成占位中文。
+2. lemma、释义、例句等身份与语境字段仍要求非空。citation 字段仍为 null 或非空 string。
+3. 内容校验器对必备医学英语空 `usage_note` 的既有例外保持不变；Research/Medical 仍要求中文使用强度说明。
+
+Reason: DEC-047 已规定必备医学英语 `usage_note` 可空；线格式解析必须与 seed 和 RPC 载荷一致，否则该模块永远无法写入当日 summary。
+Alternatives rejected: 给 663 张卡编造 usage_note；把空字符串改成 null 再改 RPC；只在 essential 模块分支放行；Sync 失败时标整个 Sync failed。
+Consequences: 空 usage_note 的 ready snapshot 可以写入 `newTotal: 10`。UI 已对空「适用范围」隐藏（DEC-047）。
+Tests/docs affected: `src/data/cloud/parsers.ts`, cloud parser + day-cache tests, `docs/02_DATA_SYNC_SECURITY.md`, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text
