@@ -483,9 +483,9 @@ failed
 6. 预取今日卡片。
 ```
 
-日缓存按模块隔离刷新：单个模块失败不得把整个 Sync 标为 failed，除非关键步骤（auth / preferences / coordinator）失败，或全部模块刷新失败（DEC-048）。
+日缓存按模块隔离、串行刷新，避免并发 IndexedDB 写入互相打断（DEC-050）。单个模块失败不得把整个 Sync 标为 failed，除非关键步骤（auth / preferences / coordinator）失败，或全部模块刷新失败（DEC-048）。本地 New/Review 日缓存与云端当日集合冲突时，清除该模块该日 assignment 缓存并对同一 snapshot 重试一次写入，避免 Home 永久停在 0/0。
 
-同步失败不能阻止继续使用已缓存内容。部分模块刷新成功、整体 Sync 为 synced 时，Home 必须显示已缓存模块，不得因另一模块缺少 `daily_summary` 而整页 empty（DEC-049）。
+同步失败不能阻止继续使用已缓存内容。部分模块刷新成功、整体 Sync 为 synced 时，Home 必须显示已缓存模块，不得因另一模块缺少 `daily_summary` 而整页 empty（DEC-049）。服务器已 ready 的模块在该模块刷新成功后必须显示真实 New/Review 计数，不得继续用未缓存占位 0/0。
 
 ---
 

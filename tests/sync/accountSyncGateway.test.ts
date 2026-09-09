@@ -123,13 +123,69 @@ describe("account sync gateway", () => {
     await expect(startup).resolves.toEqual(synced);
     expect(syncSettings).toHaveBeenCalledTimes(1);
     expect(refreshDay).toHaveBeenCalledTimes(3);
-    expect(calls[0]).toBe("push-reconcile");
-    expect(calls.slice(1, 4).sort()).toEqual([
-      "essential_medical:2026-08-26",
+    expect(calls).toEqual([
+      "push-reconcile",
+      "research_english:2026-08-26",
       "medical_english:2026-08-26",
-      "research_english:2026-08-26"
+      "essential_medical:2026-08-26",
+      "final-pull-merge"
     ]);
-    expect(calls.at(-1)).toBe("final-pull-merge");
+    expect(coordinatorSync).toHaveBeenCalledTimes(2);
+  });
+
+  it("refreshes module day caches sequentially so IndexedDB writes do not overlap", async () => {
+    const started: string[] = [];
+    const releaseByModule = new Map<string, () => void>();
+    const refreshDay = vi.fn<AccountDayCachePort["refresh"]>((module) => {
+      started.push(module);
+      return new Promise((resolve) => {
+        releaseByModule.set(module, () => {
+          resolve(undefined);
+        });
+      });
+    });
+    const coordinatorSync = vi
+      .fn<AccountSyncCoordinatorPort["sync"]>()
+      .mockResolvedValue({ status: "synced", pendingCount: 0 });
+    const gateway = new AccountSyncGateway(
+      "account-a",
+      localStore(),
+      {
+        userId: "account-a",
+        sync: coordinatorSync,
+        dispose: vi.fn().mockResolvedValue(undefined)
+      },
+      { userId: "account-a", refresh: refreshDay },
+      {
+        userId: "account-a",
+        syncRemote: vi.fn().mockResolvedValue({ timezone: "Asia/Shanghai", theme: "system" })
+      },
+      {
+        isOnline: () => true,
+        now: () => new Date("2026-08-26T08:00:00.000Z")
+      }
+    );
+
+    const syncing = gateway.sync();
+    await vi.waitFor(() => {
+      expect(started).toEqual(["research_english"]);
+    });
+    expect(releaseByModule.has("medical_english")).toBe(false);
+
+    releaseByModule.get("research_english")?.();
+    await vi.waitFor(() => {
+      expect(started).toEqual(["research_english", "medical_english"]);
+    });
+    expect(releaseByModule.has("essential_medical")).toBe(false);
+
+    releaseByModule.get("medical_english")?.();
+    await vi.waitFor(() => {
+      expect(started).toEqual(["research_english", "medical_english", "essential_medical"]);
+    });
+
+    releaseByModule.get("essential_medical")?.();
+    await expect(syncing).resolves.toEqual({ status: "synced", pendingCount: 0 });
+    expect(refreshDay).toHaveBeenCalledTimes(3);
     expect(coordinatorSync).toHaveBeenCalledTimes(2);
   });
 

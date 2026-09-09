@@ -560,6 +560,24 @@ Alternatives rejected: 失败模块也写入假 summary；把 `HomeSnapshot.modu
 Consequences: 未缓存模块在 Home 上显示 0/0，Today 仍按既有缺失 summary 行为处理。必备医学英语继续作为第三模块，不被 Research/Medical 替换。
 Tests/docs affected: `indexedDbLearningRepository`, `LearningAppProvider`, Home/repository tests, `docs/02_DATA_SYNC_SECURITY.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
 
+### DEC-050 · 模块日缓存串行刷新；本地集合冲突时清缓存并重试一次
+
+Date: 2026-09-09
+Status: Accepted
+Related requirements: SYNC-006, LOCAL-004, ASSIGN-002/008, TEST-011; DEC-048/049
+Context: DEC-048 用 `Promise.allSettled` 按模块隔离刷新。生产上 Research/Medical 的 `daily_summary` 已写入，必备医学英语仍停在 0/0，整体 Sync 仍为 synced。云端 `essential_medical` 当日 ready set 正常。并行对同一 Dexie 表开 `rw` 事务可能导致其中一个模块（常是列表最后的必备医学英语）写入失败且被隔离吞掉。另一条路径是本地旧 New/Review 集合与云端当日集合冲突，`#cacheSnapshot` 抛错后只 `console.warn`，Home 继续读未缓存或 shortage 的 0/0。
+Decision:
+
+1. `AccountSyncGateway` 按 `MODULE_SLUGS` 顺序串行刷新模块日缓存，避免并发 IndexedDB 写入互相打断。必备医学英语仍是第三模块。
+2. 单个模块失败仍只记警告；仅全部模块失败或关键步骤失败时整体 Sync 为 failed（DEC-048 隔离不变）。
+3. 本地 New/Review 日缓存与云端当日集合冲突时，清除该用户该模块该日的 assignment / review assignment / assignment set，然后对同一 snapshot 再写入一次。不重拉网络。重试仍失败则按原隔离规则警告。
+4. 成功写入必须用云端 ready set 的真实 `newTotal`/`reviewTotal` 覆盖旧 shortage 或未缓存占位；空 collocations 仍允许。
+
+Reason: Home 在 DEC-049 下会把缺失/失败模块画成 0/0。Sync 成功时，服务器已 ready 的模块必须能落到本地摘要，而不是永久占位。
+Alternatives rejected: 继续并行刷新只加 Dexie 超时；冲突时永久遵守本地旧集合；冲突失败标整个 Sync failed；用 Service Worker 代替 IndexedDB。
+Consequences: Sync 的三个模块日缓存 RPC 变为串行，延迟略增。同一日本地与云端 New 集合不一致时以云端为准并丢弃该日本地旧 assignment 行；`totalLearned` / streak 仍由未删除的 `daily_summary` 保留后被覆盖写入。
+Tests/docs affected: `accountSyncGateway`, `cloudDayCache`, gateway/day-cache tests, `docs/02_DATA_SYNC_SECURITY.md`, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text

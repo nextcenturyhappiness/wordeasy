@@ -12,6 +12,19 @@ import type {
   CloudLearningRepository
 } from "./types";
 
+const LOCAL_NEW_ASSIGNMENT_CONFLICT =
+  "Stable cloud New assignment conflicts with the local cached set.";
+const LOCAL_REVIEW_ASSIGNMENT_CONFLICT =
+  "Stable cloud Review assignment conflicts with the local cached set.";
+
+export function isLocalDayCacheConflict(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.message === LOCAL_NEW_ASSIGNMENT_CONFLICT ||
+      error.message === LOCAL_REVIEW_ASSIGNMENT_CONFLICT)
+  );
+}
+
 function cachedCard(userId: string, card: CloudContextCard, cachedAt: string): CachedCardRow {
   return {
     userId,
@@ -59,8 +72,44 @@ export class AccountCloudDayCache {
     await this.cloud.ensureNewAssignment(module, studyDate);
     await this.cloud.ensureReviewAssignment(module, studyDate);
     const snapshot = await this.cloud.getDailySnapshot(module, studyDate);
-    await this.#cacheSnapshot(module, studyDate, snapshot);
+    try {
+      await this.#cacheSnapshot(module, studyDate, snapshot);
+    } catch (error: unknown) {
+      if (!isLocalDayCacheConflict(error)) {
+        throw error;
+      }
+      const detail = error instanceof Error ? error.message : "local assignment conflict";
+      console.warn(
+        `Local day cache for ${module} on ${studyDate} conflicts with cloud (${detail}); clearing and retrying once.`
+      );
+      await this.#clearModuleDayCache(module, studyDate);
+      await this.#cacheSnapshot(module, studyDate, snapshot);
+    }
     return snapshot;
+  }
+
+  async #clearModuleDayCache(module: ModuleSlug, studyDate: string): Promise<void> {
+    const key: [string, ModuleSlug, string] = [this.userId, module, studyDate];
+    await this.database.transaction(
+      "rw",
+      this.database.cached_daily_assignments,
+      this.database.cached_daily_review_assignments,
+      this.database.cached_assignment_sets,
+      async () => {
+        await this.database.cached_daily_assignments
+          .where("[userId+module+studyDate]")
+          .equals(key)
+          .delete();
+        await this.database.cached_daily_review_assignments
+          .where("[userId+module+studyDate]")
+          .equals(key)
+          .delete();
+        await this.database.cached_assignment_sets
+          .where("[userId+module+studyDate]")
+          .equals(key)
+          .delete();
+      }
+    );
   }
 
   async #cacheSnapshot(
@@ -108,7 +157,7 @@ export class AccountCloudDayCache {
           .toArray();
         const remoteNewIds = new Set(newSet.assignments.map((assignment) => assignment.cardId));
         if (currentNew.some((assignment) => !remoteNewIds.has(assignment.cardId))) {
-          throw new Error("Stable cloud New assignment conflicts with the local cached set.");
+          throw new Error(LOCAL_NEW_ASSIGNMENT_CONFLICT);
         }
         const currentNewByCard = new Map(
           currentNew.map((assignment) => [assignment.cardId, assignment])
@@ -149,7 +198,7 @@ export class AccountCloudDayCache {
           reviewSet.assignments.map((assignment) => assignment.cardId)
         );
         if (currentReview.some((assignment) => !remoteReviewIds.has(assignment.cardId))) {
-          throw new Error("Stable cloud Review assignment conflicts with the local cached set.");
+          throw new Error(LOCAL_REVIEW_ASSIGNMENT_CONFLICT);
         }
         const currentReviewByCard = new Map(
           currentReview.map((assignment) => [assignment.cardId, assignment])

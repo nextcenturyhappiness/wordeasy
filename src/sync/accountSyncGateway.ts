@@ -136,17 +136,13 @@ export class AccountSyncGateway implements SyncGateway {
   }
 
   async #refreshDayCaches(studyDate: string): Promise<void> {
-    const outcomes = await Promise.allSettled(
-      LEARNING_MODULES.map((module) => this.dayCache.refresh(module, studyDate))
-    );
-
     const failures: Array<{ module: ModuleSlug; error: unknown }> = [];
-    for (const [index, outcome] of outcomes.entries()) {
-      const module = LEARNING_MODULES[index];
-      if (module === undefined || outcome.status !== "rejected") {
-        continue;
+    for (const module of LEARNING_MODULES) {
+      try {
+        await this.dayCache.refresh(module, studyDate);
+      } catch (error: unknown) {
+        failures.push({ module, error });
       }
-      failures.push({ module, error: outcome.reason });
     }
 
     if (failures.length === 0) {
