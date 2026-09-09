@@ -1,6 +1,6 @@
 # Traceability
 
-Updated: 2026-09-08
+Updated: 2026-09-09
 
 Allowed statuses:
 
@@ -85,7 +85,7 @@ Evidence is deliberately layered. A local unit, browser, or SQL-structure pass d
 | SYNC-003    |       P0 | Backend            | event fingerprint + UUID idempotent ingest                                                                               | SQL structure and mocked transport tests; live retry open                                    | Implemented            |
 | SYNC-004    |       P0 | Backend            | v3 indexed bounded outbox, inclusive leases, partial ack, backoff                                                        | boundary/Dexie/coordinator/10k-active tests                                                  | Automatically verified |
 | SYNC-005    |       P0 | Backend            | startup/online/focus/manual triggers and account lock                                                                    | gateway/coalescing/lock tests                                                                | Automatically verified |
-| SYNC-006    |       P0 | Backend            | pre-assignment push/pull/reconcile, isolated per-module day cache, final pass; partial cache still paints Home (DEC-049) | gateway/coordinator isolation + partial-Home tests                                           | Automatically verified |
+| SYNC-006    |       P0 | Backend            | pre-assignment push/pull/reconcile, sequential isolated per-module day cache with conflict clear+retry (DEC-050), final pass; partial cache still paints Home (DEC-049) | gateway sequential + day-cache conflict/essential + isolation tests | Automatically verified |
 | SYNC-007    |       P0 | Backend            | all events retained; mutable applications separated                                                                      | migration and conflict tests                                                                 | Automatically verified |
 | SYNC-008    |       P0 | Backend            | base revision, event-set hash, trusted CAS commit                                                                        | static SQL/transport/restart tests; live RPC open                                            | Implemented            |
 | SYNC-009    |       P0 | Backend            | durable skipped-state/conflict IDs and trusted deterministic FSRS replay                                                 | restart reconciliation + executable Edge/browser golden parity                               | Automatically verified |

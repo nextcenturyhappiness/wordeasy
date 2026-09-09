@@ -1,6 +1,7 @@
 import Dexie from "dexie";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { ModuleSlug } from "../../src/application/contracts";
 import { AccountCloudDayCache } from "../../src/data/cloud/cloudDayCache";
 import type {
   CloudContextCard,
@@ -25,27 +26,38 @@ afterEach(async () => {
   }
 });
 
-function cloudCard(index: number, category: string): CloudContextCard {
+function cloudCard(
+  index: number,
+  category: string,
+  options: {
+    module?: ModuleSlug;
+    prefix?: string;
+    collocations?: string[];
+  } = {}
+): CloudContextCard {
+  const module = options.module ?? "research_english";
+  const prefix = options.prefix ?? "card";
   const suffix = String(index);
+  const lemma = `lemma-${suffix}`;
   return {
-    cardId: `card-${suffix}`,
+    cardId: `${prefix}-${suffix}`,
     wordId: `word-${suffix}`,
     wordSenseId: `sense-${suffix}`,
     contextId: `context-${suffix}`,
-    module: "research_english",
+    module,
     category,
-    lemma: `lemma-${suffix}`,
-    displayForm: `lemma-${suffix}`,
+    lemma,
+    displayForm: lemma,
     ipa: "/test/",
     partOfSpeech: "noun",
     meaningEn: "A contextual meaning.",
     meaningZh: "语境释义",
     usageNote: "Used in research writing.",
-    contextSentence: `The lemma-${suffix} appears in context.`,
-    targetText: `lemma-${suffix}`,
+    contextSentence: `The ${lemma} appears in context.`,
+    targetText: lemma,
     plainEnglishParaphrase: "A plain paraphrase.",
     sentenceTranslationZh: "完整句子翻译。",
-    collocations: ["test collocation"],
+    collocations: options.collocations ?? ["test collocation"],
     sourceType: "original_example",
     sourceTitle: null,
     sourceUrl: null,
@@ -54,7 +66,7 @@ function cloudCard(index: number, category: string): CloudContextCard {
   };
 }
 
-function readyAssignments(): CloudNewAssignmentSet {
+function readyResearchAssignments(): CloudNewAssignmentSet {
   const categories = [
     ...Array.from({ length: 5 }, () => "general_research"),
     ...Array.from({ length: 2 }, () => "statistics_methodology"),
@@ -75,34 +87,77 @@ function readyAssignments(): CloudNewAssignmentSet {
   };
 }
 
-const REVIEW_SET: CloudReviewAssignmentSet = {
-  status: "ready",
-  setId: "review-set-a",
-  module: "research_english",
-  studyDate: "2026-08-26",
-  timezone: "Asia/Shanghai",
-  cutoffAt: "2026-08-26T16:00:00.000Z",
-  assignments: []
-};
+function readyEssentialAssignments(): CloudNewAssignmentSet {
+  return {
+    status: "ready",
+    setId: "essential-new-set",
+    module: "essential_medical",
+    studyDate: "2026-09-09",
+    timezone: "Asia/Shanghai",
+    shortage: null,
+    assignments: Array.from({ length: 10 }, (_, index) => ({
+      cardId: `essential-${String(index)}`,
+      category: "core",
+      position: index + 1
+    }))
+  };
+}
+
+function emptyReviewSet(
+  module: ModuleSlug,
+  studyDate: string,
+  setId: string
+): CloudReviewAssignmentSet {
+  return {
+    status: "ready",
+    setId,
+    module,
+    studyDate,
+    timezone: "Asia/Shanghai",
+    cutoffAt: `${studyDate}T16:00:00.000Z`,
+    assignments: []
+  };
+}
+
+function snapshotFor(newSet: CloudNewAssignmentSet): CloudDailyLearningSnapshot {
+  return {
+    newAssignment: newSet,
+    reviewAssignment: emptyReviewSet(newSet.module, newSet.studyDate, `${newSet.module}-review`),
+    cards: newSet.assignments.map((assignment, index) =>
+      cloudCard(index, assignment.category, {
+        module: newSet.module,
+        prefix: assignment.cardId.replace(/-\d+$/, ""),
+        collocations: newSet.module === "essential_medical" ? [] : ["test collocation"]
+      })
+    )
+  };
+}
 
 class FakeCloudLearningRepository implements CloudLearningRepository {
   readonly userId = "user-a";
-  readonly newSet = readyAssignments();
-  readonly snapshot: CloudDailyLearningSnapshot = {
-    newAssignment: this.newSet,
-    reviewAssignment: REVIEW_SET,
-    cards: this.newSet.assignments.map((assignment, index) => cloudCard(index, assignment.category))
-  };
+  readonly snapshot: CloudDailyLearningSnapshot;
   readonly calls: string[] = [];
+
+  constructor(snapshot: CloudDailyLearningSnapshot = snapshotFor(readyResearchAssignments())) {
+    this.snapshot = snapshot;
+  }
 
   ensureNewAssignment(): Promise<CloudNewAssignmentSet> {
     this.calls.push("new");
-    return Promise.resolve(this.newSet);
+    const newSet = this.snapshot.newAssignment;
+    if (newSet === null) {
+      throw new Error("Fake cloud is missing a New assignment.");
+    }
+    return Promise.resolve(newSet);
   }
 
   ensureReviewAssignment(): Promise<CloudReviewAssignmentSet> {
     this.calls.push("review");
-    return Promise.resolve(REVIEW_SET);
+    const reviewSet = this.snapshot.reviewAssignment;
+    if (reviewSet === null) {
+      throw new Error("Fake cloud is missing a Review assignment.");
+    }
+    return Promise.resolve(reviewSet);
   }
 
   getDailySnapshot(): Promise<CloudDailyLearningSnapshot> {
@@ -151,5 +206,111 @@ describe("cloud assignment cache integration", () => {
     expect(
       await activeDatabase.daily_summary.get(["user-a", "research_english", "2026-08-26"])
     ).toMatchObject({ newCompleted: 0, newTotal: 10, reviewCompleted: 0, reviewTotal: 0 });
+  });
+
+  it("caches a ready 必备医学英语 snapshot with empty collocations as non-zero newTotal", async () => {
+    activeDatabase = new LearningDatabase(`wordeasy-cloud-cache-${crypto.randomUUID()}`);
+    await openLearningDatabase(activeDatabase);
+    const cloud = new FakeCloudLearningRepository(snapshotFor(readyEssentialAssignments()));
+    const cache = new AccountCloudDayCache(
+      "user-a",
+      activeDatabase,
+      cloud,
+      () => new Date("2026-09-09T08:00:00.000Z")
+    );
+
+    await cache.refresh("essential_medical", "2026-09-09");
+
+    const cards = await activeDatabase.cached_cards.toArray();
+    expect(cards).toHaveLength(10);
+    expect(cards.every((card) => card.module === "essential_medical")).toBe(true);
+    expect(cards.every((card) => card.category === "core")).toBe(true);
+    expect(cards.every((card) => card.collocations.length === 0)).toBe(true);
+    expect(
+      await activeDatabase.daily_summary.get(["user-a", "essential_medical", "2026-09-09"])
+    ).toMatchObject({ newCompleted: 0, newTotal: 10, reviewCompleted: 0, reviewTotal: 0 });
+  });
+
+  it("clears a conflicting local New set and retries so today’s summary is replaced", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    activeDatabase = new LearningDatabase(`wordeasy-cloud-cache-${crypto.randomUUID()}`);
+    await openLearningDatabase(activeDatabase);
+    await activeDatabase.cached_daily_assignments.put({
+      userId: "user-a",
+      module: "essential_medical",
+      studyDate: "2026-09-09",
+      cardId: "stale-local-card",
+      wordSenseId: "stale-sense",
+      category: "core",
+      position: 0,
+      completedAt: null,
+      createdAt: "2026-09-09T00:00:00.000Z"
+    });
+    await activeDatabase.cached_assignment_sets.put({
+      userId: "user-a",
+      module: "essential_medical",
+      studyDate: "2026-09-09",
+      queue: "new",
+      status: "shortage",
+      shortage: {
+        code: "content_shortage",
+        category: "core",
+        required: 10,
+        available: 0,
+        message: "Not enough core cards."
+      },
+      createdAt: "2026-09-09T00:00:00.000Z"
+    });
+    await activeDatabase.daily_summary.put({
+      userId: "user-a",
+      module: "essential_medical",
+      studyDate: "2026-09-09",
+      newCompleted: 0,
+      newTotal: 0,
+      reviewCompleted: 0,
+      reviewTotal: 0,
+      totalLearned: 4,
+      streak: 2,
+      pendingSyncCount: 0,
+      updatedAt: "2026-09-09T00:00:00.000Z"
+    });
+
+    const cloud = new FakeCloudLearningRepository(snapshotFor(readyEssentialAssignments()));
+    const cache = new AccountCloudDayCache(
+      "user-a",
+      activeDatabase,
+      cloud,
+      () => new Date("2026-09-09T08:00:00.000Z")
+    );
+
+    await cache.refresh("essential_medical", "2026-09-09");
+
+    expect(cloud.calls).toEqual(["new", "review", "snapshot"]);
+    const assignments = await activeDatabase.cached_daily_assignments.toArray();
+    expect(assignments.map((assignment) => assignment.cardId)).toEqual(
+      Array.from({ length: 10 }, (_, index) => `essential-${String(index)}`)
+    );
+    expect(
+      await activeDatabase.cached_daily_assignments.get([
+        "user-a",
+        "essential_medical",
+        "2026-09-09",
+        "stale-local-card"
+      ])
+    ).toBeUndefined();
+    expect(
+      await activeDatabase.daily_summary.get(["user-a", "essential_medical", "2026-09-09"])
+    ).toMatchObject({
+      newCompleted: 0,
+      newTotal: 10,
+      reviewCompleted: 0,
+      reviewTotal: 0,
+      totalLearned: 4,
+      streak: 2
+    });
+    expect(warn).toHaveBeenCalledWith(
+      "Local day cache for essential_medical on 2026-09-09 conflicts with cloud (Stable cloud New assignment conflicts with the local cached set.); clearing and retrying once."
+    );
+    warn.mockRestore();
   });
 });
