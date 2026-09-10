@@ -7,12 +7,14 @@ import {
   analyzeEssentialLemma,
   buildUsageNote
 } from "../../scripts/lib/essential-medical-morphology.mjs";
-import { patternKey } from "../../scripts/lib/essential-medical-sentences.mjs";
+import { CLASSROOM_RE, patternKey } from "../../scripts/lib/essential-medical-sentences.mjs";
 
 const essentialPath = resolve(process.cwd(), "data/essential-medical/cards.json");
 const essentialDataset = JSON.parse(readFileSync(essentialPath, "utf8"));
+const CLASSROOM_PROBE =
+  /ward round|teaching example|classroom|juniors|registrar|tutor pointed|chapter on/iu;
 
-describe("essential medical classroom upgrade", () => {
+describe("essential medical clinical sentence upgrade", () => {
   it("puts a Chinese root/affix story on bronchiectasis without changing the gloss", () => {
     const card = essentialDataset.cards.find((item) => item.lemma === "bronchiectasis");
     expect(card).toBeDefined();
@@ -27,8 +29,25 @@ describe("essential medical classroom upgrade", () => {
     expect(card.usage_note).toMatch(/支气管/);
     expect(card.usage_note).toMatch(/扩张/);
     expect(card.context_sentence).toContain("bronchiectasis");
-    expect(card.context_sentence).not.toMatch(/opens with the .+ as a teaching example/iu);
+    expect(card.context_sentence).not.toMatch(CLASSROOM_RE);
     expect(card.target_text).toBe("bronchiectasis");
+  });
+
+  it("places phagocytosis in a real cell and bacteria context", () => {
+    const card = essentialDataset.cards.find((item) => item.lemma === "phagocytosis");
+    expect(card).toBeDefined();
+    expect(card.id).toBe("4e95ceb7-e9ac-56f9-8bb4-f7cb1fa0fdeb");
+    expect(card.word_sense_id).toBe("c268e973-e801-5ff5-a810-996194ee4959");
+    expect(card.context_id).toBe("4c07b9d7-f594-59fc-9551-5514640d6cfb");
+    expect(card.meaning_en).toBe("engulfment of particles by a cell");
+    expect(card.meaning_zh).toBe("吞噬作用");
+    expect(card.context_sentence).toMatch(/phagocytosis/u);
+    expect(card.context_sentence).toMatch(/bacteria/iu);
+    expect(card.context_sentence).toMatch(/engulf/iu);
+    expect(card.context_sentence).not.toMatch(CLASSROOM_RE);
+    expect(card.plain_english_paraphrase).not.toMatch(CLASSROOM_RE);
+    expect(card.sentence_translation_zh).toMatch(/吞噬作用/u);
+    expect(card.sentence_translation_zh).toMatch(/细菌/u);
   });
 
   it("leaves usage_note empty when no useful root story exists", () => {
@@ -38,17 +57,23 @@ describe("essential medical classroom upgrade", () => {
     expect(elbow?.usage_note).toBe("");
   });
 
-  it("does not let one sentence pattern dominate the essential set", () => {
+  it("keeps essential sentences clinical rather than classroom and avoids one dominant pattern", () => {
     const counts = new Map();
+    let classroomHits = 0;
     for (const card of essentialDataset.cards) {
       const key = patternKey(card.context_sentence, card.lemma);
       counts.set(key, (counts.get(key) ?? 0) + 1);
-      expect(card.context_sentence).not.toMatch(/opens with the .+ as a teaching example/iu);
       expect(card.target_text).toBe(card.lemma);
       expect(card.context_sentence.includes(card.lemma)).toBe(true);
+      const surface = `${card.context_sentence}\n${card.plain_english_paraphrase}\n${card.sentence_translation_zh}`;
+      expect(surface).not.toMatch(CLASSROOM_RE);
+      if (CLASSROOM_PROBE.test(surface)) {
+        classroomHits += 1;
+      }
     }
     const withNotes = essentialDataset.cards.filter((card) => card.usage_note.length > 0);
     const ranked = [...counts.values()].sort((left, right) => right - left);
+    expect(classroomHits).toBe(0);
     expect(withNotes.length).toBeGreaterThanOrEqual(120);
     expect(counts.size).toBeGreaterThanOrEqual(20);
     expect(ranked[0] / essentialDataset.cards.length).toBeLessThan(0.1);

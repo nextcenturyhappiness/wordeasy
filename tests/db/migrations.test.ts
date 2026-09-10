@@ -13,6 +13,7 @@ import medicalQuotaFlipSql from "../../supabase/migrations/20260907001100_medica
 import essentialAssignmentSql from "../../supabase/migrations/20260908001300_essential_medical_assignment.sql?raw";
 import essentialSeedSql from "../../supabase/migrations/20260908001400_essential_medical_seed.sql?raw";
 import essentialRefreshSql from "../../supabase/migrations/20260910001600_essential_medical_roots_sentences.sql?raw";
+import essentialClinicalSql from "../../supabase/migrations/20260910001700_essential_medical_clinical_sentences.sql?raw";
 import shortageSelfHealSql from "../../supabase/migrations/20260908001500_assignment_shortage_self_heal.sql?raw";
 import medicalChartMidlevelSql from "../../supabase/migrations/20260907001200_medical_chart_midlevel.sql?raw";
 import syncSql from "../../supabase/migrations/20260826000300_review_sync_rpcs.sql?raw";
@@ -28,6 +29,7 @@ const MEDICAL_QUOTA_FLIP = medicalQuotaFlipSql.toLowerCase();
 const ESSENTIAL_ASSIGNMENT = essentialAssignmentSql.toLowerCase();
 const ESSENTIAL_SEED = essentialSeedSql.toLowerCase();
 const ESSENTIAL_REFRESH = essentialRefreshSql.toLowerCase();
+const ESSENTIAL_CLINICAL = essentialClinicalSql.toLowerCase();
 const SHORTAGE_SELF_HEAL = shortageSelfHealSql.toLowerCase();
 const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}\n${MEDICAL_QUOTA_FLIP}\n${ESSENTIAL_ASSIGNMENT}\n${SHORTAGE_SELF_HEAL}`;
 const EFFECTIVE_SYNC = `${SYNC}\n${HARDENING}\n${MEDICAL_QUOTAS}`;
@@ -413,5 +415,21 @@ describe("Supabase migration contracts", () => {
     expect(ESSENTIAL_REFRESH).not.toContain("drop table");
     expect(ESSENTIAL_REFRESH).not.toContain("delete from public.cards");
     expect(ESSENTIAL_REFRESH).not.toContain("insert into public.cards");
+  });
+
+  it("refreshes Essential Medical sentences additively without rewriting card ids or usage notes", () => {
+    expect(ESSENTIAL_CLINICAL).toContain("additive refresh for");
+    expect(ESSENTIAL_CLINICAL).toContain("clinical/physiological sentences");
+    expect(ESSENTIAL_CLINICAL).toContain("update public.contexts");
+    expect(ESSENTIAL_CLINICAL).toContain("context_sentence");
+    expect(ESSENTIAL_CLINICAL).toContain("plain_english_paraphrase");
+    expect(ESSENTIAL_CLINICAL).toContain("sentence_translation_zh");
+    expect(ESSENTIAL_CLINICAL).toContain("4c07b9d7-f594-59fc-9551-5514640d6cfb");
+    expect(ESSENTIAL_CLINICAL).toContain("phagocytosis");
+    expect(ESSENTIAL_CLINICAL).toContain("engulf bacteria");
+    expect(ESSENTIAL_CLINICAL).not.toContain("update public.word_senses");
+    expect(ESSENTIAL_CLINICAL).not.toContain("drop table");
+    expect(ESSENTIAL_CLINICAL).not.toContain("delete from public.cards");
+    expect(ESSENTIAL_CLINICAL).not.toContain("insert into public.cards");
   });
 });
