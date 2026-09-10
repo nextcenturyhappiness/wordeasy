@@ -12,6 +12,7 @@ import medicalPdfExpansionSql from "../../supabase/migrations/20260907001000_med
 import medicalQuotaFlipSql from "../../supabase/migrations/20260907001100_medical_assignment_quota_flip.sql?raw";
 import essentialAssignmentSql from "../../supabase/migrations/20260908001300_essential_medical_assignment.sql?raw";
 import essentialSeedSql from "../../supabase/migrations/20260908001400_essential_medical_seed.sql?raw";
+import essentialRefreshSql from "../../supabase/migrations/20260910001600_essential_medical_roots_sentences.sql?raw";
 import shortageSelfHealSql from "../../supabase/migrations/20260908001500_assignment_shortage_self_heal.sql?raw";
 import medicalChartMidlevelSql from "../../supabase/migrations/20260907001200_medical_chart_midlevel.sql?raw";
 import syncSql from "../../supabase/migrations/20260826000300_review_sync_rpcs.sql?raw";
@@ -26,6 +27,7 @@ const MEDICAL_QUOTAS = medicalQuotaSql.toLowerCase();
 const MEDICAL_QUOTA_FLIP = medicalQuotaFlipSql.toLowerCase();
 const ESSENTIAL_ASSIGNMENT = essentialAssignmentSql.toLowerCase();
 const ESSENTIAL_SEED = essentialSeedSql.toLowerCase();
+const ESSENTIAL_REFRESH = essentialRefreshSql.toLowerCase();
 const SHORTAGE_SELF_HEAL = shortageSelfHealSql.toLowerCase();
 const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}\n${MEDICAL_QUOTA_FLIP}\n${ESSENTIAL_ASSIGNMENT}\n${SHORTAGE_SELF_HEAL}`;
 const EFFECTIVE_SYNC = `${SYNC}\n${HARDENING}\n${MEDICAL_QUOTAS}`;
@@ -396,5 +398,20 @@ describe("Supabase migration contracts", () => {
     expect(ESSENTIAL_SEED.match(/'context_recall', true\)/g)?.length).toBeGreaterThanOrEqual(660);
     expect(ESSENTIAL_SEED).toContain("begin;");
     expect(ESSENTIAL_SEED).toContain("commit;");
+  });
+
+  it("refreshes Essential Medical copy additively without rewriting card ids", () => {
+    expect(ESSENTIAL_REFRESH).toContain("additive refresh for");
+    expect(ESSENTIAL_REFRESH).toContain("update public.word_senses");
+    expect(ESSENTIAL_REFRESH).toContain("usage_note");
+    expect(ESSENTIAL_REFRESH).toContain("update public.contexts");
+    expect(ESSENTIAL_REFRESH).toContain("context_sentence");
+    expect(ESSENTIAL_REFRESH).toContain("plain_english_paraphrase");
+    expect(ESSENTIAL_REFRESH).toContain("sentence_translation_zh");
+    expect(ESSENTIAL_REFRESH).toContain("5d71a3cd-0f3c-5de7-b30e-9325e52ebc04");
+    expect(ESSENTIAL_REFRESH).toContain("bronchio-");
+    expect(ESSENTIAL_REFRESH).not.toContain("drop table");
+    expect(ESSENTIAL_REFRESH).not.toContain("delete from public.cards");
+    expect(ESSENTIAL_REFRESH).not.toContain("insert into public.cards");
   });
 });

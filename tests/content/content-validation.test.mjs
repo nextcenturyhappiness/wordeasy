@@ -327,7 +327,14 @@ describe("essential medical dataset", () => {
     expect(essentialDataset.cards.every((card) => card.target_text === card.lemma)).toBe(true);
     expect(essentialDataset.cards.every((card) => card.module === "essential_medical")).toBe(true);
     expect(essentialDataset.cards.every((card) => card.collocations.length === 0)).toBe(true);
-    expect(essentialDataset.cards.every((card) => card.usage_note === "")).toBe(true);
+    expect(
+      essentialDataset.cards.every(
+        (card) =>
+          card.usage_note === "" ||
+          (/(构词|词根|前缀|后缀)/u.test(card.usage_note) &&
+            /[\u3400-\u9fff]/u.test(card.usage_note))
+      )
+    ).toBe(true);
     expect(essentialDataset.cards.every((card) => card.source_type === "original_example")).toBe(
       true
     );

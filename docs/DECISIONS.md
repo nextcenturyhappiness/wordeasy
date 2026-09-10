@@ -595,6 +595,24 @@ Alternatives rejected: 给 663 张卡编造 usage_note；把空字符串改成 n
 Consequences: 空 usage_note 的 ready snapshot 可以写入 `newTotal: 10`。UI 已对空「适用范围」隐藏（DEC-047）。
 Tests/docs affected: `src/data/cloud/parsers.ts`, cloud parser + day-cache tests, `docs/02_DATA_SYNC_SECURITY.md`, `docs/TRACEABILITY.md`.
 
+### DEC-052 · 必备医学英语课堂构词 + 多样例句；Sync 失败露出原因
+
+Date: 2026-09-10
+Status: Accepted
+Related requirements: CONTENT-005/007/013, CORE-011, UI-007, TEST-036; DEC-047/051
+Context: 所有者要求：能拆词根词缀的必备医学英语 lemma 把课堂构词写进卡片；同时停用“The chapter on X opens with the Y as a teaching example”一类重复句。`SyncStatus` 失败时只显示 Sync failed，把 `state.message` 藏掉。
+Decision:
+
+1. 必备医学英语 `usage_note` 仍可空（DEC-047/051 解析契约不变）。能讲清前缀/词根/后缀时写入一两句中文课堂构词，例如 bronchiectasis → bronchio-（支气管）+ -ectasis（扩张）。不改 `meaning_en` / `meaning_zh`，不编专科行话。
+2. 重新生成 `context_sentence`、paraphrase、中文翻译，使用病历、查房、讲课、短病例、教材插图、老师指图等多样模板；`target_text` 仍等于 lemma，原句必须含 lemma。禁止再生成 “opens with … as a teaching example”。
+3. JSON 由生成脚本重写；云端用 additive UPDATE（`word_senses.usage_note` 与 `contexts` 三句字段），不重写 `20260908001400`，不改 card / word / sense UUID。standalone catalog 升为 `canonical-essential-medical-v3` 以重载本地文案。
+4. `SyncStatus` 在 `status === "failed"` 且 `message` 非空时附加缩短后的失败原因；英文消息保持英文短句。
+
+Reason: 课堂构词帮助记实用词，不是另开一门词根课；例句重复会把 Context-first 学成填模板。失败原因可见才能判断是网络、解析还是单模块问题。
+Alternatives rejected: 给全部 663 张卡编造 usage_note；destructive 全量 reseed；把词根写进 meaning 字段；Sync 失败整页 alert。
+Consequences: 已应用 `20260908001400` 的远端必须再 apply `20260910001600` 才会更新云端文案。空 usage_note 仍合法。本地个人词库版本号前进，下次启动重写 cached cards。
+Tests/docs affected: essential seed script/JSON/SQL, content validator tests, SyncStatus UI/CSS, `docs/01_PRODUCT_CORE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text

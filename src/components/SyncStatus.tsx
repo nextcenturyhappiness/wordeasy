@@ -5,6 +5,19 @@ interface SyncStatusProps {
   onSync?: () => void;
 }
 
+const SYNC_FAILURE_REASON_LIMIT = 96;
+
+export function shortenSyncFailureReason(message: string): string {
+  const compact = message.trim().replace(/\s+/gu, " ");
+  if (compact.length === 0) {
+    return "";
+  }
+  if (compact.length <= SYNC_FAILURE_REASON_LIMIT) {
+    return compact;
+  }
+  return `${compact.slice(0, SYNC_FAILURE_REASON_LIMIT - 1).trimEnd()}…`;
+}
+
 function statusText(state: SyncState): string {
   switch (state.status) {
     case "local-only":
@@ -23,10 +36,14 @@ function statusText(state: SyncState): string {
         : "Offline";
     case "pending":
       return `${String(state.pendingCount)} ${state.pendingCount === 1 ? "change" : "changes"} pending`;
-    case "failed":
-      return state.pendingCount > 0
-        ? `Sync failed · ${String(state.pendingCount)} changes pending`
-        : "Sync failed";
+    case "failed": {
+      const base =
+        state.pendingCount > 0
+          ? `Sync failed · ${String(state.pendingCount)} changes pending`
+          : "Sync failed";
+      const reason = shortenSyncFailureReason(state.message);
+      return reason.length > 0 ? `${base} · ${reason}` : base;
+    }
   }
 }
 
