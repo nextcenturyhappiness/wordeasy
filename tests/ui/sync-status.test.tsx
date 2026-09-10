@@ -1,7 +1,9 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
-import { shortenSyncFailureReason, SyncStatus } from "../../src/components/SyncStatus";
+import { SyncStatus } from "../../src/components/SyncStatus";
+
+afterEach(cleanup);
 
 describe("SyncStatus", () => {
   it("keeps a failed status without a message as Sync failed", () => {
@@ -28,12 +30,19 @@ describe("SyncStatus", () => {
   });
 
   it("shortens a long English failure reason without translating it", () => {
-    const reason = shortenSyncFailureReason(
-      "  Cloud day cache refresh failed for every module (research_english: unavailable; medical_english: unavailable; essential_medical: unavailable).  "
+    render(
+      <SyncStatus
+        state={{
+          status: "failed",
+          pendingCount: 0,
+          message:
+            "  Cloud day cache refresh failed for every module (research_english: unavailable; medical_english: unavailable; essential_medical: unavailable).  "
+        }}
+      />
     );
 
-    expect(reason.startsWith("Cloud day cache refresh failed")).toBe(true);
-    expect(reason.length).toBeLessThanOrEqual(96);
-    expect(reason.endsWith("…")).toBe(true);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /Sync failed · Cloud day cache refresh failed for every module \(research_english:.+…$/u
+    );
   });
 });

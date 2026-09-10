@@ -7,7 +7,7 @@ interface SyncStatusProps {
 
 const SYNC_FAILURE_REASON_LIMIT = 96;
 
-export function shortenSyncFailureReason(message: string): string {
+function shortenSyncFailureReason(message: string): string {
   const compact = message.trim().replace(/\s+/gu, " ");
   if (compact.length === 0) {
     return "";

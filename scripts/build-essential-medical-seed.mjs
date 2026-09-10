@@ -308,7 +308,7 @@ if (checkOnly) {
   if (existingCards !== generatedCards || existingSql !== generatedSql || sourceMismatch) {
     throw new Error("Essential medical seed is stale. Run npm run content:essential-medical.");
   }
-  if (!originalSeed.includes("generated from data/essential-medical")) {
+  if (!originalSeed.includes("Generated from data/essential-medical")) {
     throw new Error("Original essential medical seed migration is missing.");
   }
   for (const [index, card] of cards.entries()) {
