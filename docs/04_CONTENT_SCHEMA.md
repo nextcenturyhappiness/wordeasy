@@ -47,7 +47,7 @@
 - 覆盖 `lemmas.txt` 中的每一个 lemma（当前 663 张 Context Card，不少于 660，不得缩短词表）；
 - 可解析的中文释义优先来自完整 `source.txt`；若 `source.txt` 仍是占位，则按 `source.part1.txt`…`source.part5.txt` 顺序拼接后再解析；缺项按教材医学义补全，不是应试 trivia；生成脚本不得覆写 `lemmas.txt`；
 - `collocations` 必须为空；`usage_note` 可为空，但能讲清词根词缀时必须写入课堂构词说明（中文、实用，不编专科行话）；
-- `context_sentence` / paraphrase / 中文翻译须用多样真实生理、临床或病历语境（细胞与宿主防御、体内结构与功能、典型临床表现、病程/化验/影像写法），不得使用课堂框架（查房提问、讲课幻灯、教材插图点名、老师指图、测验题干等），也不得让单一句式占主导；`target_text` 等于 lemma 且必须出现在原句中；
+- `context_sentence` / paraphrase / 中文翻译须用多样真实生理、临床或病历语境（细胞与宿主防御、体内结构与功能、典型临床表现、病程/化验/影像写法），lemma 必须按其实际医学义出现；不得使用课堂框架（查房提问、讲课幻灯、教材插图点名、老师指图、测验题干等），不得把 lemma 填进与词义无关的模板句（如 “progress line mentioned X”、“episode was ADJ enough”、“operative report used X to map”），也不得让单一句式占主导；`target_text` 等于 lemma 且必须出现在原句中；
 - `source_type` 仅为 `original_example`，citation 字段为 null；
 - 首次 catalog 由 `20260908001400_essential_medical_seed.sql` 按 stable_key upsert；此后文案刷新用 additive UPDATE，不重写已应用 seed，也不改写 Research / Medical seed。
 

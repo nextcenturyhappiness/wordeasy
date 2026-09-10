@@ -630,6 +630,24 @@ Alternatives rejected: 只改 phagocytosis 一张；把英文释义直接抄进�
 Consequences: 已应用前两份 essential 迁移的远端必须再 apply `20260910001700` 才会更新云端例句。词根 usage_note 不被本迁移改写。
 Tests/docs affected: sentence builder, `data/essential-medical/cards.json`, additive SQL, catalog version, content tests, `docs/01_PRODUCT_CORE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/TRACEABILITY.md`.
 
+### DEC-054 · 必备医学英语例句禁止不通顺的填槽模板
+
+Date: 2026-09-10
+Status: Accepted
+Related requirements: CONTENT-005/013, CORE-011, TEST-036; DEC-047/052/053
+Context: PR #23（DEC-053）已合并，但 generic “把 lemma 填进 130 个壳子” 仍产出不通顺的 mad-lib，例如 cube-shaped → “The episode was cube-shaped enough…”，collarbone → “The host response … included collarbone”，hyperthyroidism → “Pain mapped over the hyperthyroidism”。所有者要求每条 essential_medical 例句必须是该词实际医学义的生理/临床/病历句子，禁止课堂框架，也禁止不通顺模板。
+Decision:
+
+1. 例句生成改为 per-lemma override + 按英文释义驱动的 builder，不再把 lemma 填进与词义无关的通用壳。
+2. 重新生成全部约 663 张卡的 `context_sentence` / paraphrase / 中文翻译。lemma、`meaning_en`、`meaning_zh`、IPA、词根 `usage_note`、UUID 不变。
+3. 云端用 additive UPDATE 只改 `contexts` 三句字段；不重写 `20260908001400`、`20260910001600`、`20260910001700`。catalog 升为 `canonical-essential-medical-v5`。
+4. 质量检查失败条件包括：`progress line mentioned`、形容词 `episode was ADJ enough`、学科名词 `operative report used X to map`，以及把非结构词塞进 “scan showed swelling around” 一类壳。
+
+Reason: Context-first 要求例句里的词带着它的真实医学义，而不是能认出术语标签。
+Alternatives rejected: 只改用户点名的几张卡；继续扩 130 个通用壳；destructive reseed。
+Consequences: 已应用 `20260910001700` 的远端必须再 apply `20260910001800` 才会更新云端例句。
+Tests/docs affected: `scripts/lib/essential-medical-sentences.mjs`, `scripts/lib/essential-medical-compose.mjs`, `data/essential-medical/cards.json`, `20260910001800_essential_medical_sentence_quality.sql`, catalog v5, content + migration tests, `docs/01_PRODUCT_CORE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text

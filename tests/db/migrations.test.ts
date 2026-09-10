@@ -14,6 +14,7 @@ import essentialAssignmentSql from "../../supabase/migrations/20260908001300_ess
 import essentialSeedSql from "../../supabase/migrations/20260908001400_essential_medical_seed.sql?raw";
 import essentialRefreshSql from "../../supabase/migrations/20260910001600_essential_medical_roots_sentences.sql?raw";
 import essentialClinicalSql from "../../supabase/migrations/20260910001700_essential_medical_clinical_sentences.sql?raw";
+import essentialQualitySql from "../../supabase/migrations/20260910001800_essential_medical_sentence_quality.sql?raw";
 import shortageSelfHealSql from "../../supabase/migrations/20260908001500_assignment_shortage_self_heal.sql?raw";
 import medicalChartMidlevelSql from "../../supabase/migrations/20260907001200_medical_chart_midlevel.sql?raw";
 import syncSql from "../../supabase/migrations/20260826000300_review_sync_rpcs.sql?raw";
@@ -30,6 +31,7 @@ const ESSENTIAL_ASSIGNMENT = essentialAssignmentSql.toLowerCase();
 const ESSENTIAL_SEED = essentialSeedSql.toLowerCase();
 const ESSENTIAL_REFRESH = essentialRefreshSql.toLowerCase();
 const ESSENTIAL_CLINICAL = essentialClinicalSql.toLowerCase();
+const ESSENTIAL_QUALITY = essentialQualitySql.toLowerCase();
 const SHORTAGE_SELF_HEAL = shortageSelfHealSql.toLowerCase();
 const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}\n${MEDICAL_QUOTA_FLIP}\n${ESSENTIAL_ASSIGNMENT}\n${SHORTAGE_SELF_HEAL}`;
 const EFFECTIVE_SYNC = `${SYNC}\n${HARDENING}\n${MEDICAL_QUOTAS}`;
@@ -431,5 +433,25 @@ describe("Supabase migration contracts", () => {
     expect(ESSENTIAL_CLINICAL).not.toContain("drop table");
     expect(ESSENTIAL_CLINICAL).not.toContain("delete from public.cards");
     expect(ESSENTIAL_CLINICAL).not.toContain("insert into public.cards");
+  });
+
+  it("refreshes Essential Medical sentences again for quality without rewriting card ids", () => {
+    expect(ESSENTIAL_QUALITY).toContain("additive quality fix for");
+    expect(ESSENTIAL_QUALITY).toContain("clinical/physiological sentences");
+    expect(ESSENTIAL_QUALITY).toContain("update public.contexts");
+    expect(ESSENTIAL_QUALITY).toContain("context_sentence");
+    expect(ESSENTIAL_QUALITY).toContain("plain_english_paraphrase");
+    expect(ESSENTIAL_QUALITY).toContain("sentence_translation_zh");
+    expect(ESSENTIAL_QUALITY).toContain("4c07b9d7-f594-59fc-9551-5514640d6cfb");
+    expect(ESSENTIAL_QUALITY).toContain("phagocytosis");
+    expect(ESSENTIAL_QUALITY).toContain("engulf bacteria");
+    expect(ESSENTIAL_QUALITY).toContain("cube-shaped rather than needle-like");
+    expect(ESSENTIAL_QUALITY).toContain("fracture of the collarbone");
+    expect(ESSENTIAL_QUALITY).not.toContain("update public.word_senses");
+    expect(ESSENTIAL_QUALITY).not.toContain("drop table");
+    expect(ESSENTIAL_QUALITY).not.toContain("delete from public.cards");
+    expect(ESSENTIAL_QUALITY).not.toContain("insert into public.cards");
+    expect(ESSENTIAL_QUALITY).not.toContain("episode was cube-shaped enough");
+    expect(ESSENTIAL_QUALITY).not.toContain("progress line mentioned");
   });
 });

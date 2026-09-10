@@ -7,7 +7,12 @@ import {
   analyzeEssentialLemma,
   buildUsageNote
 } from "../../scripts/lib/essential-medical-morphology.mjs";
-import { CLASSROOM_RE, patternKey } from "../../scripts/lib/essential-medical-sentences.mjs";
+import {
+  CLASSROOM_RE,
+  LAZY_SENTENCE_RE,
+  patternKey,
+  sentenceFailsQuality
+} from "../../scripts/lib/essential-medical-sentences.mjs";
 
 const essentialPath = resolve(process.cwd(), "data/essential-medical/cards.json");
 const essentialDataset = JSON.parse(readFileSync(essentialPath, "utf8"));
@@ -50,6 +55,62 @@ describe("essential medical clinical sentence upgrade", () => {
     expect(card.sentence_translation_zh).toMatch(/细菌/u);
   });
 
+  it("rewrites previously mad-lib lemmas into real clinical or physiological English", () => {
+    const cube = essentialDataset.cards.find((item) => item.lemma === "cube-shaped");
+    expect(cube?.context_sentence).toMatch(/crystals were cube-shaped/u);
+    expect(cube?.context_sentence).not.toMatch(/episode was/u);
+
+    const collarbone = essentialDataset.cards.find((item) => item.lemma === "collarbone");
+    expect(collarbone?.context_sentence).toMatch(/fracture of the collarbone/u);
+    expect(collarbone?.context_sentence).not.toMatch(/host response/u);
+
+    const offspring = essentialDataset.cards.find((item) => item.lemma === "offspring");
+    expect(offspring?.context_sentence).toMatch(/affected offspring had inherited/u);
+
+    const hyperthyroidism = essentialDataset.cards.find((item) => item.lemma === "hyperthyroidism");
+    expect(hyperthyroidism?.context_sentence).toMatch(/suppressed TSH fitted hyperthyroidism/u);
+    expect(hyperthyroidism?.context_sentence).not.toMatch(/Pain mapped over/u);
+
+    const alkali = essentialDataset.cards.find((item) => item.lemma === "alkali");
+    expect(alkali?.context_sentence).toMatch(/alkali spill raised the pH/u);
+    expect(alkali?.context_sentence).not.toMatch(/Neighboring tissue/u);
+
+    const psychology = essentialDataset.cards.find((item) => item.lemma === "psychology");
+    expect(psychology?.context_sentence).toMatch(/psychology input was needed/u);
+    expect(psychology?.context_sentence).not.toMatch(/operative report used/u);
+
+    const globulin = essentialDataset.cards.find((item) => item.lemma === "globulin");
+    expect(globulin?.context_sentence).toMatch(/antibody protein/u);
+    expect(globulin?.context_sentence).not.toMatch(/Normal function in this region/u);
+  });
+
+  it("fails lazy mad-lib sentence patterns", () => {
+    expect(
+      sentenceFailsQuality("The progress line mentioned alkali in one plain sentence.", {
+        lemma: "alkali",
+        pos: "noun",
+        meaningEn: "a base that can neutralize acid"
+      })
+    ).toBe(true);
+    expect(
+      sentenceFailsQuality("The episode was cube-shaped enough to need the monitor overnight.", {
+        lemma: "cube-shaped",
+        pos: "adjective",
+        meaningEn: "having the shape of a cube, as some short bones do"
+      })
+    ).toBe(true);
+    expect(
+      sentenceFailsQuality("The operative report used psychology to map the injured structures.", {
+        lemma: "psychology",
+        pos: "noun",
+        meaningEn: "the study of mind, emotion, and behavior"
+      })
+    ).toBe(true);
+    expect(
+      LAZY_SENTENCE_RE.test("The progress line mentioned collarbone in one plain sentence.")
+    ).toBe(true);
+  });
+
   it("leaves usage_note empty when no useful root story exists", () => {
     expect(buildUsageNote("elbow")).toBe("");
     expect(analyzeEssentialLemma("function")).toBeNull();
@@ -67,6 +128,14 @@ describe("essential medical clinical sentence upgrade", () => {
       expect(card.context_sentence.includes(card.lemma)).toBe(true);
       const surface = `${card.context_sentence}\n${card.plain_english_paraphrase}\n${card.sentence_translation_zh}`;
       expect(surface).not.toMatch(CLASSROOM_RE);
+      expect(surface).not.toMatch(LAZY_SENTENCE_RE);
+      expect(
+        sentenceFailsQuality(card.context_sentence, {
+          lemma: card.lemma,
+          pos: card.part_of_speech,
+          meaningEn: card.meaning_en
+        })
+      ).toBe(false);
       if (CLASSROOM_PROBE.test(surface)) {
         classroomHits += 1;
       }

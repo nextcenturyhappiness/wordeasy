@@ -117,7 +117,7 @@ Medical English
 
 ### CORE-011 · P0 · 必备医学英语
 
-`essential_medical` 是第三个顶层学习选项，显示名「必备医学英语」。词库覆盖 `data/essential-medical/lemmas.txt` 中的全部 lemma。每日分配 10 个新词，来自单一 `core`（课堂词汇）池。本模块 Context Card 不提供 collocations；能拆词根词缀时把课堂构词写入 `usage_note`，否则可空。例句为多样真实生理 / 临床 / 病历场景的 `original_example`，不得使用查房提问、讲课幻灯、老师指图一类课堂框架，不得编造 DOI/PMID。Medical English 的 7 词根构词 + 3 病历用语配额不变。
+`essential_medical` 是第三个顶层学习选项，显示名「必备医学英语」。词库覆盖 `data/essential-medical/lemmas.txt` 中的全部 lemma。每日分配 10 个新词，来自单一 `core`（课堂词汇）池。本模块 Context Card 不提供 collocations；能拆词根词缀时把课堂构词写入 `usage_note`，否则可空。例句为多样真实生理 / 临床 / 病历场景的 `original_example`，lemma 必须按其实际医学义出现（如 phagocytosis：中性粒细胞/巨噬细胞吞入细菌），不得使用查房提问、讲课幻灯、老师指图一类课堂框架，不得把 lemma 填进不通顺的模板句，不得编造 DOI/PMID。Medical English 的 7 词根构词 + 3 病历用语配额不变。
 
 ---
 
