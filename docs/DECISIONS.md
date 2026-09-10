@@ -598,7 +598,7 @@ Tests/docs affected: `src/data/cloud/parsers.ts`, cloud parser + day-cache tests
 ### DEC-052 · 必备医学英语课堂构词 + 多样例句；Sync 失败露出原因
 
 Date: 2026-09-10
-Status: Accepted
+Status: Accepted (sentence templates superseded by DEC-053; root/affix usage_note still in force)
 Related requirements: CONTENT-005/007/013, CORE-011, UI-007, TEST-036; DEC-047/051
 Context: 所有者要求：能拆词根词缀的必备医学英语 lemma 把课堂构词写进卡片；同时停用“The chapter on X opens with the Y as a teaching example”一类重复句。`SyncStatus` 失败时只显示 Sync failed，把 `state.message` 藏掉。
 Decision:
@@ -612,6 +612,23 @@ Reason: 课堂构词帮助记实用词，不是另开一门词根课；例句重
 Alternatives rejected: 给全部 663 张卡编造 usage_note；destructive 全量 reseed；把词根写进 meaning 字段；Sync 失败整页 alert。
 Consequences: 已应用 `20260908001400` 的远端必须再 apply `20260910001600` 才会更新云端文案。空 usage_note 仍合法。本地个人词库版本号前进，下次启动重写 cached cards。
 Tests/docs affected: essential seed script/JSON/SQL, content validator tests, SyncStatus UI/CSS, `docs/01_PRODUCT_CORE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
+
+### DEC-053 · 必备医学英语例句改为真实生理 / 临床语境
+
+Date: 2026-09-10
+Status: Accepted
+Related requirements: CONTENT-005/013, CORE-011, TEST-036; DEC-047/052
+Context: 所有者反馈必备医学英语全部例句仍像课堂点名（查房让低年资说出术语、讲课幻灯、教材插图、老师指图）。期望如 phagocytosis：细胞吞入细菌或有害物质，而不是教学框架。DEC-052 的课堂构词 `usage_note` 仍然有效。
+Decision:
+
+1. 重新生成全部约 663 张 `essential_medical` 卡的 `context_sentence`、`plain_english_paraphrase`、`sentence_translation_zh`。优先细胞与宿主防御、体内解剖/生理、典型临床表现、病程与化验影像写法。禁止 ward round / registrar / juniors / lecture / textbook chapter / tutor / classroom / glossary / labelled slide / teaching example 等课堂框架。
+2. lemma、`meaning_en`、`meaning_zh`、IPA、词根 `usage_note`、card / word / sense / context UUID 保持不变。collocations 仍为空。
+3. JSON 由生成脚本重写；云端用 additive UPDATE 只改 `contexts` 三句字段，不重写 `20260908001400` 或 `20260910001600`，不改 card ID。standalone/personal catalog 升为 `canonical-essential-medical-v4` 以重载本地文案。
+
+Reason: Context-first 学的是词在真实医学语境中的意思，不是认出黑板上的术语标签。
+Alternatives rejected: 只改 phagocytosis 一张；把英文释义直接抄进原句当词典定义；destructive 全量 reseed。
+Consequences: 已应用前两份 essential 迁移的远端必须再 apply `20260910001700` 才会更新云端例句。词根 usage_note 不被本迁移改写。
+Tests/docs affected: sentence builder, `data/essential-medical/cards.json`, additive SQL, catalog version, content tests, `docs/01_PRODUCT_CORE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
 
