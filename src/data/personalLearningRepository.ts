@@ -24,7 +24,7 @@ const PERSONAL_ACTIVE_NEW_POOL: Record<DomainModuleSlug, number> = {
   essential_medical: 663
 };
 const PERSONAL_DAILY_QUOTA = 10;
-const PERSONAL_CATALOG_VERSION = "canonical-essential-medical-v2";
+const PERSONAL_CATALOG_VERSION = "canonical-essential-medical-v3";
 const PERSONAL_CATALOG_VERSION_KEY = "personal-catalog-version";
 const REVIEW_QUEUE_MIGRATION_KEY = "personal-review-queues-v1";
 

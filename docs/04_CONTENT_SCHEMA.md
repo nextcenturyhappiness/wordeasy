@@ -46,9 +46,10 @@
 
 - 覆盖 `lemmas.txt` 中的每一个 lemma（当前 663 张 Context Card，不少于 660，不得缩短词表）；
 - 可解析的中文释义优先来自完整 `source.txt`；若 `source.txt` 仍是占位，则按 `source.part1.txt`…`source.part5.txt` 顺序拼接后再解析；缺项按教材医学义补全，不是应试 trivia；生成脚本不得覆写 `lemmas.txt`；
-- `collocations` 必须为空；`usage_note` 可为空；
+- `collocations` 必须为空；`usage_note` 可为空，但能讲清词根词缀时必须写入课堂构词说明（中文、实用，不编专科行话）；
+- `context_sentence` / paraphrase / 中文翻译须用多样课堂场景（病历、查房、讲课、短病例、插图、老师指图等），不得让单一句式占主导；`target_text` 等于 lemma 且必须出现在原句中；
 - `source_type` 仅为 `original_example`，citation 字段为 null；
-- 生成脚本写出幂等 SQL migration，按 stable_key upsert。Research / Medical 既有 seed migration 不重写。
+- 首次 catalog 由 `20260908001400_essential_medical_seed.sql` 按 stable_key upsert；此后文案刷新用 additive UPDATE，不重写已应用 seed，也不改写 Research / Medical seed。
 
 ---
 
@@ -191,6 +192,7 @@ Paraphrase 必须真正降低句子理解难度，而不是只替换一两个词
 - 完整句子翻译自然准确；
 - `usage_note` 用一两句中文说明写作时的使用强度：证据或关系要多强才诚实，必要时对比更弱或更强的近邻词；
 - 词根构词卡还要写清各语素含义，并说明凭词根猜测可能错过临床细节；
+- 必备医学英语的 `usage_note` 不是强度说明：有用的词根词缀就写课堂拆词，没有就留空；
 - 不把中文逐词硬译；
 - 医学术语使用常见规范表达。
 

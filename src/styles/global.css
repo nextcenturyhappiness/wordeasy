@@ -643,6 +643,11 @@ p {
   color: var(--color-error);
 }
 
+.sync-status--failed {
+  white-space: normal;
+  max-width: 36rem;
+}
+
 .sync-status--pending,
 .sync-status--syncing {
   color: var(--color-warning);
