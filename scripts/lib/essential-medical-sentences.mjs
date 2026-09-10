@@ -100,6 +100,92 @@ export const LEMMA_OVERRIDES = {
     sentence: () => "Her asthma can flare up after a simple viral cold.",
     paraphrase: () => "The chronic airway disease can suddenly worsen after a cold.",
     translation: () => "一次普通病毒性感冒后，她的哮喘就会急性加重。"
+  },
+  expel: {
+    id: "override_expel",
+    sentence: () => "A strong cough helped expel the mucus that was blocking the airway.",
+    paraphrase: () => "Coughing forced the mucus out of the airway.",
+    translation: () => "有力的咳嗽把堵住气道的痰液排出。"
+  },
+  exhale: {
+    id: "override_exhale",
+    sentence: () => "After the deep breath she had to exhale slowly through pursed lips.",
+    paraphrase: () => "She had to breathe the air out slowly through pursed lips.",
+    translation: () => "深吸气后，她必须通过缩唇把气慢慢呼出。"
+  },
+  diagnose: {
+    id: "override_diagnose",
+    sentence: () => "After history, exam, and the CT result, the team could diagnose appendicitis.",
+    paraphrase: () => "History, exam, and the scan were enough to name the illness: appendicitis.",
+    translation: () => "结合病史、查体和 CT 结果，团队可以诊断为阑尾炎。"
+  },
+  paralyze: {
+    id: "override_paralyze",
+    sentence: () => "The stroke can paralyze the right arm and face.",
+    paraphrase: () => "The stroke can take away movement in the right arm and face.",
+    translation: () => "这次卒中可以使右侧上肢和面部瘫痪。"
+  },
+  detoxify: {
+    id: "override_detoxify",
+    sentence: () => "The liver can detoxify many drugs before they reach the rest of the body.",
+    paraphrase: () => "The liver can make many drugs less harmful before they travel onward.",
+    translation: () => "肝脏能在许多药物到达全身其他部位之前把它们解毒。"
+  },
+  abort: {
+    id: "override_abort",
+    sentence: () =>
+      "Bleeding in early pregnancy may abort the pregnancy before the fetus is viable.",
+    paraphrase: () => "Early bleeding may end the pregnancy before the fetus can survive.",
+    translation: () => "妊娠早期出血可能在胎儿可存活前终止妊娠。"
+  },
+  transmit: {
+    id: "override_transmit",
+    sentence: () => "Respiratory droplets can transmit the infection from one person to the next.",
+    paraphrase: () => "Cough droplets can pass the infection from one person to another.",
+    translation: () => "呼吸道飞沫可以把感染从一个人传给下一个人。"
+  },
+  incur: {
+    id: "override_incur",
+    sentence: () => "Leaving the clot untreated can incur a risk of later embolus.",
+    paraphrase: () => "Leaving the clot untreated can bring on a later embolus risk.",
+    translation: () => "血栓不加处理，日后可能招致栓子风险。"
+  },
+  prematurely: {
+    id: "override_prematurely",
+    sentence: () => "The infant was born prematurely at 32 weeks.",
+    paraphrase: () => "The baby arrived earlier than the expected time, at 32 weeks.",
+    translation: () => "婴儿在 32 周就提前出生了。"
+  },
+  peristalsis: {
+    id: "override_peristalsis",
+    sentence: () => "In the gut wall, peristalsis moved contents onward between meals.",
+    paraphrase: () => "Wave-like squeezing in the bowel pushed contents along between meals.",
+    translation: () => "肠壁的蠕动在餐间把内容物向前推进。"
+  },
+  absorption: {
+    id: "override_absorption",
+    sentence: () => "After a meal, absorption of glucose increased across the small-bowel mucosa.",
+    paraphrase: () => "After eating, more glucose was taken up across the small-bowel lining.",
+    translation: () => "餐后，葡萄糖经小肠黏膜的吸收增加。"
+  },
+  kidney: {
+    id: "override_kidney",
+    sentence: () => "Blood was filtered as it passed through each kidney, and urine began to form.",
+    paraphrase: () => "Each kidney filtered the blood and started making urine.",
+    translation: () => "血液流经每一侧肾时被滤过，并开始生成尿液。"
+  },
+  "cell division": {
+    id: "override_cell_division",
+    sentence: () => "After the cut, cell division produced new cells to close the wound.",
+    paraphrase: () => "After the cut, one cell becoming two made new cells to close the wound.",
+    translation: () => "割伤之后，细胞分裂产生新细胞来闭合伤口。"
+  },
+  "sickle cell anemia": {
+    id: "override_sickle_cell_anemia",
+    sentence: () =>
+      "Painful crises occur when sickle cell anemia distorts red cells in small vessels.",
+    paraphrase: () => "Painful attacks happen when sickle-shaped red cells jam small vessels.",
+    translation: () => "镰状细胞贫血使红细胞在小血管里变形时，就会出现疼痛危象。"
   }
 };
 
@@ -914,10 +1000,10 @@ export const PHRASE_FRAMES = [
   },
   {
     id: "phrase_body",
-    sentence: (lemma) => `In the body, the ${lemma} kept its usual role during the acute illness.`,
+    sentence: (lemma) => `In the body, the ${lemma} remained relevant during the acute illness.`,
     paraphrase: (_lemma, meaningEn) =>
-      `In the body, ${cue(meaningEn)} kept its usual role during the acute illness.`,
-    translation: (zh) => `急性病期间，体内的${zh}仍发挥通常作用。`
+      `In the body, ${cue(meaningEn)} remained relevant during the acute illness.`,
+    translation: (zh) => `急性病期间，体内的${zh}仍然相关。`
   },
   {
     id: "phrase_chart",
@@ -947,18 +1033,16 @@ export const PHRASE_FRAMES = [
     translation: (zh) => `入院查体把${zh}和其他系统发现写在一起。`
   },
   {
-    id: "phrase_cell",
-    sentence: (lemma) => `In this tissue the ${lemma} was the working unit that still mattered.`,
-    paraphrase: (_lemma, meaningEn) =>
-      `In this tissue ${cue(meaningEn)} was the working unit that still mattered.`,
-    translation: (zh) => `在这片组织里，${zh}仍是起作用的单位。`
+    id: "phrase_tissue",
+    sentence: (lemma) => `The affected tissue findings included the ${lemma}.`,
+    paraphrase: (_lemma, meaningEn) => `The affected tissue findings included ${cue(meaningEn)}.`,
+    translation: (zh) => `受累组织的发现包括${zh}。`
   },
   {
-    id: "phrase_flow",
-    sentence: (lemma) => `Forward flow depended on the ${lemma} staying adequate.`,
-    paraphrase: (_lemma, meaningEn) =>
-      `Forward flow depended on ${cue(meaningEn)} staying adequate.`,
-    translation: (zh) => `前向血流取决于${zh}是否足够。`
+    id: "phrase_care",
+    sentence: (lemma) => `Overnight care still had to account for the ${lemma}.`,
+    paraphrase: (_lemma, meaningEn) => `Overnight care still had to account for ${cue(meaningEn)}.`,
+    translation: (zh) => `夜间处理仍需考虑${zh}。`
   },
   {
     id: "phrase_symptom",
@@ -968,18 +1052,17 @@ export const PHRASE_FRAMES = [
     translation: (zh) => `她把${zh}说成促使就诊的主诉。`
   },
   {
-    id: "phrase_support",
-    sentence: (lemma) => `Once gas exchange failed, the ${lemma} had to be started.`,
+    id: "phrase_picture",
+    sentence: (lemma) => `In this patient the ${lemma} explained part of the overnight picture.`,
     paraphrase: (_lemma, meaningEn) =>
-      `Once gas exchange failed, ${cue(meaningEn)} had to be started.`,
-    translation: (zh) => `气体交换失败后，必须开始${zh}。`
+      `In this patient ${cue(meaningEn)} explained part of the overnight picture.`,
+    translation: (zh) => `在该患者身上，${zh}解释了夜间病情的一部分。`
   },
   {
     id: "phrase_lab",
-    sentence: (lemma) => `The laboratory value for the ${lemma} moved with the clinical change.`,
-    paraphrase: (_lemma, meaningEn) =>
-      `The laboratory value for ${cue(meaningEn)} moved with the clinical change.`,
-    translation: (zh) => `${zh}的化验数值随临床变化而动。`
+    sentence: (lemma) => `The laboratory or scan report mentioned the ${lemma}.`,
+    paraphrase: (_lemma, meaningEn) => `The laboratory or scan report mentioned ${cue(meaningEn)}.`,
+    translation: (zh) => `化验或扫描报告提到了${zh}。`
   },
   {
     id: "phrase_discharge",
@@ -1159,10 +1242,9 @@ export const ADJ_CLINICAL_FRAMES = [
   },
   {
     id: "adj_course",
-    sentence: (lemma) => `Her course stayed ${lemma} from admission through the first night.`,
-    paraphrase: (_lemma, meaningEn) =>
-      `From admission through the first night, the picture remained ${cue(meaningEn)}.`,
-    translation: (zh) => `从入院到第一夜，病程一直是${zh}的。`
+    sentence: (lemma) => `The overnight note described the finding as ${lemma}.`,
+    paraphrase: (_lemma, meaningEn) => `The night note described the finding as ${cue(meaningEn)}.`,
+    translation: (zh) => `夜间病程把该发现写成${zh}。`
   },
   {
     id: "adj_note",
@@ -1173,30 +1255,30 @@ export const ADJ_CLINICAL_FRAMES = [
   },
   {
     id: "adj_plan",
-    sentence: (lemma) => `The plan stayed ${lemma} until culture results returned.`,
+    sentence: (lemma) => `The report called this pattern ${lemma} after the overnight change.`,
     paraphrase: (_lemma, meaningEn) =>
-      `The plan stayed ${cue(meaningEn)} until culture results returned.`,
-    translation: (zh) => `培养结果出来前，计划一直保持${zh}。`
+      `The report called this pattern ${cue(meaningEn)} after the overnight change.`,
+    translation: (zh) => `夜间变化后，报告把这一模式写成${zh}。`
   },
   {
     id: "adj_vessel",
-    sentence: (lemma) => `The vessel was ${lemma} on the second look.`,
-    paraphrase: (_lemma, meaningEn) => `The vessel was ${cue(meaningEn)} when they looked again.`,
-    translation: (zh) => `再看时，血管是${zh}的。`
+    sentence: (lemma) => `On the second look the finding was still ${lemma}.`,
+    paraphrase: (_lemma, meaningEn) =>
+      `When they looked again the finding was still ${cue(meaningEn)}.`,
+    translation: (zh) => `再看时，该发现仍是${zh}的。`
   },
   {
     id: "adj_treatment",
-    sentence: (lemma) => `The first regimen was ${lemma} rather than aimed at cure.`,
+    sentence: (lemma) => `The chart used ${lemma} because that matched the evidence.`,
     paraphrase: (_lemma, meaningEn) =>
-      `The first regimen was ${cue(meaningEn)} rather than aimed at cure.`,
-    translation: (zh) => `第一方案是${zh}的，而不是以根治为目标。`
+      `The chart used this wording because the evidence matched ${cue(meaningEn)}.`,
+    translation: (zh) => `病历写成${zh}，因为证据对得上。`
   },
   {
     id: "adj_response",
-    sentence: (lemma) => `The infection proved ${lemma} to the first drug.`,
-    paraphrase: (_lemma, meaningEn) =>
-      `The infection was ${cue(meaningEn)} relative to the first drug.`,
-    translation: (zh) => `感染对第一种药表现为${zh}。`
+    sentence: (lemma) => `In this family the trait was ${lemma}.`,
+    paraphrase: (_lemma, meaningEn) => `In this family the trait was ${cue(meaningEn)}.`,
+    translation: (zh) => `在这个家系里，该性状是${zh}的。`
   },
   {
     id: "adj_spread",
@@ -1229,17 +1311,17 @@ export const ADJ_CLINICAL_FRAMES = [
   },
   {
     id: "adj_fever",
-    sentence: (lemma) => `She remained ${lemma} after the first doses of antipyretic.`,
+    sentence: (lemma) => `After the first doses the picture remained ${lemma}.`,
     paraphrase: (_lemma, meaningEn) =>
-      `After the first fever medicine she remained ${cue(meaningEn)}.`,
-    translation: (zh) => `首剂退热药之后，她仍是${zh}的。`
+      `After the first doses the picture remained ${cue(meaningEn)}.`,
+    translation: (zh) => `首剂之后，情况仍是${zh}的。`
   },
   {
     id: "adj_timing",
-    sentence: (lemma) => `The operation was ${lemma}, not moved up as an emergency.`,
+    sentence: (lemma) => `The scan description marked the lesion as ${lemma}.`,
     paraphrase: (_lemma, meaningEn) =>
-      `The operation was ${cue(meaningEn)}, not moved up as an emergency.`,
-    translation: (zh) => `手术是${zh}的，并没有提前成急诊。`
+      `The scan description marked the lesion as ${cue(meaningEn)}.`,
+    translation: (zh) => `扫描描述把病灶标成${zh}。`
   },
   {
     id: "adj_handover",
@@ -1298,17 +1380,17 @@ export const VERB_FRAMES = [
   },
   {
     id: "verb_airway",
-    sentence: (lemma) => `Before transfer they had to ${lemma} the airway and document the result.`,
+    sentence: (lemma) => `Before transfer they still needed to ${lemma}.`,
     paraphrase: (_lemma, meaningEn) =>
-      `Before transfer they had to ${infinitiveRest(meaningEn)} the airway and write the result.`,
-    translation: (zh) => `转出前必须先对气道${zh}并记录结果。`
+      `Before transfer they still needed to ${infinitiveRest(meaningEn)}.`,
+    translation: (zh) => `转出前仍需要${zh}。`
   },
   {
     id: "verb_drug",
-    sentence: (lemma) => `The order was to ${lemma} the drug once the rash appeared.`,
+    sentence: (lemma) => `Once the rash appeared, the next step was to ${lemma}.`,
     paraphrase: (_lemma, meaningEn) =>
-      `The order was to ${infinitiveRest(meaningEn)} the drug once the rash appeared.`,
-    translation: (zh) => `皮疹一出现，医嘱就要对药物${zh}。`
+      `Once the rash appeared, the next step was to ${infinitiveRest(meaningEn)}.`,
+    translation: (zh) => `皮疹出现后，下一步是${zh}。`
   },
   {
     id: "verb_numbers",
@@ -1326,32 +1408,32 @@ export const VERB_FRAMES = [
   },
   {
     id: "verb_watch",
-    sentence: (lemma) => `The night order was to ${lemma} the saturation every hour.`,
+    sentence: (lemma) => `The night order was to ${lemma} if the numbers drifted.`,
     paraphrase: (_lemma, meaningEn) =>
-      `The night order was to ${infinitiveRest(meaningEn)} the saturation every hour.`,
-    translation: (zh) => `夜间医嘱要求每小时${zh}血氧饱和度。`
+      `The night order was to ${infinitiveRest(meaningEn)} if the numbers drifted.`,
+    translation: (zh) => `如果数值漂移，夜间医嘱要求${zh}。`
   },
   {
     id: "verb_worse",
     sentence: (lemma) =>
-      `If the blood pressure continued to ${lemma}, they would call for a higher level of care.`,
+      `If the picture continued to worsen, they would ${lemma} and call for more support.`,
     paraphrase: (_lemma, meaningEn) =>
-      `If the blood pressure continued to ${infinitiveRest(meaningEn)}, they would escalate care.`,
-    translation: (zh) => `如果血压继续${zh}，就要升级监护。`
+      `If the picture continued to worsen, they would ${infinitiveRest(meaningEn)} and call for more support.`,
+    translation: (zh) => `如果病情继续变差，就要${zh}并请求更多支持。`
   },
   {
     id: "verb_pain",
-    sentence: (lemma) => `The first goal was to ${lemma} the pain enough for a deep breath.`,
+    sentence: (lemma) => `The first overnight goal was to ${lemma} safely.`,
     paraphrase: (_lemma, meaningEn) =>
-      `The first goal was to ${infinitiveRest(meaningEn)} the pain enough for a deep breath.`,
-    translation: (zh) => `首要目标是把疼痛${zh}到能深呼吸。`
+      `The first overnight goal was to ${infinitiveRest(meaningEn)} safely.`,
+    translation: (zh) => `夜间的首要目标是稳妥地${zh}。`
   },
   {
     id: "verb_prevent",
-    sentence: (lemma) => `Early mobilization was meant to ${lemma} clot formation in the calves.`,
+    sentence: (lemma) => `The written plan was to ${lemma} before the next set of numbers.`,
     paraphrase: (_lemma, meaningEn) =>
-      `Early walking was meant to ${infinitiveRest(meaningEn)} clot formation in the calves.`,
-    translation: (zh) => `早期活动是为了${zh}小腿血栓形成。`
+      `The written plan was to ${infinitiveRest(meaningEn)} before the next set of numbers.`,
+    translation: (zh) => `书面计划是在下一组数值出来前${zh}。`
   }
 ];
 
@@ -1418,32 +1500,31 @@ export const PHRASAL_FRAMES = [
 
 export const ADVERB_FRAMES = [
   {
-    id: "adv_route",
-    sentence: (lemma) => `The drug was given ${lemma} according to the route the gut allowed.`,
+    id: "adv_timing",
+    sentence: (lemma) => `The change happened ${lemma} relative to the expected time.`,
     paraphrase: (_lemma, meaningEn) =>
-      `The drug was given ${cue(meaningEn)}, according to what the gut allowed.`,
-    translation: (zh) => `根据肠道情况，药物${zh}给予。`
+      `The change happened ${cue(meaningEn)} relative to the expected time.`,
+    translation: (zh) => `这一变化相对预期时间来说发生得${zh}。`
   },
   {
-    id: "adv_swallow",
-    sentence: (lemma) => `Because swallowing was still possible, the dose went in ${lemma}.`,
+    id: "adv_birth",
+    sentence: (lemma) => `The infant arrived ${lemma} compared with the due date.`,
     paraphrase: (_lemma, meaningEn) =>
-      `Because swallowing was still possible, the dose went in ${cue(meaningEn)}.`,
-    translation: (zh) => `仍能吞咽时，剂量${zh}进入。`
+      `The infant arrived ${cue(meaningEn)} compared with the due date.`,
+    translation: (zh) => `与预产期相比，婴儿${zh}到来。`
   },
   {
-    id: "adv_gut_fail",
-    sentence: (lemma) => `When the gut failed, the same drug had to be given ${lemma}.`,
+    id: "adv_lab",
+    sentence: (lemma) => `The laboratory flagged the sample as processed ${lemma}.`,
     paraphrase: (_lemma, meaningEn) =>
-      `When the gut failed, the same drug had to be given ${cue(meaningEn)}.`,
-    translation: (zh) => `肠道失败时，同一药物必须${zh}给予。`
+      `The laboratory flagged the sample as processed ${cue(meaningEn)}.`,
+    translation: (zh) => `化验把该标本标成${zh}处理。`
   },
   {
     id: "adv_chart",
-    sentence: (lemma) => `The medication record marked the dose as given ${lemma}.`,
-    paraphrase: (_lemma, meaningEn) =>
-      `The medication record marked the dose as given ${cue(meaningEn)}.`,
-    translation: (zh) => `用药记录把该剂量标成${zh}给予。`
+    sentence: (lemma) => `The chart recorded that this occurred ${lemma}.`,
+    paraphrase: (_lemma, meaningEn) => `The chart recorded that this occurred ${cue(meaningEn)}.`,
+    translation: (zh) => `病历记录此事发生得${zh}。`
   }
 ];
 
@@ -1547,7 +1628,7 @@ export function classifyEntry(entry) {
   if (/^(?:the\s+)?(?:microscopic\s+)?study of\b/u.test(meaning)) return "study";
   if (/^inflammation of\b/u.test(meaning) || /itis$/u.test(lemma)) return "inflammation";
   if (
-    /engulfment|coating of a microbe|cell division|process by which|breakdown of molecules|building of complex|uptake of a substance|wave-like muscle|energy-using movement|digestive organelle|unspecialized cell that can renew/.test(
+    /engulfment|coating of a microbe|cell division|process by which|process of one cell|breakdown of molecules|building of complex|uptake of a substance|wave-like muscle|energy-using movement|digestive organelle|unspecialized cell that can renew/.test(
       meaning
     )
   ) {
@@ -1588,9 +1669,10 @@ export function classifyEntry(entry) {
     return "lab";
   }
   if (
-    /malignan|tumor|disease in which|a disease |abnormally |excess body|inadequate |failure of|infection|wasting of muscle|pocket of pus|escape of blood|collection of clotted|new growth|spread of tumor|life-threatening|widening of bronchi|destruction of alveolar|persistently high|too little hemoglobin|too few red|invas(?:ion|ion and multiplication)|pause in breathing|loss of normal muscle|deterioration of tissue|poor nutrition|downward displacement/.test(
+    /malignan|tumor|disease in which|a disease |abnormally |excess body|inadequate |failure of|infection|wasting of muscle|pocket of pus|escape of blood|collection of clotted|new growth|spread of tumor|life-threatening|widening of bronchi|destruction of alveolar|persistently high|too little hemoglobin|too few red|invas(?:ion|ion and multiplication)|pause in breathing|loss of normal muscle|deterioration of tissue|poor nutrition|downward displacement|inherited anemia|neural-tube defect|valve damage|anemia with|defect with/.test(
       meaning
-    )
+    ) ||
+    /\b(disease|anemia|syndrome|failure|arrest)\b/u.test(lemma)
   ) {
     return "pathology";
   }
