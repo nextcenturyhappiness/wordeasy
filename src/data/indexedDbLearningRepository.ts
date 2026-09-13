@@ -55,6 +55,7 @@ export interface IndexedDbLearningRepositoryOptions {
   deferredBootstrap?: (context: IndexedDbBootstrapContext) => Promise<void>;
   now?: () => Date;
   eventIdFactory?: () => string;
+  fuzzyLexiconSearch?: boolean;
 }
 
 function defaultEventIdFactory(): string {
@@ -154,6 +155,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
   readonly #deferredBootstrap: ((context: IndexedDbBootstrapContext) => Promise<void>) | undefined;
   readonly #now: () => Date;
   readonly #eventIdFactory: () => string;
+  readonly #fuzzyLexiconSearch: boolean;
   #initialization: Promise<void> | null = null;
   readonly #dailyBootstraps = new Map<string, Promise<void>>();
   readonly #deferredBootstraps = new Map<string, Promise<void>>();
@@ -175,6 +177,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
     this.#deferredBootstrap = options.deferredBootstrap;
     this.#now = options.now ?? (() => new Date());
     this.#eventIdFactory = options.eventIdFactory ?? defaultEventIdFactory;
+    this.#fuzzyLexiconSearch = options.fuzzyLexiconSearch === true;
   }
 
   #studyTimezone(): string {
@@ -458,7 +461,8 @@ export class IndexedDbLearningRepository implements LearningRepository {
     return searchLocalLexicon(
       cards,
       new Set(learnedRows.flat().map((row) => row.wordSenseId)),
-      query
+      query,
+      this.#fuzzyLexiconSearch ? { fuzzy: true } : {}
     );
   }
 

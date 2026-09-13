@@ -648,6 +648,24 @@ Alternatives rejected: 只改用户点名的几张卡；继续扩 130 个通用�
 Consequences: 已应用 `20260910001700` 的远端必须再 apply `20260910001800` 才会更新云端例句。
 Tests/docs affected: `scripts/lib/essential-medical-sentences.mjs`, `scripts/lib/essential-medical-compose.mjs`, `data/essential-medical/cards.json`, `20260910001800_essential_medical_sentence_quality.sql`, catalog v5, content + migration tests, `docs/01_PRODUCT_CORE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/TRACEABILITY.md`.
 
+### DEC-055 · Home 词库模糊检索仅限 Mac 个人本地词库
+
+Date: 2026-09-13
+Status: Accepted
+Related requirements: UI-015, DESKTOP-001; DEC-032, DEC-039
+Context: 所有者在 Mac 本地应用写作时用首页搜 lemma，常有近邻拼写（如 `phagocytoss` → phagocytosis）。cloud / 手机 PWA 的 IndexedDB 只缓存当日 assignment 快照，多数必备词本来就搜不到；所有者明确要求模糊检索不必上 PWA。
+Decision:
+
+1. `searchLocalLexicon` 默认保持大小写不敏感子串匹配与 DEC-032 排序（已学优先，再 score，再 lemma），以及 `LEXICON_SEARCH_LIMIT`。
+2. 仅 `PersonalLearningRepository`（desktop / standalone 全量本地目录）传入 `{ fuzzy: true }`。cloud `IndexedDbLearningRepository`、demo/preview、以及未传 flag 的调用保持子串路径。
+3. 模糊只作用于 lemma / displayForm 的有界 Levenshtein（查询长度 3–5 允许距离 1，≥6 允许距离 2），以及含汉字的中文释义单字近邻。不模糊匹配语境句或搭配，以免长句误伤。
+4. 空状态文案仍只显示「还没有学过相关的词」。不引入搜索库依赖，不恢复公共词典或独立 Search 页。
+
+Reason: Mac 本地已有完整词库，容错拼写才有用；PWA 先缺卡，上模糊也搜不出未缓存的词。
+Alternatives rejected: 给 cloud/PWA 一并上模糊；引入 fuse.js 一类搜索库；对句子/搭配做编辑距离；用 `VITE_APP_MODE` 在 UI 层分叉而不是 repository 边界。
+Consequences: 同一套 Home UI 在 Mac 个人版能命中近邻拼写，在手机 PWA 上仍只认子串。排序与条数上限不变。
+Tests/docs affected: `src/domain/lexiconSearch.ts`, personal repository wiring, unit + personal/demo repository tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text

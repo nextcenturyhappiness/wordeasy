@@ -1,6 +1,6 @@
 # Traceability
 
-Updated: 2026-09-10
+Updated: 2026-09-13
 
 Allowed statuses:
 
@@ -117,7 +117,7 @@ Evidence is deliberately layered. A local unit, browser, or SQL-structure pass d
 | UI-012      |       P0 | Frontend           | centered bounded desktop layout and keyboard flow                                                                                                                   | desktop browser/E2E; installed macOS app open                               | Automatically verified |
 | UI-013      |       P0 | Frontend           | system/light/dark, persisted settings, pre-React theme script                                                                                                       | theme/settings/UI/build tests                                               | Automatically verified |
 | UI-014      |       P1 | Frontend           | no UI framework/chart/icon font; CSS/token system only                                                                                                              | dependency and bundle inspection                                            | Automatically verified |
-| UI-015      |       P1 | Frontend           | Home primary lexicon search (no 词库 title); lemma+zh same row; quiet sentence; capped scroll results; empty placeholder; honest empty copy; no dictionary fallback | unit + Home component + demo repository checks                              | Automatically verified |
+| UI-015      |       P1 | Frontend           | Home primary lexicon search (no 词库 title); lemma+zh same row; quiet sentence; capped scroll results; empty placeholder; honest empty copy; DEC-055 Mac-local fuzzy | unit + personal/demo repository checks                                      | Automatically verified |
 | UI-016      |       P1 | Frontend           | revealed sticky IPA is a button; `speechSynthesis` speaks lemma (en-US, prefer local English voice); front does not auto-speak; no remote audio                     | unit + ContextCard/Study component tests                                    | Automatically verified |
 | PWA-001     |       P0 | Frontend           | complete manifest and 192/512/maskable local icons; context-card mark on DEC-034/038 padded master                                                                  | PWA static check                                                            | Automatically verified |
 | PWA-002     |       P0 | Frontend + QA      | installable cloud and formal local-data standalone targets; Android-sized formal PWA E2E passes                                                                     | Real Android/macOS Chrome installation not yet executed                     | Not verified           |
