@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   LEXICON_SEARCH_LIMIT,
+  isFuzzyLexiconSearchEnabled,
   searchLocalLexicon,
   type LexiconSearchCard
 } from "../../src/domain/lexiconSearch";
@@ -51,6 +52,17 @@ const essential: LexiconSearchCard = {
 
 const catalog = [research, medical, essential];
 const fuzzy = { fuzzy: true } as const;
+
+describe("isFuzzyLexiconSearchEnabled", () => {
+  it("enables fuzzy only for desktop and standalone app modes", () => {
+    expect(isFuzzyLexiconSearchEnabled("desktop")).toBe(true);
+    expect(isFuzzyLexiconSearchEnabled("standalone")).toBe(true);
+    expect(isFuzzyLexiconSearchEnabled("cloud")).toBe(false);
+    expect(isFuzzyLexiconSearchEnabled("demo")).toBe(false);
+    expect(isFuzzyLexiconSearchEnabled("preview")).toBe(false);
+    expect(isFuzzyLexiconSearchEnabled(undefined)).toBe(false);
+  });
+});
 
 describe("searchLocalLexicon", () => {
   it("returns nothing for an empty query", () => {

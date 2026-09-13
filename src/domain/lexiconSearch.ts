@@ -30,6 +30,12 @@ export interface LexiconSearchOptions {
   fuzzy?: boolean;
 }
 
+export function isFuzzyLexiconSearchEnabled(
+  appMode: string | undefined = import.meta.env.VITE_APP_MODE
+): boolean {
+  return appMode === "desktop" || appMode === "standalone";
+}
+
 function normalize(value: string): string {
   return value.trim().toLocaleLowerCase();
 }

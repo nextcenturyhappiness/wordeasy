@@ -14,6 +14,7 @@ import type {
 } from "../application/contracts";
 import { themeStorageKey } from "../app/theme";
 import { BrowserSessionCache, type SessionCache } from "../auth/SupabaseAuthGateway";
+import { isFuzzyLexiconSearchEnabled } from "../domain/lexiconSearch";
 import { assertIanaTimezone, systemIanaTimezone } from "../domain/time";
 import { LearningDatabase } from "../db/learningDatabase";
 import { LocalSyncStateStore } from "../sync/localSyncState";
@@ -346,7 +347,8 @@ export function createBrowserCloudRuntimeManager(): CloudRuntimeManager {
           const { FsrsSchedulerAdapter } = await import("../scheduler/fsrsScheduler");
           return new FsrsSchedulerAdapter();
         },
-        syncState: sync
+        syncState: sync,
+        ...(isFuzzyLexiconSearchEnabled() ? { fuzzyLexiconSearch: true } : {})
       });
       await learning.initialize();
 
