@@ -268,6 +268,7 @@ describe("DemoLearningRepository", () => {
     const byLemma = await repository.searchLocalCards(card.lemma);
     expect(byLemma[0]?.lemma).toBe(card.lemma);
     expect(await repository.searchLocalCards("not-a-local-context-card")).toEqual([]);
+    expect(await repository.searchLocalCards("phagocytoss")).toEqual([]);
   });
 
   it("keeps module progress isolated and reads Home without review-event history", async () => {

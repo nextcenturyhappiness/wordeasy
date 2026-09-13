@@ -648,6 +648,24 @@ Alternatives rejected: 只改用户点名的几张卡；继续扩 130 个通用�
 Consequences: 已应用 `20260910001700` 的远端必须再 apply `20260910001800` 才会更新云端例句。
 Tests/docs affected: `scripts/lib/essential-medical-sentences.mjs`, `scripts/lib/essential-medical-compose.mjs`, `data/essential-medical/cards.json`, `20260910001800_essential_medical_sentence_quality.sql`, catalog v5, content + migration tests, `docs/01_PRODUCT_CORE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/TRACEABILITY.md`.
 
+### DEC-055 · Home 词库模糊检索仅限 Mac 本地与 standalone 个人目录
+
+Date: 2026-09-13
+Status: Accepted
+Related requirements: UI-015, DESKTOP-001; DEC-030, DEC-032, DEC-039
+Context: 所有者在 Mac 应用写作时用首页搜 lemma，常有近邻拼写（如 `phagocytoss` → phagocytosis），并明确要求模糊检索不必上手机 PWA。核实现状：`VITE_APP_MODE=desktop` 的 Tauri 启动路径是 DEC-030 云端 runtime（`article-english:cloud:${userId}`），本地只有已同步的 assignment 快照，不是 `desktop:v1` 全量目录；全量 必备医学英语目录由 standalone / `PersonalLearningRepository` 播种。
+Decision:
+
+1. `searchLocalLexicon` 默认保持大小写不敏感子串匹配与 DEC-032 排序（已学优先，再 score，再 lemma），以及 `LEXICON_SEARCH_LIMIT`。未传 `{ fuzzy: true }` 的路径拒绝纯拼写错误。
+2. 打开 fuzzy 的边界：`PersonalLearningRepository`（standalone，以及 `createLearningRuntime({ mode: "desktop" | "standalone" })`），以及 `VITE_APP_MODE=desktop` 的 cloud `IndexedDbLearningRepository`。hosted cloud / PWA、demo、preview 保持子串。
+3. 模糊只作用于 lemma / displayForm 的有界 Levenshtein（查询长度 3–5 允许距离 1，≥6 允许距离 2），以及含汉字的中文释义单字近邻。不模糊匹配语境句或搭配。
+4. 空状态文案仍只显示「还没有学过相关的词」。不引入搜索库，不恢复公共词典或独立 Search 页。本决策不把完整词库打进 cloud/PWA 缓存。
+
+Reason: Mac 本地构建需要容错拼写；手机 PWA 先缺卡，上模糊也搜不出未缓存的词。
+Alternatives rejected: 给 hosted cloud/PWA 一并上模糊；引入 fuse.js；对句子/搭配做编辑距离；只按“全量目录”猜测而不核验 desktop 实际走 cloud runtime。
+Consequences: 同一套 Home UI 在 Mac desktop 与 standalone 能命中近邻拼写，在手机 PWA 上仍只认子串。desktop 云端缓存范围不变；未同步过的必备词仍然搜不到。
+Tests/docs affected: `src/domain/lexiconSearch.ts`, personal + desktop-cloud repository wiring, unit + personal/demo repository tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text

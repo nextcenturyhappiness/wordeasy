@@ -171,6 +171,17 @@ describe("PersonalLearningRepository", () => {
     expect(medical.cards.filter((card) => card.category !== "morphology")).toHaveLength(3);
   });
 
+  it("fuzzy-matches English lemma typos against the seeded personal catalog", async () => {
+    const { repository } = await createHarness();
+
+    const hits = await repository.searchLocalCards("phagocytoss");
+    expect(hits.map((hit) => hit.lemma)).toEqual(["phagocytosis"]);
+    expect(hits[0]).toMatchObject({
+      module: "essential_medical",
+      meaningZh: "吞噬作用"
+    });
+  });
+
   it("retries a failed catalog load in the same running repository", async () => {
     let attempt = 0;
     const { repository, loadCards } = await createHarness({
