@@ -113,6 +113,13 @@ const demoSentinels = [
   "wordeasy-seed-v1",
   "res-general-attenuate-001"
 ];
+if (
+  assetFiles.some((path) =>
+    /^standaloneCards-[^/]+\.js$/u.test(relative(join(distDirectory, "assets"), path))
+  )
+) {
+  throw new Error("Production cloud build emitted the standalone catalog chunk.");
+}
 for (const path of productionTextFiles) {
   const contents = await readFile(path, "utf8");
   const leakedSentinel = demoSentinels.find((sentinel) => contents.includes(sentinel));

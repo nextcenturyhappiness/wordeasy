@@ -11,20 +11,19 @@ import {
   type PendingSyncCountPort
 } from "./indexedDbLearningRepository";
 import { LocalAssignmentService } from "./localAssignmentService";
+import {
+  assertCompleteFullCatalog,
+  cachedFullCatalogIsComplete,
+  FULL_CATALOG_VERSION
+} from "./local/fullCatalog";
 
 const MODULES = MODULE_SLUGS;
-const PERSONAL_CATALOG_SIZE: Record<DomainModuleSlug, number> = {
-  research_english: 60,
-  medical_english: 177,
-  essential_medical: 663
-};
 const PERSONAL_ACTIVE_NEW_POOL: Record<DomainModuleSlug, number> = {
   research_english: 60,
   medical_english: 140,
   essential_medical: 663
 };
 const PERSONAL_DAILY_QUOTA = 10;
-const PERSONAL_CATALOG_VERSION = "canonical-essential-medical-v5";
 const PERSONAL_CATALOG_VERSION_KEY = "personal-catalog-version";
 const REVIEW_QUEUE_MIGRATION_KEY = "personal-review-queues-v1";
 
@@ -45,33 +44,7 @@ async function cachedCatalogIsComplete(
   database: LearningDatabase,
   userId: string
 ): Promise<boolean> {
-  const [version, ...counts] = await Promise.all([
-    database.sync_metadata.get([userId, PERSONAL_CATALOG_VERSION_KEY]),
-    ...MODULES.map((module) =>
-      database.cached_cards.where("[userId+module]").equals([userId, module]).count()
-    )
-  ]);
-  return (
-    version?.value === PERSONAL_CATALOG_VERSION &&
-    MODULES.every((module, index) => counts[index] === PERSONAL_CATALOG_SIZE[module])
-  );
-}
-
-function assertCompleteCatalog(cards: NormalizedContextCard[]): void {
-  if (new Set(cards.map((card) => card.card.id)).size !== cards.length) {
-    throw new Error("The personal catalog contains duplicate card IDs.");
-  }
-  for (const module of MODULES) {
-    const moduleCards = cards.filter((card) => card.sense.module === module);
-    if (moduleCards.length !== PERSONAL_CATALOG_SIZE[module]) {
-      throw new Error(
-        `The personal ${module} catalog must contain exactly ${String(PERSONAL_CATALOG_SIZE[module])} cards.`
-      );
-    }
-    if (new Set(moduleCards.map((card) => card.card.id)).size !== PERSONAL_CATALOG_SIZE[module]) {
-      throw new Error(`The personal ${module} catalog contains duplicate card IDs.`);
-    }
-  }
+  return cachedFullCatalogIsComplete(database, userId, PERSONAL_CATALOG_VERSION_KEY);
 }
 
 async function migrateLegacyEmptyReviewSets({
@@ -182,7 +155,7 @@ export class PersonalLearningRepository extends IndexedDbLearningRepository {
         let complete = await cachedCatalogIsComplete(context.database, context.userId);
         if (!complete) {
           const cards = await loadCards();
-          assertCompleteCatalog(cards);
+          assertCompleteFullCatalog(cards);
           const { DemoContentCatalog } = await import("./demo/demoContentCatalog");
           await new DemoContentCatalog(context.database, context.userId, cards).replace(
             context.initializedAt
@@ -190,7 +163,7 @@ export class PersonalLearningRepository extends IndexedDbLearningRepository {
           await context.database.sync_metadata.put({
             userId: context.userId,
             key: PERSONAL_CATALOG_VERSION_KEY,
-            value: PERSONAL_CATALOG_VERSION,
+            value: FULL_CATALOG_VERSION,
             updatedAt: context.initializedAt
           });
           complete = true;
