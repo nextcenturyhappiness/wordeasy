@@ -2,7 +2,15 @@
 
 ## 1. 项目目标
 
-本仓库实现一个个人长期使用的 **Research English + Medical English 跨平台 PWA**。
+本仓库实现一个个人长期使用的 **Research English + Medical English + 必备医学英语** 跨平台 PWA。
+
+三个顶层模块必须并存，不得互相替换或删除：
+
+```text
+research_english
+medical_english
+essential_medical   # 显示名「必备医学英语」
+```
 
 核心学习目标不是记忆孤立单词的中文翻译，而是理解单词在科研论文、医学文章、英文教材、指南和临床资料中的具体语境含义。
 
@@ -17,19 +25,23 @@ Context Card
 
 不要依赖聊天记忆判断产品需求。
 
-先读取：
+强制阅读顺序：
 
 ```text
+AGENTS.md
 docs/00_REQUIREMENTS_INDEX.md
+任务相关需求文件（按该索引的阅读矩阵）
+docs/DECISIONS.md          # 读到最新 Accepted 条目，当前至 DEC-056
+docs/TRACEABILITY.md
 ```
 
-再按照其中的阅读矩阵读取与当前任务相关的需求文件。
-
-当前有效需求文件是唯一执行依据。发生冲突时：
+当前有效需求文件是唯一执行依据。`docs/` 与本文件或 README 冲突时，以 `docs/` 为准。发生冲突时：
 
 1. 不得自行静默解释。
 2. 在 `docs/DECISIONS.md` 记录冲突、裁决和理由。
 3. 更新 `docs/TRACEABILITY.md`。
+
+只做最小正确改动。不要把 Deferred 功能（Add Word、独立全局搜索页、AI、Anki、统计看板、社交等，见 SCOPE-002）重新加回来。
 
 ## 3. 永久工程规则
 
@@ -43,11 +55,13 @@ docs/00_REQUIREMENTS_INDEX.md
 - Review event 必须不可变、具有全局唯一 UUID，并支持幂等重试。
 - 同一天的 daily assignment 必须稳定，刷新和换设备不能改变。
 - Research English 每天严格分配 5 + 2 + 3 个新词。
-- Medical English 每天分配 10 个新词。
+- Medical English 每天严格分配 7 词根构词 + 3 病历用语（合计仍是 10；不是笼统的 10，也不是滚动分类平衡配额）。
+- 必备医学英语（`essential_medical`）每天分配 10 个 `core` 新词。
 - New 与 Review 必须分开计算。
 - 首页不得等待 Supabase 网络请求后才首次显示。
 - 完整词库不得打入首屏 JavaScript bundle。
 - 不使用远程字体作为首屏依赖。
+- 首页本地 Context Card 检索已授权（DEC-032 / DEC-039 / DEC-042），不是 Deferred。Mac desktop 的拼写容错（DEC-055）与完整本地词库播种供检索（DEC-056）以 `docs/DECISIONS.md` 为准；hosted cloud / PWA 仍为子串匹配 + 当日缓存，除非后续决策另有规定。不得把该检索做成独立 Search 页、公共词典或 Add Word。
 - 不实现需求中明确标记为 Deferred 的功能。
 - 不得声称未实际运行或未实际验证的场景已经通过。
 - 不得删除用户已有未提交修改，不得执行 destructive reset。
