@@ -245,7 +245,7 @@ Asia/Shanghai
 - 换设备；
 - 重复 API 调用。
 
-空的 `shortage` set（`assigned_count = 0`）不是已完成分配。词库后来达到该模块当日配额时，`ensure_daily_assignment` 删除该 shortage set 并按原确定性规则生成 ready set（DEC-048）。词库仍不足时保持原 shortage，不改写、不跨分类补足。
+空的 `shortage` set（`assigned_count = 0`）不是已完成分配。当前 New 资格池后来达到该模块当日配额时（词库补足，或仅被分配过但从未学完的卡片按 DEC-057 重新可分配），`ensure_daily_assignment` 删除该 shortage set 并按原确定性规则生成 ready set（DEC-048）。资格池仍不足时保持原 shortage，不改写、不跨分类补足。
 
 ### ASSIGN-003 · P0 · Research 配额
 
@@ -270,7 +270,7 @@ Medical 每日严格：
 
 ### ASSIGN-005 · P0 · 不重复已学新卡
 
-已经进入过用户新卡学习流程的 card，不得再次作为新卡分配。
+已经完成过一次新卡学习的 card 不得再次作为新卡分配。已学与 CORE-008 同一口径：`learned_word_senses`（首次成功完成 New 评分后物化）。仅出现在历史 New assignment、从未写入 `learned_word_senses` 的卡片仍可作为 New。当日已写入的 ready set 仍冻结（ASSIGN-002）。
 
 Review 卡不占新卡名额。
 
