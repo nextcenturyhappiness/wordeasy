@@ -16,6 +16,7 @@ import essentialRefreshSql from "../../supabase/migrations/20260910001600_essent
 import essentialClinicalSql from "../../supabase/migrations/20260910001700_essential_medical_clinical_sentences.sql?raw";
 import essentialQualitySql from "../../supabase/migrations/20260910001800_essential_medical_sentence_quality.sql?raw";
 import shortageSelfHealSql from "../../supabase/migrations/20260908001500_assignment_shortage_self_heal.sql?raw";
+import newEligibilitySql from "../../supabase/migrations/20260917001900_new_assignment_eligibility_learned.sql?raw";
 import medicalChartMidlevelSql from "../../supabase/migrations/20260907001200_medical_chart_midlevel.sql?raw";
 import syncSql from "../../supabase/migrations/20260826000300_review_sync_rpcs.sql?raw";
 import edgeFsrs from "../../supabase/functions/_shared/fsrs.ts?raw";
@@ -33,7 +34,8 @@ const ESSENTIAL_REFRESH = essentialRefreshSql.toLowerCase();
 const ESSENTIAL_CLINICAL = essentialClinicalSql.toLowerCase();
 const ESSENTIAL_QUALITY = essentialQualitySql.toLowerCase();
 const SHORTAGE_SELF_HEAL = shortageSelfHealSql.toLowerCase();
-const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}\n${MEDICAL_QUOTA_FLIP}\n${ESSENTIAL_ASSIGNMENT}\n${SHORTAGE_SELF_HEAL}`;
+const NEW_ELIGIBILITY = newEligibilitySql.toLowerCase();
+const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}\n${MEDICAL_QUOTA_FLIP}\n${ESSENTIAL_ASSIGNMENT}\n${SHORTAGE_SELF_HEAL}\n${NEW_ELIGIBILITY}`;
 const EFFECTIVE_SYNC = `${SYNC}\n${HARDENING}\n${MEDICAL_QUOTAS}`;
 const SEED_PDF_EXPANSION = medicalPdfExpansionSql.toLowerCase();
 const SEED_CHART_MIDLEVEL = medicalChartMidlevelSql.toLowerCase();
@@ -138,8 +140,10 @@ describe("Supabase migration contracts", () => {
     expect(body).toContain("status,\n          assigned_count");
     expect(body).toContain("'shortage',\n          0");
     expect(body).toContain(
-      "not exists (\n          select 1\n          from public.daily_assignments"
+      "not exists (\n          select 1\n          from public.learned_word_senses"
     );
+    expect(body).toContain("learned.word_sense_id = sense.id");
+    expect(body).not.toContain("from public.daily_assignments as prior_assignment");
     expect(body).toContain("extensions.digest");
     expect(body).toContain("if v_inserted <> 10 then");
     expect(body).toContain("bucket_slug = 'clinical' and bucket_position <= 3");
@@ -379,6 +383,20 @@ describe("Supabase migration contracts", () => {
     expect(SHORTAGE_SELF_HEAL).toContain("p_module_slug = 'research_english'");
     expect(SHORTAGE_SELF_HEAL).not.toContain("drop function");
     expect(SHORTAGE_SELF_HEAL).not.toContain("drop table");
+  });
+
+  it("selects New cards from unlearned word senses rather than prior assignment membership", () => {
+    const body = functionBody(EFFECTIVE_ASSIGNMENTS, "ensure_daily_assignment_v1_unlocked");
+    expect(NEW_ELIGIBILITY).toContain("learned_word_senses (first completed new)");
+    expect(NEW_ELIGIBILITY).toContain("dec-057");
+    expect(body).toContain("from public.learned_word_senses as learned");
+    expect(body).toContain("learned.module_id = v_module_id");
+    expect(body).toContain("learned.word_sense_id = sense.id");
+    expect(body).not.toContain("from public.daily_assignments as prior_assignment");
+    expect(body).toContain("v_existing_status is distinct from 'shortage'");
+    expect(body).toContain("assignment_set.assigned_count = 0");
+    expect(NEW_ELIGIBILITY).not.toContain("drop function");
+    expect(NEW_ELIGIBILITY).not.toContain("drop table");
   });
 
   it("adds Essential Medical daily assignment of 10 from the core pool", () => {

@@ -1,5 +1,6 @@
 import type { ContentShortage } from "../application/contracts";
 import {
+  eligibleNewCandidates,
   selectEssentialMedicalAssignment,
   selectMedicalAssignment,
   selectResearchAssignment,
@@ -79,6 +80,7 @@ export class LocalAssignmentService {
       this.database.cached_daily_assignments,
       this.database.cached_assignment_sets,
       this.database.daily_summary,
+      this.database.learned_word_senses,
       async () => {
         const summaryKey: [string, DomainModuleSlug, string] = [this.userId, module, studyDate];
         const summary =
@@ -103,11 +105,11 @@ export class LocalAssignmentService {
           return;
         }
 
-        const assignedBeforeToday = await this.database.cached_daily_assignments
+        const learnedCount = await this.database.learned_word_senses
           .where("[userId+module]")
           .equals([this.userId, module])
           .count();
-        const remaining = Math.max(0, catalogSize - assignedBeforeToday);
+        const remaining = Math.max(0, catalogSize - learnedCount);
         await this.database.daily_summary.put({
           ...summary,
           newTotal: remaining >= dailyQuota ? dailyQuota : 0,
@@ -218,6 +220,7 @@ export class LocalAssignmentService {
       this.database.cached_daily_assignments,
       this.database.cached_assignment_sets,
       this.database.daily_summary,
+      this.database.learned_word_senses,
       async () => {
         const setKey: [string, DomainModuleSlug, string, "new"] = [
           this.userId,
@@ -226,10 +229,7 @@ export class LocalAssignmentService {
           "new"
         ];
         const existingSet = await this.database.cached_assignment_sets.get(setKey);
-        if (existingSet !== undefined) {
-          if (existingSet.status === "shortage" && existingSet.shortage !== null) {
-            return { status: "shortage", shortage: existingSet.shortage };
-          }
+        if (existingSet !== undefined && existingSet.status === "ready") {
           const assignments = await this.database.cached_daily_assignments
             .where("[userId+module+studyDate]")
             .equals([this.userId, module, studyDate])
@@ -241,18 +241,16 @@ export class LocalAssignmentService {
           .where("[userId+module]")
           .equals([this.userId, module])
           .toArray();
-        const previouslyAssigned = new Set(
+        const learnedSenseIds = new Set(
           (
-            await this.database.cached_daily_assignments
+            await this.database.learned_word_senses
               .where("[userId+module]")
               .equals([this.userId, module])
               .toArray()
-          ).map((assignment) => assignment.cardId)
+          ).map((row) => row.wordSenseId)
         );
         const selection = select(
-          allCards
-            .filter((card) => card.active && !previouslyAssigned.has(card.cardId))
-            .map((card) => ({ cardId: card.cardId, category: card.category })),
+          eligibleNewCandidates(allCards, learnedSenseIds),
           this.userId,
           studyDate
         );
@@ -262,6 +260,12 @@ export class LocalAssignmentService {
           emptySummary(this.userId, module, studyDate, createdAt);
 
         if (selection.status === "shortage") {
+          if (existingSet !== undefined) {
+            return {
+              status: "shortage",
+              shortage: existingSet.shortage ?? selection.shortage
+            };
+          }
           const frozenSet: CachedAssignmentSetRow = {
             userId: this.userId,
             module,
@@ -274,6 +278,10 @@ export class LocalAssignmentService {
           await this.database.cached_assignment_sets.add(frozenSet);
           await this.database.daily_summary.put({ ...summary, newTotal: 0, updatedAt: createdAt });
           return { status: "shortage", shortage: selection.shortage };
+        }
+
+        if (existingSet !== undefined) {
+          await this.database.cached_assignment_sets.delete(setKey);
         }
 
         const cardById = new Map(allCards.map((card) => [card.cardId, card]));

@@ -329,8 +329,13 @@ describe("DemoLearningRepository", () => {
     databaseB.close();
   });
 
-  it("freezes an all-or-nothing shortage after the first day consumes all demo cards", async () => {
+  it("freezes an all-or-nothing shortage only after demo Research cards are actually learned", async () => {
     const firstDay = await harness();
+    const queue = (await firstDay.repository.getStudyQueue("research_english", "new")).cards;
+    expect(queue).toHaveLength(10);
+    for (const [index, card] of queue.entries()) {
+      await firstDay.repository.rateCard(ratingInput(card.cardId, `learn-all-${String(index)}`));
+    }
     firstDay.database.close();
     const nextDayDatabase = new LearningDatabase(firstDay.databaseName);
     const nextDay = new DemoLearningRepository({
@@ -355,6 +360,33 @@ describe("DemoLearningRepository", () => {
       available: 0
     });
     expect((await nextDay.getStudyQueue("research_english", "new")).cards).toEqual([]);
+    nextDayDatabase.close();
+  });
+
+  it("keeps unlearned demo Research cards available as New on the next day", async () => {
+    const firstDay = await harness();
+    expect((await firstDay.repository.getStudyQueue("research_english", "new")).cards).toHaveLength(
+      10
+    );
+    firstDay.database.close();
+    const nextDayDatabase = new LearningDatabase(firstDay.databaseName);
+    const nextDay = new DemoLearningRepository({
+      database: nextDayDatabase,
+      userId: firstDay.userId,
+      email: "test-user-a@example.invalid",
+      timezone: "Asia/Shanghai",
+      deviceId: "device-test-user-a",
+      scheduler: new FsrsSchedulerAdapter(),
+      syncState: new LocalSyncStateStore(),
+      cards: DEMO_CARDS,
+      now: () => new Date("2026-08-27T08:00:00.000Z")
+    });
+    await nextDay.initialize();
+
+    const today = await nextDay.getToday("research_english");
+    expect(today.new).toEqual({ completed: 0, total: 10 });
+    expect(today.contentShortage).toBeNull();
+    expect((await nextDay.getStudyQueue("research_english", "new")).cards).toHaveLength(10);
     nextDayDatabase.close();
   });
 });

@@ -15,6 +15,22 @@ export interface AssignmentCandidate {
   category: string;
 }
 
+export interface NewEligibilityCard {
+  cardId: string;
+  category: string;
+  wordSenseId: string;
+  active: boolean;
+}
+
+export function eligibleNewCandidates(
+  cards: ReadonlyArray<NewEligibilityCard>,
+  learnedSenseIds: ReadonlySet<string>
+): AssignmentCandidate[] {
+  return cards
+    .filter((card) => card.active && !learnedSenseIds.has(card.wordSenseId))
+    .map((card) => ({ cardId: card.cardId, category: card.category }));
+}
+
 export type ResearchSelectionResult =
   | { status: "ready"; cards: AssignmentCandidate[] }
   | { status: "shortage"; shortage: ContentShortageRecord };

@@ -55,9 +55,9 @@ MVP 使用系统字体栈。
 ### DEC-013 · Assignment shortage 原子化
 
 Date: 2026-08-26
-Status: Accepted — empty-shortage freeze narrowed by DEC-048 when catalog later fills the quota
+Status: Accepted — empty-shortage freeze narrowed by DEC-048; “重复旧卡” means learned New cards (DEC-057)
 Related requirements: RES-001, RES-003, MED-001, ASSIGN-003–006
-Decision: 任一必需分类不足时，当日该模块的新卡 assignment 整组不创建；返回并冻结结构化 shortage。不得部分分配、跨分类补足或重复旧卡。词库后来补足时，空 shortage set 可由 DEC-048 替换为 ready set。
+Decision: 任一必需分类不足时，当日该模块的新卡 assignment 整组不创建；返回并冻结结构化 shortage。不得部分分配、跨分类补足或重复已学 New 卡。词库后来补足或未学卡片重新具备资格时，空 shortage set 可由 DEC-048 替换为 ready set。
 Reason: 只有 all-or-nothing 才能同时保持 Research 5+2+3、Medical 7+3（现为 7 词根 + 3 病历）和同日稳定。
 
 ### DEC-014 · Review 日队列截止点
@@ -684,6 +684,24 @@ Reason: Mac 写作时的首页检索需要完整 Research / Medical / 必备医�
 Alternatives rejected: 恢复 `desktop:v1` 本地进度；给 hosted cloud/PWA 一并播种；用 `replace` 覆盖 snapshot；把目录打进 desktop 首屏/Home JS；另写一份重复词库。
 Consequences: 登录后的 Mac Home 搜索可命中从未出现在当日 snapshot 里的 Research / Medical / 必备 lemma。云端 OTP、配额、评分和同步不变。hosted PWA 仍只搜已同步的 `cached_cards`。
 Tests/docs affected: desktop cloud seed + `IndexedDbLearningRepository` search tests, `cloudRuntime` desktop-only loader, `check-desktop-build.mjs`, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
+
+### DEC-057 · New 资格以已学 sense 为准，不以历史 New assignment 为准
+
+Date: 2026-09-17
+Status: Accepted
+Related requirements: ASSIGN-002/005, CORE-008, RES-001/003, TEST-013; DEC-013/048
+Context: 生产 Research 词库 60 张均曾作为 New 写入 `daily_assignments`（`ever_assigned_new = 60`），但 `learned_word_senses` 几乎为空。选择器按「曾经出现在任何 New assignment」排除卡片，于是 general_research 可用数为 0，当日 `daily_assignment_sets` 冻结为 `shortage` / `assigned_count=0`。用户从未实际学习这些卡，它们按 CORE-008 仍应算 New。
+Decision:
+
+1. New 资格排除集是 `learned_word_senses`（首次成功完成 New 评分后物化，与 CORE-008 同一「已学」定义）。不把历史 `daily_assignments` 行当作已学。
+2. 仅被分配过、从未写入 `learned_word_senses` 的卡片仍可进入之后某日的 New 池。已完成 New / 已学的卡片不得再作为 New。
+3. 当日已写入的 **ready** set 仍冻结（ASSIGN-002 / DEC-006）。空 shortage set（`assigned_count=0`）在当前资格池足以填满 5+2+3 / 7+3 / 10 时，走既有 DEC-048 自愈：删除 shortage 后按原确定性规则生成 ready set。
+4. 不改 Review 资格、不改 Medical 7+3 或必备医学英语 10 的配额与 all-or-nothing 规则。
+
+Reason: ASSIGN-005 与 CORE「不得重复已学卡片」指的是学过，不是「曾经出现在某日队列里」。把未评分的 assignment 当成已学，会在词库仍有未学卡时永久 shortage。
+Alternatives rejected: 另造「studied」状态；用 `completedAt` 作为第二套已学定义；手工删历史 assignment 行；放宽 DEC-013 允许部分分配或跨类补足。
+Consequences: 同一卡片可以出现在不同 `study_date` 的 New set 中，直到首次 New 完成。远程 Postgres 必须另行 apply `20260917001900`；仓库落地不等于远程已迁移。DEC-013「不得重复旧卡」收窄为不得重复已学 New 卡。
+Tests/docs affected: `eligibleNewCandidates`, `LocalAssignmentService`, `ensure_daily_assignment_v1_unlocked`, assignment/demo/SQL tests, `docs/02_DATA_SYNC_SECURITY.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
 

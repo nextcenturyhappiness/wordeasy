@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  eligibleNewCandidates,
   selectEssentialMedicalAssignment,
   selectMedicalAssignment,
   selectResearchAssignment
@@ -15,6 +16,50 @@ function cards(categories: Array<[string, number]>): Array<{ cardId: string; cat
   }
   return result;
 }
+
+describe("New-card eligibility", () => {
+  it("keeps a previously assigned unlearned card in the New pool", () => {
+    const candidates = eligibleNewCandidates(
+      [
+        {
+          cardId: "assigned-unlearned",
+          category: "general_research",
+          wordSenseId: "sense-unlearned",
+          active: true
+        },
+        {
+          cardId: "inactive",
+          category: "general_research",
+          wordSenseId: "sense-inactive",
+          active: false
+        }
+      ],
+      new Set()
+    );
+    expect(candidates).toEqual([{ cardId: "assigned-unlearned", category: "general_research" }]);
+  });
+
+  it("excludes a learned word sense from later New selection", () => {
+    const candidates = eligibleNewCandidates(
+      [
+        {
+          cardId: "learned-card",
+          category: "general_research",
+          wordSenseId: "sense-learned",
+          active: true
+        },
+        {
+          cardId: "still-new",
+          category: "general_research",
+          wordSenseId: "sense-new",
+          active: true
+        }
+      ],
+      new Set(["sense-learned"])
+    );
+    expect(candidates).toEqual([{ cardId: "still-new", category: "general_research" }]);
+  });
+});
 
 describe("daily assignment quotas", () => {
   it("selects Research 5+2+3 and freezes a category shortage", () => {

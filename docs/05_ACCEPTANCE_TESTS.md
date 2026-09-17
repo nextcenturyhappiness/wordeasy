@@ -153,7 +153,7 @@ Medical 3 / 10
 
 ### TEST-013 · 词库不足
 
-分类不足时返回结构化 shortage，不重复旧词，不用其他分类偷偷补足。空 shortage set 在词库后来补足后可被替换为 ready set；已写入的 ready set 仍冻结（DEC-048）。
+分类不足时返回结构化 shortage，不重复已学新卡，不用其他分类偷偷补足。空 shortage set 在资格池后来足以填满配额时可被替换为 ready set；已写入的 ready set 仍冻结（DEC-048 / DEC-057）。
 
 ### TEST-014 · 时区边界
 
