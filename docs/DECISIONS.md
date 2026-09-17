@@ -663,8 +663,27 @@ Decision:
 
 Reason: Mac 本地构建需要容错拼写；手机 PWA 先缺卡，上模糊也搜不出未缓存的词。
 Alternatives rejected: 给 hosted cloud/PWA 一并上模糊；引入 fuse.js；对句子/搭配做编辑距离；只按“全量目录”猜测而不核验 desktop 实际走 cloud runtime。
-Consequences: 同一套 Home UI 在 Mac desktop 与 standalone 能命中近邻拼写，在手机 PWA 上仍只认子串。desktop 云端缓存范围不变；未同步过的必备词仍然搜不到。
+Consequences: 同一套 Home UI 在 Mac desktop 与 standalone 能命中近邻拼写，在手机 PWA 上仍只认子串。未同步过的必备词在 DEC-056 之前搜不到；DEC-056 起 Mac desktop 另播种完整本地目录供检索。
 Tests/docs affected: `src/domain/lexiconSearch.ts`, personal + desktop-cloud repository wiring, unit + personal/demo repository tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
+
+### DEC-056 · Mac desktop 云端 runtime 另播种完整本地词库供首页检索
+
+Date: 2026-09-17
+Status: Accepted
+Related requirements: UI-015, DESKTOP-001/004, LOCAL-001, PERF-006, TEST-042; DEC-030, DEC-032, DEC-055
+Context: DEC-030 让个人 Mac 应用启动 `article-english:cloud:${userId}`。Home 检索只读 IndexedDB `cached_cards`，而云端路径原先只把当日 assignment snapshot 写入该表，因此 Research / Medical / 必备医学英语里绝大多数卡要等逐日 Sync 后才能搜到。standalone / `PersonalLearningRepository` 已播种完整约 900 张目录。所有者要求 Mac 在不改 hosted PWA、不退回退役的 `desktop:v1` 本地进度的前提下，立刻能搜全库。
+Decision:
+
+1. 仅当 `VITE_APP_MODE=desktop` 的云端 runtime 创建 `IndexedDbLearningRepository` 时，增加 additive deferred bootstrap：把与 standalone/personal 相同的完整本地目录（Research + Medical + `essential_medical`，当前 900 张，`STANDALONE_CARDS` / `normalizeSeedCard`）upsert 进该账户的 `cached_cards`。
+2. 播种只服务词库检索。不得改写 daily assignment、Review 队列、评分、outbox 或云端同步；这些路径仍以 assignment/snapshot 为准。使用 `DemoContentCatalog.seed`（bulkPut），禁止 `replace` 清空已有 snapshot 行。
+3. Home 首次绘制仍不得等待完整目录或 Supabase。播种挂在既有 deferred bootstrap 上，由首次搜索（或 Today/Study）触发。hosted cloud / PWA 不得引入该 loader 或 seed chunk。
+4. DEC-030 云端学习身份保持不变：`article-english:cloud:${userId}`、Email OTP、IndexedDB-first、后台同步。DEC-055 的 desktop fuzzy 边界保持不变。
+5. desktop 构建允许一个独立 deferred catalog chunk；该 chunk 不得进入首屏或 Home 静态可达 JavaScript。PERF-006 / TEST-042 中“desktop 不得再打入 seed chunk”的条款由本决策收窄为“不得进入 Home 可达包”。
+
+Reason: Mac 写作时的首页检索需要完整 Research / Medical / 必备医学英语目录，但不能把 hosted 手机 PWA 变成全量本地词库，也不能把进度退回本地-only `desktop:v1`。
+Alternatives rejected: 恢复 `desktop:v1` 本地进度；给 hosted cloud/PWA 一并播种；用 `replace` 覆盖 snapshot；把目录打进 desktop 首屏/Home JS；另写一份重复词库。
+Consequences: 登录后的 Mac Home 搜索可命中从未出现在当日 snapshot 里的 Research / Medical / 必备 lemma。云端 OTP、配额、评分和同步不变。hosted PWA 仍只搜已同步的 `cached_cards`。
+Tests/docs affected: desktop cloud seed + `IndexedDbLearningRepository` search tests, `cloudRuntime` desktop-only loader, `check-desktop-build.mjs`, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
 

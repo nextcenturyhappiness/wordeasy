@@ -435,7 +435,7 @@ Cloudflare Pages 上的 Preview 或正式 standalone PWA 发布前后必须保�
 必须分别记录自动证据与真实运行证据：
 
 1. `dist-desktop` 不包含 Service Worker、Manifest、Workbox、Cloudflare `_headers` 或 privileged secret；公开客户端只允许本项目 `VITE_SUPABASE_URL` 与 publishable key，且 key 不得写入 git；
-2. 完整 120-card 词库不得进入首屏或 Home 可达 JavaScript；catalog 由云端学习 runtime 在登录后同步，不得再打入 desktop seed chunk；
+2. 完整词库不得进入首屏或 Home 可达 JavaScript；允许一个独立 deferred catalog chunk，供 desktop 云端 runtime 在首次搜索时把 Research / Medical / 必备医学英语 upsert 进 `cached_cards`（DEC-056）。hosted cloud / PWA 构建不得包含该 chunk。assignment / 评分 / 同步仍走云端 snapshot，不得退回 `desktop:v1`；
 3. `cargo fmt --check`、Clippy `-D warnings`、Cargo tests（含本项目 Supabase origin 放行与其他远程拒绝）通过；
 4. `.app` 与 `.dmg` 均实际生成，主二进制为 `arm64`，identifier 为 `com.nextcenturyhappiness.wordeasy`；
 5. ad-hoc `codesign --verify --deep --strict` 与 `hdiutil verify` 通过；

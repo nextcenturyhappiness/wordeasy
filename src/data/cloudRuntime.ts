@@ -22,6 +22,7 @@ import { AccountCloudSettingsGateway } from "./cloud/accountPreferences";
 import type { CloudRpcClient } from "./cloud/rpcClient";
 import {
   IndexedDbLearningRepository,
+  type IndexedDbBootstrapContext,
   type PendingSyncCountPort
 } from "./indexedDbLearningRepository";
 import {
@@ -32,6 +33,10 @@ import {
 import type { SupabaseRemoteServices } from "./supabaseRemote";
 
 const DEVICE_ID_STORAGE_KEY = "article-english:device-id:v1";
+const desktopLexiconCatalogLoader =
+  import.meta.env.VITE_APP_MODE === "desktop"
+    ? () => import("./desktop/desktopLexiconCatalogSeed")
+    : null;
 
 function cachedTheme(): ThemePreference {
   try {
@@ -348,7 +353,15 @@ export function createBrowserCloudRuntimeManager(): CloudRuntimeManager {
           return new FsrsSchedulerAdapter();
         },
         syncState: sync,
-        ...(isFuzzyLexiconSearchEnabled() ? { fuzzyLexiconSearch: true } : {})
+        ...(isFuzzyLexiconSearchEnabled() ? { fuzzyLexiconSearch: true } : {}),
+        ...(desktopLexiconCatalogLoader === null
+          ? {}
+          : {
+              deferredBootstrap: async (context: IndexedDbBootstrapContext) => {
+                const { seedDesktopLexiconCatalog } = await desktopLexiconCatalogLoader();
+                await seedDesktopLexiconCatalog(context);
+              }
+            })
       });
       await learning.initialize();
 

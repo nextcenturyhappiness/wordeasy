@@ -76,15 +76,23 @@ function sourcesFor(files, javascriptByName) {
   return [...files].map((name) => javascriptByName.get(name)).join("\n");
 }
 
-const [indexHtml, assetNames, canonicalSeed, tauriConfigText, cargoManifest, tauriSource] =
-  await Promise.all([
-    readFile(join(output, "index.html"), "utf8"),
-    readdir(join(output, "assets")),
-    readFile(join(root, "data", "seed-data.json"), "utf8").then(JSON.parse),
-    readFile(join(root, "src-tauri", "tauri.conf.json"), "utf8"),
-    readFile(join(root, "src-tauri", "Cargo.toml"), "utf8"),
-    readFile(join(root, "src-tauri", "src", "lib.rs"), "utf8")
-  ]);
+const [
+  indexHtml,
+  assetNames,
+  canonicalSeed,
+  essentialSeed,
+  tauriConfigText,
+  cargoManifest,
+  tauriSource
+] = await Promise.all([
+  readFile(join(output, "index.html"), "utf8"),
+  readdir(join(output, "assets")),
+  readFile(join(root, "data", "seed-data.json"), "utf8").then(JSON.parse),
+  readFile(join(root, "data", "essential-medical", "cards.json"), "utf8").then(JSON.parse),
+  readFile(join(root, "src-tauri", "tauri.conf.json"), "utf8"),
+  readFile(join(root, "src-tauri", "Cargo.toml"), "utf8"),
+  readFile(join(root, "src-tauri", "src", "lib.rs"), "utf8")
+]);
 const tauriConfig = JSON.parse(tauriConfigText);
 const javascriptFiles = assetNames.filter((name) => name.endsWith(".js"));
 const javascriptByName = new Map(
@@ -143,7 +151,9 @@ const homeGzip = (
   ])
 ).reduce((total, size) => total + size, 0);
 const activeCardIds = canonicalSeed.cards.filter((card) => card.active).map((card) => card.id);
-const cardCatalogFiles = filesContainingEvery(javascriptByName, activeCardIds);
+const essentialCardIds = essentialSeed.cards.map((card) => card.id);
+const catalogCardIds = [...activeCardIds, ...essentialCardIds];
+const cardCatalogFiles = filesContainingEvery(javascriptByName, catalogCardIds);
 const fsrsMarkers = ["ts-fsrs@5.4.1/default-v1", "wordeasy-fsrs-card-v1"];
 const fsrsFiles = filesContainingEvery(javascriptByName, fsrsMarkers);
 const deferredSupabaseFiles = [...javascriptByName]
@@ -162,13 +172,25 @@ assert(
   !/navigator\.serviceWorker|registerSW|virtual:pwa-register/u.test(allJavaScript),
   "Desktop JavaScript contains Service Worker registration code."
 );
-assert(activeCardIds.length === 148, "Canonical catalog must contain 148 active cards.");
-assert(cardCatalogFiles.length === 0, "Desktop cloud build must not embed the canonical catalog.");
+assert(activeCardIds.length === 200, "Canonical catalog must contain 200 active cards.");
+assert(essentialCardIds.length === 663, "Desktop catalog must include 663 必备医学英语 cards.");
 assert(
-  [...javascriptByName].every(([, source]) =>
-    activeCardIds.every((cardId) => !source.includes(cardId))
+  cardCatalogFiles.length === 1,
+  `Expected one dedicated desktop lexicon catalog chunk; found ${String(cardCatalogFiles.length)}.`
+);
+const cardCatalogFile = cardCatalogFiles[0];
+assert(cardCatalogFile !== undefined, "Desktop deferred catalog chunk could not be identified.");
+assert(
+  [...javascriptByName].every(
+    ([name, source]) =>
+      name === cardCatalogFile || catalogCardIds.every((cardId) => !source.includes(cardId))
   ),
-  "Desktop JavaScript contains canonical vocabulary data."
+  "Desktop card IDs escaped their dedicated deferred catalog chunk."
+);
+assert(
+  !homeFiles.has(cardCatalogFile) &&
+    catalogCardIds.every((cardId) => !homeJavaScript.includes(cardId)),
+  "Desktop initial + Home reachable JavaScript contains vocabulary data."
 );
 assert(
   fsrsFiles.length === 1,
@@ -176,6 +198,10 @@ assert(
 );
 const fsrsFile = fsrsFiles[0];
 assert(fsrsFile !== undefined, "Desktop FSRS chunk could not be identified.");
+assert(
+  fsrsFile !== cardCatalogFile,
+  "Desktop FSRS and lexicon catalog must be separate deferred chunks."
+);
 assert(
   !homeFiles.has(fsrsFile) && fsrsMarkers.every((marker) => !homeJavaScript.includes(marker)),
   "Desktop initial + Home reachable JavaScript contains the FSRS implementation."
@@ -337,5 +363,5 @@ try {
 }
 
 console.log(
-  `Desktop cloud boundary passed: ${(initialGzip / 1024).toFixed(2)} KiB initial JS, ${(homeGzip / 1024).toFixed(2)} KiB Home JS, deferred Supabase and FSRS chunks, ${(initialCssGzip / 1024).toFixed(2)} KiB CSS, personal Supabase origin allowlisted, zero capability/IPC/plugin, no PWA runtime or privileged secret.`
+  `Desktop cloud boundary passed: ${(initialGzip / 1024).toFixed(2)} KiB initial JS, ${(homeGzip / 1024).toFixed(2)} KiB Home JS, deferred lexicon catalog, Supabase and FSRS chunks, ${(initialCssGzip / 1024).toFixed(2)} KiB CSS, personal Supabase origin allowlisted, zero capability/IPC/plugin, no PWA runtime or privileged secret.`
 );

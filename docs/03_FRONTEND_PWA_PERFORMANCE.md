@@ -59,7 +59,7 @@ words learned
 Continue
 ```
 
-另显示 streak、小型 sync state。完整词库不得因 Home 首次绘制而被拉入首屏 bundle；搜索与下一句预览只读本地缓存，搜索首次输入才允许触发已有的 deferred catalog bootstrap。hosted cloud / PWA 搜索保持子串匹配；Mac desktop 与 standalone 的拼写容错见 DEC-055。首页视觉层级见 DEC-039：搜索是打开应用的主因，Next Session 是可选清队列入口。搜索呈现见 DEC-042：无「词库」标题，结果行 lemma+中文同行，多条结果在有限高度面板内滚动。
+另显示 streak、小型 sync state。完整词库不得因 Home 首次绘制而被拉入首屏 bundle；搜索与下一句预览只读本地缓存，搜索首次输入才允许触发已有的 deferred catalog bootstrap。`VITE_APP_MODE=desktop` 的该 bootstrap 会把完整本地目录 upsert 进 `cached_cards` 供检索（DEC-056），assignment/sync 仍只写队列。hosted cloud / PWA 搜索保持子串匹配且不播种全库；Mac desktop 与 standalone 的拼写容错见 DEC-055。首页视觉层级见 DEC-039：搜索是打开应用的主因，Next Session 是可选清队列入口。搜索呈现见 DEC-042：无「词库」标题，结果行 lemma+中文同行，多条结果在有限高度面板内滚动。
 
 ---
 
@@ -289,7 +289,7 @@ com.nextcenturyhappiness.wordeasy
 
 macOS 个人版使用与 `npm run dev:cloud` 相同的云端学习 runtime：WebView 内 Email OTP，账户与浏览器同一 Supabase 项目。评分必须先写入 IndexedDB，再异步同步；同步失败不得阻塞学习。同一天 assignment 保持稳定。
 
-桌面使用与浏览器相同的云端账户，并保持 local-first；不得显示常驻 environment / deployment banner 来重复说明这些边界。不得把尚未接入同一账户的 Android standalone PWA 描述为已同步。
+桌面使用与浏览器相同的云端账户，并保持 local-first；不得显示常驻 environment / deployment banner 来重复说明这些边界。不得把尚未接入同一账户的 Android standalone PWA 描述为已同步。Mac desktop 另播种完整本地词库到 `cached_cards` 供首页检索（DEC-056）；不得因此改写 assignment、评分或同步身份。
 
 ---
 
@@ -373,7 +373,7 @@ import allVocabulary from "./all-words.json";
 
 把完整词库打入初始或 Home bundle。
 
-Seed data 通过数据库 seed、导入脚本或测试 fixture 提供。
+Seed data 通过数据库 seed、导入脚本或测试 fixture 提供。standalone 与 Mac desktop 允许把完整约 900 张目录放在独立 deferred chunk，仅在搜索或 Study 的 deferred bootstrap 时加载（DEC-056）。hosted cloud / PWA 不得打入该 chunk。
 
 ---
 
