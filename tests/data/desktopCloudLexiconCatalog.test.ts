@@ -164,6 +164,8 @@ describe("desktop cloud lexicon catalog seed", () => {
     ]);
 
     expect(await database.cached_cards.count()).toBe(FULL_CATALOG_TOTAL + 1);
+    expect(await repository.searchLocalCards(research.word.lemma)).toEqual(researchHits);
+    expect(await database.cached_cards.count()).toBe(FULL_CATALOG_TOTAL + 1);
     expect(await database.cached_cards.get([USER_ID, "snapshot-only-card"])).toMatchObject({
       lemma: "snapshotlemma"
     });

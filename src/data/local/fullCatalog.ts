@@ -17,7 +17,8 @@ export const FULL_CATALOG_TOTAL = 900;
 export async function cachedFullCatalogIsComplete(
   database: LearningDatabase,
   userId: string,
-  versionKey: string
+  versionKey: string,
+  options?: { allowExtraCards?: boolean }
 ): Promise<boolean> {
   const [version, ...counts] = await Promise.all([
     database.sync_metadata.get([userId, versionKey]),
@@ -27,7 +28,11 @@ export async function cachedFullCatalogIsComplete(
   ]);
   return (
     version?.value === FULL_CATALOG_VERSION &&
-    MODULE_SLUGS.every((module, index) => counts[index] === FULL_CATALOG_SIZE[module])
+    MODULE_SLUGS.every((module, index) =>
+      options?.allowExtraCards === true
+        ? counts[index] >= FULL_CATALOG_SIZE[module]
+        : counts[index] === FULL_CATALOG_SIZE[module]
+    )
   );
 }
 

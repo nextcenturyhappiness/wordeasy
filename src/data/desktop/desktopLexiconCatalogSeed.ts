@@ -12,7 +12,8 @@ export async function seedDesktopLexiconCatalog(context: IndexedDbBootstrapConte
     await cachedFullCatalogIsComplete(
       context.database,
       context.userId,
-      DESKTOP_LEXICON_CATALOG_VERSION_KEY
+      DESKTOP_LEXICON_CATALOG_VERSION_KEY,
+      { allowExtraCards: true }
     )
   ) {
     return;
