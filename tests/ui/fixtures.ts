@@ -205,6 +205,14 @@ export function createRepository(overrides: Partial<LearningRepository> = {}): L
         searchLocalLexicon(searchableCards, new Set([researchCard.wordSenseId]), query)
       )
     ),
+    getLocalCard: vi.fn<LearningRepository["getLocalCard"]>((cardId) =>
+      Promise.resolve(
+        [researchCard, secondResearchCard, medicalCard, essentialCard].find(
+          (card) => card.cardId === cardId
+        ) ?? null
+      )
+    ),
+    hasLocalLexicon: vi.fn<LearningRepository["hasLocalLexicon"]>(() => Promise.resolve(false)),
     prefetchToday: vi.fn<LearningRepository["prefetchToday"]>(() => Promise.resolve()),
     rateCard: vi.fn<LearningRepository["rateCard"]>((input) =>
       Promise.resolve({

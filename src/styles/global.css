@@ -426,6 +426,25 @@ p {
   gap: 0.2rem;
 }
 
+.lexicon-search__hit {
+  display: grid;
+  gap: 0.2rem;
+  width: 100%;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-small, 0.5rem);
+}
+
+.lexicon-search__hit:hover,
+.lexicon-search__hit:focus-visible {
+  color: inherit;
+}
+
+.lexicon-search__hit:hover .lexicon-search__lemma,
+.lexicon-search__hit:focus-visible .lexicon-search__lemma {
+  color: var(--color-accent);
+}
+
 .lexicon-search__results li + li {
   padding-top: var(--space-3);
   border-top: 1px solid var(--color-border);

@@ -466,6 +466,24 @@ export class IndexedDbLearningRepository implements LearningRepository {
     );
   }
 
+  async getLocalCard(cardId: string): Promise<ContextCardView | null> {
+    if (cardId.trim().length === 0) {
+      return null;
+    }
+    await this.#ensureDeferredBootstrap();
+    const card = await this.#database.cached_cards.get([this.#userId, cardId]);
+    return card === undefined ? null : toContextCardView(card);
+  }
+
+  async hasLocalLexicon(): Promise<boolean> {
+    if (this.#deferredBootstrap !== undefined) {
+      return true;
+    }
+    await this.initialize();
+    const count = await this.#database.cached_cards.where("userId").equals(this.#userId).count();
+    return count > 0;
+  }
+
   async rateCard(input: RateCardInput): Promise<RateCardResult> {
     await this.#ensureDeferredBootstrap();
     if (input.presentationActionId.trim().length === 0) {

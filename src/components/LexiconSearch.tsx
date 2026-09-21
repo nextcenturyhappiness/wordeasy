@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
 import type { LearningRepository, LexiconSearchHit } from "../application/contracts";
-import { getModuleName } from "../app/moduleRoutes";
+import { getModuleName, lexiconLookupHref } from "../app/moduleRoutes";
 
 interface LexiconSearchProps {
   repository: LearningRepository;
@@ -122,18 +123,20 @@ export function LexiconSearch({ repository }: LexiconSearchProps) {
           <ul className="lexicon-search__results" id={listId} tabIndex={0}>
             {hits.map((hit) => (
               <li key={hit.cardId}>
-                <p className="lexicon-search__meta">
-                  <span>{getModuleName(hit.module)}</span>
-                  {hit.learned ? <span>Learned</span> : null}
-                </p>
-                <p className="lexicon-search__lemma-row">
-                  <span className="lexicon-search__lemma">{hit.lemma}</span>
-                  <span className="lexicon-search__gloss" lang="zh-CN">
-                    {hit.meaningZh}
-                  </span>
-                </p>
-                <p className="lexicon-search__meaning">{hit.meaningEn}</p>
-                <p className="lexicon-search__sentence">{hit.contextSentence}</p>
+                <Link className="lexicon-search__hit" to={lexiconLookupHref(hit.module, hit.cardId)}>
+                  <p className="lexicon-search__meta">
+                    <span>{getModuleName(hit.module)}</span>
+                    {hit.learned ? <span>Learned</span> : null}
+                  </p>
+                  <p className="lexicon-search__lemma-row">
+                    <span className="lexicon-search__lemma">{hit.lemma}</span>
+                    <span className="lexicon-search__gloss" lang="zh-CN">
+                      {hit.meaningZh}
+                    </span>
+                  </p>
+                  <p className="lexicon-search__meaning">{hit.meaningEn}</p>
+                  <p className="lexicon-search__sentence">{hit.contextSentence}</p>
+                </Link>
               </li>
             ))}
           </ul>

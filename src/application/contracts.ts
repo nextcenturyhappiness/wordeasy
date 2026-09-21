@@ -101,6 +101,8 @@ export interface LearningQueries {
   getStudyQueue(module: ModuleSlug, queue: QueueKind): Promise<StudyQueueSnapshot>;
   peekNextSessionCard(module: ModuleSlug, queue: QueueKind): Promise<ContextCardView | null>;
   searchLocalCards(query: string): Promise<LexiconSearchHit[]>;
+  getLocalCard(cardId: string): Promise<ContextCardView | null>;
+  hasLocalLexicon(): Promise<boolean>;
   prefetchToday(module: ModuleSlug): Promise<void>;
 }
 

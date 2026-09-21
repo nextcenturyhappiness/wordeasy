@@ -263,6 +263,35 @@ describe("StudyPage", () => {
     }
   });
 
+  it("opens a local catalog lookup from ?card= without rating or a daily queue", async () => {
+    const user = userEvent.setup();
+    const getStudyQueue = vi.fn<LearningRepository["getStudyQueue"]>();
+    const rateCard = vi.fn<LearningRepository["rateCard"]>();
+    const repository = createRepository({ getStudyQueue, rateCard });
+
+    renderWithLearningApp(<StudyRoute />, {
+      repository,
+      initialEntries: ["/study/research?card=card-research-1"]
+    });
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: researchCard.lemma })
+    ).toBeInTheDocument();
+    expect(screen.getByText(researchCard.contextSentence)).toBeInTheDocument();
+    expect(screen.queryByText(researchCard.meaningEn)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "← Home" })).toHaveAttribute("href", "/");
+    expect(screen.getByText("Context Card")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /reveal answer/i }));
+    expect(await screen.findByText(researchCard.meaningEn)).toBeInTheDocument();
+    expect(screen.getByText(researchCard.usageNote)).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: /how well did you remember/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to Home" })).toBeInTheDocument();
+    expect(getStudyQueue).not.toHaveBeenCalled();
+    expect(rateCard).not.toHaveBeenCalled();
+    expect(repository.getLocalCard).toHaveBeenCalledWith("card-research-1");
+  });
+
   it("does not auto-speak on the unrevealed front or when revealing", async () => {
     const user = userEvent.setup();
     const speak = vi.spyOn(systemTts, "speakEnglishWord").mockReturnValue({ ok: true });

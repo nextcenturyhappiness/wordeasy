@@ -38,6 +38,26 @@ function greetingFor(timeZone: string): string {
 export function HomePage() {
   const { home, repository, syncState, syncNow } = useLearningApp();
   const [nextCard, setNextCard] = useState<ContextCardView | null>(null);
+  const [localLexiconAvailable, setLocalLexiconAvailable] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void repository
+      .hasLocalLexicon()
+      .then((available) => {
+        if (active) {
+          setLocalLexiconAvailable(available);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setLocalLexiconAvailable(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [repository]);
 
   useEffect(() => {
     if (home.status !== "ready") {
@@ -117,6 +137,22 @@ export function HomePage() {
   }
 
   if (home.status === "empty") {
+    if (localLexiconAvailable) {
+      return (
+        <section className="home-page">
+          <header className="home-heading">
+            <div>
+              <p className="eyebrow">Saved progress</p>
+              <h1>No learning day is cached on this device.</h1>
+            </div>
+            <SyncStatus state={syncState} onSync={triggerSync} />
+          </header>
+          <LexiconSearch repository={repository} />
+          <p>Connect once to receive an assignment. No replacement cards were generated.</p>
+        </section>
+      );
+    }
+
     return (
       <section className="home-page panel panel--centered">
         <p className="eyebrow">Saved progress</p>

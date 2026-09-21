@@ -31,7 +31,7 @@ Context Card
 AGENTS.md
 docs/00_REQUIREMENTS_INDEX.md
 任务相关需求文件（按该索引的阅读矩阵）
-docs/DECISIONS.md          # 读到最新 Accepted 条目，当前至 DEC-056
+docs/DECISIONS.md          # 读到最新 Accepted 条目，当前至 DEC-058
 docs/TRACEABILITY.md
 ```
 

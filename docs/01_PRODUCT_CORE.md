@@ -260,11 +260,11 @@ Offline
 
 首页把本地 Context Card 检索做成主表面：更大、更可点的搜索区，而不是顶部一条紧凑胶囊。检索当前设备 IndexedDB 中的 Context Cards。
 
-匹配字段：中文释义、英文 lemma / display form、语境句、搭配。已学/已复习卡片优先，但仍搜索本地词库，避免第一天搜索为空。`VITE_APP_MODE=desktop` 的 Mac 应用在 DEC-030 云端身份上另播种完整本地目录（Research + Medical + 必备医学英语，与 standalone/personal 相同，当前约 900 张）到 `cached_cards`，因此检索不必等待逐日 Sync（DEC-056）；该应用以及 standalone / personal 本地目录在 lemma / displayForm 上允许有界编辑距离的拼写容错，中文释义仅在低成本单字近邻时容错（DEC-055）。hosted cloud / PWA / demo 仍只检索已缓存卡片，并只做大小写不敏感的子串匹配，不得对纯拼写错误给出结果。
+匹配字段：中文释义、英文 lemma / display form、语境句、搭配。已学/已复习卡片优先，但仍搜索本地词库，避免第一天搜索为空。`VITE_APP_MODE=desktop` 的 Mac 应用在 DEC-030 云端身份上另播种完整本地目录（Research + Medical + 必备医学英语，与 standalone/personal 相同，当前约 900 张）到 `cached_cards`，因此检索不必等待逐日 Sync（DEC-056）；该应用以及 standalone / personal 本地目录在 lemma / displayForm 上允许有界编辑距离的拼写容错，中文释义仅在低成本单字近邻时容错（DEC-055）。hosted cloud / PWA / demo 仍只检索已缓存卡片，并只做大小写不敏感的子串匹配，不得对纯拼写错误给出结果。本地词库已就绪时，搜索框不得等云端 Sync 或当日 assignment 才出现（DEC-058）。
 
 空查询只显示搜索框，不显示「词库」标题，不打开独立搜索页。输入框不放中文或英文 placeholder 提示，可访问名称由 `aria-label` / label 提供。无匹配时显示诚实空文案「还没有学过相关的词」，不得回退到公共词典、翻译器或编造释义。不新增 Search 主导航。
 
-有结果时：lemma 与中文释义同一行（lemma 在左），其下是 `meaning_en`，再下是更安静的语境句。不得另加「解释」一类标签。多条结果放在有限高度的纵向可滚动区域内，Next Session 仍在搜索区下方。
+有结果时：lemma 与中文释义同一行（lemma 在左），其下是 `meaning_en`，再下是更安静的语境句。不得另加「解释」一类标签。多条结果放在有限高度的纵向可滚动区域内，Next Session 仍在搜索区下方。点击结果进入既有 Study 查阅（`/study/:module?card=`）：同一套 lemma + 完整例句 + Reveal，不评分、不改当日队列（DEC-058）。
 
 ---
 
