@@ -33,3 +33,7 @@ export function getModuleRoute(module: ModuleSlug): ModuleRouteParam {
 export function getModuleName(module: ModuleSlug): string {
   return moduleNames[module];
 }
+
+export function lexiconLookupHref(module: ModuleSlug, cardId: string): string {
+  return `/study/${getModuleRoute(module)}?card=${encodeURIComponent(cardId)}`;
+}

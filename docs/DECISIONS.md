@@ -703,6 +703,23 @@ Alternatives rejected: 另造「studied」状态；用 `completedAt` 作为第�
 Consequences: 同一卡片可以出现在不同 `study_date` 的 New set 中，直到首次 New 完成。远程 Postgres 必须另行 apply `20260917001900`；仓库落地不等于远程已迁移。DEC-013「不得重复旧卡」收窄为不得重复已学 New 卡。
 Tests/docs affected: `eligibleNewCandidates`, `LocalAssignmentService`, `ensure_daily_assignment_v1_unlocked`, assignment/demo/SQL tests, `docs/02_DATA_SYNC_SECURITY.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
 
+### DEC-058 · Home 检索不依赖 Sync，结果进入既有 Study 查阅
+
+Date: 2026-09-21
+Status: Accepted
+Related requirements: UI-001, UI-006, UI-015, DESKTOP-001/004; DEC-009, DEC-032, DEC-039, DEC-055, DEC-056
+Context: Mac Home 能搜到本地词库（含 DEC-056 全量目录），但点结果无导航；且搜索框被 Home `empty`（无当日 `daily_summary`）挡住，必须等云端 Sync 写出 day cache 才出现。检索只读 IndexedDB `cached_cards`，与 assignment/Sync 无关。
+Decision:
+
+1. 点击或轻点一条 Home 检索结果，进入既有 `/study/:module?card=<cardId>` 查阅。使用同一套 Context Card 正/背面（lemma、完整例句、Reveal 后释义与 usage），不新增独立 Search 页或词典页。查阅不是当日 New/Review 队列：不评分、不写 review event、不改 assignment。
+2. Home 是否显示搜索框与 Sync / 当日 assignment 解耦。`hasLocalLexicon()` 为真时（Mac desktop 已接 DEC-056 deferred catalog seed，或 `cached_cards` 已有本地卡），即使 `getCachedHome()` 仍为 null、Sync 仍为 syncing/failed，也显示搜索主表面。hosted PWA 在本地没有任何 cached card 且无 desktop seed 时，empty Home 仍可不显示搜索框。
+3. 首次输入仍可触发既有 deferred catalog bootstrap（DEC-056）。不得为了显示搜索框而等待 Supabase 或完整 day cache。
+
+Reason: 写作时查本地语境是打开应用的主因（DEC-039）。死点击与“等 Sync 才出现搜索”都把本地词库误绑到云端日计划。
+Alternatives rejected: 在结果行展开另一套详情卡；lookup 允许评分；给 PWA 也强制 empty 显示空搜索；把搜索框绑在 `syncState === "synced"`。
+Consequences: Mac 客户端 UI 变更，需要重新打包 desktop 才能在已安装 App 里看到。hosted PWA 无本地卡时的 empty 文案不变。
+Tests/docs affected: `LexiconSearch`, `HomePage`, `StudyPage` lookup, repository `getLocalCard` / `hasLocalLexicon`, Home/Study UI tests, desktop catalog tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text

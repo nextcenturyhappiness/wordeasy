@@ -97,6 +97,15 @@ class AnonymousLearningRepository implements LearningRepository {
     return Promise.resolve([]);
   }
 
+  getLocalCard(cardId: string): Promise<ContextCardView | null> {
+    void cardId;
+    return Promise.resolve(null);
+  }
+
+  hasLocalLexicon(): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+
   rateCard(input: RateCardInput): Promise<never> {
     void input;
     return Promise.reject(new Error("Sign in before rating a learning card."));

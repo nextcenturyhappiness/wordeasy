@@ -60,8 +60,17 @@ export function StudyPage() {
   const { module: moduleParam } = useParams();
   const [searchParams] = useSearchParams();
   const module = parseModuleRoute(moduleParam);
-  const queue = parseQueueKind(searchParams.get("queue"));
-  const routeKey = module === null || queue === null ? null : `${module}:${queue}`;
+  const lookupCardId = searchParams.get("card")?.trim() ?? "";
+  const isLookup = lookupCardId.length > 0;
+  const queue = isLookup ? null : parseQueueKind(searchParams.get("queue"));
+  const routeKey =
+    module === null
+      ? null
+      : isLookup
+        ? `${module}:lookup:${lookupCardId}`
+        : queue === null
+          ? null
+          : `${module}:${queue}`;
   const { repository, ensureInitialized, applyRatingResult, syncState } = useLearningApp();
   const [resource, setResource] = useState<QueueResource>({ status: "loading" });
   const [cardIndex, setCardIndex] = useState(0);
@@ -82,18 +91,46 @@ export function StudyPage() {
   }, [phase]);
 
   useEffect(() => {
-    if (module === null || queue === null) {
+    if (module === null || routeKey === null) {
+      return;
+    }
+    if (!isLookup && queue === null) {
       return;
     }
 
     const selectedModule = module;
     const selectedQueue = queue;
-    const selectedRouteKey = `${selectedModule}:${selectedQueue}`;
+    const selectedRouteKey = routeKey;
+    const selectedLookupCardId = lookupCardId;
     let active = true;
 
     async function loadQueue() {
       try {
         await ensureInitialized();
+        if (isLookup) {
+          const card = await repository.getLocalCard(selectedLookupCardId);
+          if (card === null || card.module !== selectedModule) {
+            throw new Error("This Context Card is not cached on this device.");
+          }
+          if (active) {
+            setResource({
+              status: "ready",
+              routeKey: selectedRouteKey,
+              studyDate: "",
+              cards: [card]
+            });
+            setCardIndex(0);
+            setPhase("prompt");
+            setSaveError(null);
+            setAnnouncement("");
+          }
+          return;
+        }
+
+        if (selectedQueue === null) {
+          return;
+        }
+
         const snapshot = await repository.getStudyQueue(selectedModule, selectedQueue);
         if (active) {
           setResource({
@@ -124,7 +161,7 @@ export function StudyPage() {
     return () => {
       active = false;
     };
-  }, [ensureInitialized, module, queue, repository]);
+  }, [ensureInitialized, isLookup, lookupCardId, module, queue, repository, routeKey]);
 
   const activeResource =
     resource.status !== "loading" && resource.routeKey === routeKey
@@ -151,8 +188,10 @@ export function StudyPage() {
     }
 
     setPhase("revealed");
-    setAnnouncement("Answer revealed. Choose Again, Hard, Good, or Easy.");
-  }, [phase]);
+    setAnnouncement(
+      isLookup ? "Answer revealed." : "Answer revealed. Choose Again, Hard, Good, or Easy."
+    );
+  }, [isLookup, phase]);
 
   useEffect(() => {
     if (phase !== "revealed") {
@@ -166,6 +205,7 @@ export function StudyPage() {
   const rate = useCallback(
     async (rating: ReviewRating) => {
       if (
+        isLookup ||
         phase !== "revealed" ||
         commitLockRef.current ||
         activeResource.status !== "ready" ||
@@ -229,7 +269,7 @@ export function StudyPage() {
         commitLockRef.current = false;
       }
     },
-    [activeResource, applyRatingResult, cardIndex, module, phase, queue, repository]
+    [activeResource, applyRatingResult, cardIndex, isLookup, module, phase, queue, repository]
   );
 
   useEffect(() => {
@@ -267,7 +307,7 @@ export function StudyPage() {
     );
   }
 
-  if (queue === null) {
+  if (!isLookup && queue === null) {
     return (
       <RouteNotice
         eyebrow="Unknown queue"
@@ -298,15 +338,17 @@ export function StudyPage() {
         <h1>
           {offline
             ? "These cards are not cached for offline study."
-            : "The queue could not be opened."}
+            : isLookup
+              ? "This Context Card could not be opened."
+              : "The queue could not be opened."}
         </h1>
         <p>
           {offline
             ? "Reconnect once to cache the stable assignment. No replacement cards were generated."
             : activeResource.message}
         </p>
-        <Link className="button button--secondary" to={`/today/${moduleRoute}`}>
-          Return to Today
+        <Link className="button button--secondary" to={isLookup ? "/" : `/today/${moduleRoute}`}>
+          {isLookup ? "Return to Home" : "Return to Today"}
         </Link>
       </section>
     );
@@ -345,12 +387,13 @@ export function StudyPage() {
     <section className="study-page">
       <header className="study-heading">
         <div>
-          <Link className="back-link" to={`/today/${moduleRoute}`}>
-            ← {moduleName} Today
+          <Link className="back-link" to={isLookup ? "/" : `/today/${moduleRoute}`}>
+            {isLookup ? "← Home" : `← ${moduleName} Today`}
           </Link>
           <p className="eyebrow">
-            {queue === "new" ? "New" : "Review"} · Card {cardIndex + 1} of{" "}
-            {activeResource.cards.length}
+            {isLookup
+              ? "Context Card"
+              : `${queue === "new" ? "New" : "Review"} · Card ${String(cardIndex + 1)} of ${String(activeResource.cards.length)}`}
           </p>
         </div>
         <SyncStatus state={syncState} />
@@ -374,12 +417,18 @@ export function StudyPage() {
 
       <div className="study-actions">
         {revealed ? (
-          <RatingControls
-            disabled={phase === "committing"}
-            onRate={(rating) => {
-              void rate(rating);
-            }}
-          />
+          isLookup ? (
+            <Link className="button button--secondary" to="/">
+              Back to Home
+            </Link>
+          ) : (
+            <RatingControls
+              disabled={phase === "committing"}
+              onRate={(rating) => {
+                void rate(rating);
+              }}
+            />
+          )
         ) : (
           <button
             className="button button--primary reveal-button"

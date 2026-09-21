@@ -1,5 +1,6 @@
 import { useLearningApp } from "../../src/app/LearningAppContext";
 import { HomePage } from "../../src/routes/home/HomePage";
+import { StudyPage } from "../../src/routes/study/StudyPage";
 import { TodayPage } from "../../src/routes/today/TodayPage";
 import type {
   HomeSnapshot,
@@ -16,7 +17,8 @@ import {
   buildHomeSnapshot,
   buildTodaySnapshot,
   createRepository,
-  renderWithLearningApp
+  renderWithLearningApp,
+  researchCard
 } from "./fixtures";
 
 afterEach(() => {
@@ -56,6 +58,15 @@ function TodayRoute() {
   );
 }
 
+function HomeStudyRoutes() {
+  return (
+    <Routes>
+      <Route index element={<HomePage />} />
+      <Route path="/study/:module" element={<StudyPage />} />
+    </Routes>
+  );
+}
+
 describe("Home and Today", () => {
   it("shows an honest offline empty state without inventing a Home assignment", async () => {
     const getCachedHome = vi.fn<LearningRepository["getCachedHome"]>(() => Promise.resolve(null));
@@ -86,6 +97,9 @@ describe("Home and Today", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Offline");
     expect(screen.queryByRole("article", { name: "Research English" })).not.toBeInTheDocument();
     expect(screen.queryByRole("article", { name: "Medical English" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("searchbox", { name: "Search learned Context Cards" })
+    ).not.toBeInTheDocument();
     expect(getCachedHome).toHaveBeenCalledTimes(1);
     expect(getToday).not.toHaveBeenCalled();
     expect(getStudyQueue).not.toHaveBeenCalled();
@@ -361,6 +375,77 @@ describe("Home and Today", () => {
     expect(within(results).getByText("attenuate").parentElement).toHaveTextContent("减弱；降低");
     expect(results.compareDocumentPosition(nextSession) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
+    );
+  });
+
+  it("opens a search result in the existing study reveal UI", async () => {
+    const user = userEvent.setup();
+    const getStudyQueue = vi.fn<LearningRepository["getStudyQueue"]>();
+    const getLocalCard = vi.fn<LearningRepository["getLocalCard"]>((cardId) =>
+      Promise.resolve(cardId === researchCard.cardId ? researchCard : null)
+    );
+    const repository = createRepository({ getStudyQueue, getLocalCard });
+    renderWithLearningApp(<HomeStudyRoutes />, { repository });
+
+    await user.type(
+      screen.getByRole("searchbox", { name: "Search learned Context Cards" }),
+      "attenuate"
+    );
+    const result = await screen.findByRole("link", { name: /attenuate/ });
+    expect(result).toHaveAttribute("href", "/study/research?card=card-research-1");
+    await user.click(result);
+
+    expect(await screen.findByRole("heading", { level: 1, name: "attenuate" })).toBeInTheDocument();
+    expect(screen.getByText(/what does this word mean in this context/i)).toBeInTheDocument();
+    expect(screen.getByText(researchCard.targetText, { selector: "mark" })).toBeInTheDocument();
+    expect(document.getElementById("context-sentence-anchor")).toHaveTextContent(
+      researchCard.contextSentence
+    );
+    expect(screen.queryByText(researchCard.meaningEn)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", { name: /how well did you remember/i })
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /reveal answer/i }));
+    expect(await screen.findByText(researchCard.meaningEn)).toBeInTheDocument();
+    expect(screen.getByText(researchCard.usageNote)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", { name: /how well did you remember/i })
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to Home" })).toBeInTheDocument();
+    expect(getStudyQueue).not.toHaveBeenCalled();
+    expect(getLocalCard).toHaveBeenCalledWith("card-research-1");
+  });
+
+  it("shows Home search when a local lexicon is present even if the day assignment is not ready", async () => {
+    const user = userEvent.setup();
+    const getCachedHome = vi.fn<LearningRepository["getCachedHome"]>(() => Promise.resolve(null));
+    const hasLocalLexicon = vi.fn<LearningRepository["hasLocalLexicon"]>(() =>
+      Promise.resolve(true)
+    );
+    const repository = createRepository({ getCachedHome, hasLocalLexicon });
+
+    renderWithLearningApp(<HomePage />, {
+      repository,
+      initialHome: null,
+      syncState: { status: "syncing", pendingCount: 0 }
+    });
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "No learning day is cached on this device."
+      })
+    ).toBeInTheDocument();
+    const field = await screen.findByRole("searchbox", { name: "Search learned Context Cards" });
+    expect(screen.getByRole("status")).toHaveTextContent("Syncing");
+    expect(screen.queryByRole("article", { name: "Research English" })).not.toBeInTheDocument();
+    expect(getCachedHome).toHaveBeenCalledTimes(1);
+
+    await user.type(field, "attenuate");
+    const results = await screen.findByRole("list");
+    expect(within(results).getByRole("link", { name: /attenuate/ })).toHaveAttribute(
+      "href",
+      "/study/research?card=card-research-1"
     );
   });
 

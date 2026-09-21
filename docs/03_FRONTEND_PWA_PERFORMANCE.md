@@ -50,7 +50,7 @@ inputmode="numeric"
 
 本地缓存可用时，Supabase 慢或断网不能造成白屏或长时间全屏 loading。后台 Sync 标为 synced 后，只要本地已有任一模块的当日 summary，Home 就必须从 empty 升级为模块卡；不得因另一模块缺失而保持整页 empty（DEC-049）。
 
-首页先显示个人词库搜索主表面，再显示次级 Next Session 和两个更次一级的模块摘要。模块卡至少显示：
+首页先显示个人词库搜索主表面，再显示次级 Next Session 和两个更次一级的模块摘要。本地词库已就绪时（desktop 全量目录 seed，或 IndexedDB 已有 `cached_cards`），即使当日 assignment / Sync 尚未完成，也必须显示搜索框；点击结果走既有 Study 查阅，不新增 Search 页（DEC-058）。模块卡至少显示：
 
 ```text
 module name

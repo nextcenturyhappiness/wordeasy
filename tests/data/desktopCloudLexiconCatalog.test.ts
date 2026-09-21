@@ -64,6 +64,15 @@ describe("desktop cloud lexicon catalog seed", () => {
     expect(await activeDatabase?.cached_cards.count()).toBe(0);
     expect(await hosted.searchLocalCards(requireCard("research_english").word.lemma)).toEqual([]);
     expect(await hosted.searchLocalCards("phagocytosis")).toEqual([]);
+    expect(await hosted.hasLocalLexicon()).toBe(false);
+    expect(await hosted.getLocalCard(requireCard("research_english").card.id)).toBeNull();
+  });
+
+  it("reports a local lexicon for desktop seed before any day assignment exists", async () => {
+    const repository = createCloudRepository();
+    expect(await repository.hasLocalLexicon()).toBe(true);
+    expect(await repository.getCachedHome()).toBeNull();
+    expect(await activeDatabase?.cached_cards.count()).toBe(0);
   });
 
   it("upserts the full local catalog for desktop search without creating assignments", async () => {
@@ -174,5 +183,13 @@ describe("desktop cloud lexicon catalog seed", () => {
       await database.cached_assignment_sets.get([USER_ID, "research_english", STUDY_DATE, "new"])
     ).toMatchObject({ status: "ready" });
     expect(await database.cached_daily_review_assignments.count()).toBe(0);
+
+    const opened = await repository.getLocalCard(research.card.id);
+    expect(opened).toMatchObject({
+      cardId: research.card.id,
+      module: "research_english",
+      lemma: research.word.lemma,
+      contextSentence: research.context.contextSentence
+    });
   });
 });

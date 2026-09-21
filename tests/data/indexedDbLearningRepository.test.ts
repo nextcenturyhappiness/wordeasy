@@ -44,6 +44,8 @@ describe("IndexedDbLearningRepository", () => {
     expect(await database.cached_daily_assignments.count()).toBe(0);
     expect(await database.sync_outbox.count()).toBe(0);
     expect(await repository.getCachedHome()).toBeNull();
+    expect(await repository.hasLocalLexicon()).toBe(false);
+    expect(await repository.getLocalCard("missing-card")).toBeNull();
     expect(schedulerLoads).toBe(0);
   });
 
