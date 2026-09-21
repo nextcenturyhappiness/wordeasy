@@ -263,8 +263,7 @@ describe("StudyPage", () => {
     }
   });
 
-  it("opens a local catalog lookup from ?card= without rating or a daily queue", async () => {
-    const user = userEvent.setup();
+  it("opens a local catalog lookup from ?card= already revealed, without rating or a daily queue", async () => {
     const getStudyQueue = vi.fn<LearningRepository["getStudyQueue"]>();
     const getLocalCard = vi.fn<LearningRepository["getLocalCard"]>((cardId) =>
       Promise.resolve(cardId === researchCard.cardId ? researchCard : null)
@@ -284,13 +283,13 @@ describe("StudyPage", () => {
     expect(document.getElementById("context-sentence-anchor")).toHaveTextContent(
       researchCard.contextSentence
     );
-    expect(screen.queryByText(researchCard.meaningEn)).not.toBeInTheDocument();
+    expect(await screen.findByText(researchCard.meaningEn)).toBeInTheDocument();
+    expect(screen.getByText(researchCard.meaningZh)).toBeInTheDocument();
+    expect(screen.getByText(researchCard.usageNote)).toBeInTheDocument();
+    expect(screen.queryByText(/what does this word mean in this context/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /reveal answer/i })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "← Home" })).toHaveAttribute("href", "/");
     expect(screen.getByText("Context Card")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /reveal answer/i }));
-    expect(await screen.findByText(researchCard.meaningEn)).toBeInTheDocument();
-    expect(screen.getByText(researchCard.usageNote)).toBeInTheDocument();
     expect(
       screen.queryByRole("group", { name: /how well did you remember/i })
     ).not.toBeInTheDocument();

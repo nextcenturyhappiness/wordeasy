@@ -120,9 +120,9 @@ export function StudyPage() {
               cards: [card]
             });
             setCardIndex(0);
-            setPhase("prompt");
+            setPhase("revealed");
             setSaveError(null);
-            setAnnouncement("");
+            setAnnouncement("Context Card opened with meaning and usage visible.");
           }
           return;
         }

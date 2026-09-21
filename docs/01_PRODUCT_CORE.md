@@ -264,7 +264,7 @@ Offline
 
 空查询只显示搜索框，不显示「词库」标题，不打开独立搜索页。输入框不放中文或英文 placeholder 提示，可访问名称由 `aria-label` / label 提供。无匹配时显示诚实空文案「还没有学过相关的词」，不得回退到公共词典、翻译器或编造释义。不新增 Search 主导航。
 
-有结果时：lemma 与中文释义同一行（lemma 在左），其下是 `meaning_en`，再下是更安静的语境句。不得另加「解释」一类标签。多条结果放在有限高度的纵向可滚动区域内，Next Session 仍在搜索区下方。点击结果进入既有 Study 查阅（`/study/:module?card=`）：同一套 lemma + 完整例句 + Reveal，不评分、不改当日队列（DEC-058）。
+有结果时：lemma 与中文释义同一行（lemma 在左），其下是 `meaning_en`，再下是更安静的语境句。不得另加「解释」一类标签。多条结果放在有限高度的纵向可滚动区域内，Next Session 仍在搜索区下方。点击结果进入既有 Study 查阅（`/study/:module?card=`）：同一套 lemma + 完整例句 + 已 Reveal 的释义/usage，跳过正面提问；不评分、不改当日队列（DEC-058）。
 
 ---
 

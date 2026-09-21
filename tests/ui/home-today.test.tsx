@@ -378,7 +378,7 @@ describe("Home and Today", () => {
     );
   });
 
-  it("opens a search result in the existing study reveal UI", async () => {
+  it("opens a search result already revealed, without a Reveal step", async () => {
     const user = userEvent.setup();
     const getStudyQueue = vi.fn<LearningRepository["getStudyQueue"]>();
     const getLocalCard = vi.fn<LearningRepository["getLocalCard"]>((cardId) =>
@@ -396,19 +396,15 @@ describe("Home and Today", () => {
     await user.click(result);
 
     expect(await screen.findByRole("heading", { level: 1, name: "attenuate" })).toBeInTheDocument();
-    expect(screen.getByText(/what does this word mean in this context/i)).toBeInTheDocument();
     expect(screen.getByText(researchCard.targetText, { selector: "mark" })).toBeInTheDocument();
     expect(document.getElementById("context-sentence-anchor")).toHaveTextContent(
       researchCard.contextSentence
     );
-    expect(screen.queryByText(researchCard.meaningEn)).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("group", { name: /how well did you remember/i })
-    ).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /reveal answer/i }));
     expect(await screen.findByText(researchCard.meaningEn)).toBeInTheDocument();
+    expect(screen.getByText(researchCard.meaningZh)).toBeInTheDocument();
     expect(screen.getByText(researchCard.usageNote)).toBeInTheDocument();
+    expect(screen.queryByText(/what does this word mean in this context/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /reveal answer/i })).not.toBeInTheDocument();
     expect(
       screen.queryByRole("group", { name: /how well did you remember/i })
     ).not.toBeInTheDocument();
