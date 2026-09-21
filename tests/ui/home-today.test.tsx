@@ -380,7 +380,11 @@ describe("Home and Today", () => {
 
   it("opens a search result in the existing study reveal UI", async () => {
     const user = userEvent.setup();
-    const repository = createRepository();
+    const getStudyQueue = vi.fn<LearningRepository["getStudyQueue"]>();
+    const getLocalCard = vi.fn<LearningRepository["getLocalCard"]>((cardId) =>
+      Promise.resolve(cardId === researchCard.cardId ? researchCard : null)
+    );
+    const repository = createRepository({ getStudyQueue, getLocalCard });
     renderWithLearningApp(<HomeStudyRoutes />, { repository });
 
     await user.type(
@@ -393,17 +397,24 @@ describe("Home and Today", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "attenuate" })).toBeInTheDocument();
     expect(screen.getByText(/what does this word mean in this context/i)).toBeInTheDocument();
-    expect(screen.getByText(researchCard.contextSentence)).toBeInTheDocument();
+    expect(screen.getByText(researchCard.targetText, { selector: "mark" })).toBeInTheDocument();
+    expect(document.getElementById("context-sentence-anchor")).toHaveTextContent(
+      researchCard.contextSentence
+    );
     expect(screen.queryByText(researchCard.meaningEn)).not.toBeInTheDocument();
-    expect(screen.queryByRole("group", { name: /how well did you remember/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", { name: /how well did you remember/i })
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /reveal answer/i }));
     expect(await screen.findByText(researchCard.meaningEn)).toBeInTheDocument();
     expect(screen.getByText(researchCard.usageNote)).toBeInTheDocument();
-    expect(screen.queryByRole("group", { name: /how well did you remember/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", { name: /how well did you remember/i })
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Back to Home" })).toBeInTheDocument();
-    expect(repository.getStudyQueue).not.toHaveBeenCalled();
-    expect(repository.getLocalCard).toHaveBeenCalledWith("card-research-1");
+    expect(getStudyQueue).not.toHaveBeenCalled();
+    expect(getLocalCard).toHaveBeenCalledWith("card-research-1");
   });
 
   it("shows Home search when a local lexicon is present even if the day assignment is not ready", async () => {

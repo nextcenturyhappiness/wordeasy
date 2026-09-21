@@ -347,10 +347,7 @@ export function StudyPage() {
             ? "Reconnect once to cache the stable assignment. No replacement cards were generated."
             : activeResource.message}
         </p>
-        <Link
-          className="button button--secondary"
-          to={isLookup ? "/" : `/today/${moduleRoute}`}
-        >
+        <Link className="button button--secondary" to={isLookup ? "/" : `/today/${moduleRoute}`}>
           {isLookup ? "Return to Home" : "Return to Today"}
         </Link>
       </section>

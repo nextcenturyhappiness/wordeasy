@@ -123,7 +123,10 @@ export function LexiconSearch({ repository }: LexiconSearchProps) {
           <ul className="lexicon-search__results" id={listId} tabIndex={0}>
             {hits.map((hit) => (
               <li key={hit.cardId}>
-                <Link className="lexicon-search__hit" to={lexiconLookupHref(hit.module, hit.cardId)}>
+                <Link
+                  className="lexicon-search__hit"
+                  to={lexiconLookupHref(hit.module, hit.cardId)}
+                >
                   <p className="lexicon-search__meta">
                     <span>{getModuleName(hit.module)}</span>
                     {hit.learned ? <span>Learned</span> : null}
