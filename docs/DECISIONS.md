@@ -711,7 +711,7 @@ Related requirements: UI-001, UI-006, UI-015, DESKTOP-001/004; DEC-009, DEC-032,
 Context: Mac Home 能搜到本地词库（含 DEC-056 全量目录），但点结果无导航；且搜索框被 Home `empty`（无当日 `daily_summary`）挡住，必须等云端 Sync 写出 day cache 才出现。检索只读 IndexedDB `cached_cards`，与 assignment/Sync 无关。
 Decision:
 
-1. 点击或轻点一条 Home 检索结果，进入既有 `/study/:module?card=<cardId>` 查阅。使用同一套 Context Card 正/背面（lemma、完整例句、Reveal 后释义与 usage），不新增独立 Search 页或词典页。查阅不是当日 New/Review 队列：不评分、不写 review event、不改 assignment。
+1. 点击或轻点一条 Home 检索结果，进入既有 `/study/:module?card=<cardId>` 查阅。使用同一套 Context Card 背面内容（lemma、完整例句、中文释义、English meaning、usage），**直接以已 Reveal 状态打开**，跳过正面提问与 Reveal 按钮：检索是查词，不是背词。不新增独立 Search 页或词典页。查阅不是当日 New/Review 队列：不评分、不写 review event、不改 assignment。New/Review 仍走正面 + Reveal + 评分。
 2. Home 是否显示搜索框与 Sync / 当日 assignment 解耦。`hasLocalLexicon()` 为真时（Mac desktop 已接 DEC-056 deferred catalog seed，或 `cached_cards` 已有本地卡），即使 `getCachedHome()` 仍为 null、Sync 仍为 syncing/failed，也显示搜索主表面。hosted PWA 在本地没有任何 cached card 且无 desktop seed 时，empty Home 仍可不显示搜索框。
 3. 首次输入仍可触发既有 deferred catalog bootstrap（DEC-056）。不得为了显示搜索框而等待 Supabase 或完整 day cache。
 
