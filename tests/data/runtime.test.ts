@@ -110,6 +110,34 @@ describe("createLearningRuntime", () => {
     }
   );
 
+  it.each([
+    ["standalone", "wordeasy:standalone:v1:local-user"],
+    ["desktop", "wordeasy:desktop:v1:local-user"]
+  ] as const)(
+    "keeps %s progress in %s without opening a cloud account",
+    async (mode, databaseName) => {
+      vi.stubEnv("MODE", mode);
+      vi.stubEnv("VITE_APP_MODE", mode);
+      databaseNames.push(databaseName);
+      const runtime = await createLearningRuntime({
+        mode,
+        timezone: "Asia/Shanghai",
+        now: () => new Date("2026-09-22T08:00:00.000Z")
+      });
+
+      expect(runtime.mode).toBe(mode);
+      expect(runtime.sync.getState()).toEqual({ status: "local-only", pendingCount: 0 });
+      expect(await runtime.learning.getCachedHome()).toMatchObject({ userId: "local-user" });
+      const inspectionDatabase = new LearningDatabase(databaseName);
+      expect(await inspectionDatabase.local_profile.get("local-user")).toMatchObject({
+        userId: "local-user",
+        email: "local@wordeasy.invalid"
+      });
+      inspectionDatabase.close();
+      await runtime.dispose();
+    }
+  );
+
   it.each(["standalone", "desktop"] as const)(
     "refuses the %s runtime outside its matching build mode",
     async (mode) => {

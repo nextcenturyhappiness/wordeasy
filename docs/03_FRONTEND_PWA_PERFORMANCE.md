@@ -59,7 +59,7 @@ words learned
 Continue
 ```
 
-另显示 streak、小型 sync state。完整词库不得因 Home 首次绘制而被拉入首屏 bundle；搜索与下一句预览只读本地缓存，搜索首次输入才允许触发已有的 deferred catalog bootstrap。`VITE_APP_MODE=desktop` 的该 bootstrap 会把完整本地目录 upsert 进 `cached_cards` 供检索（DEC-056），assignment/sync 仍只写队列。hosted cloud / PWA 搜索保持子串匹配且不播种全库；Mac desktop 与 standalone 的拼写容错见 DEC-055。首页视觉层级见 DEC-039：搜索是打开应用的主因，Next Session 是可选清队列入口。搜索呈现见 DEC-042：无「词库」标题，结果行 lemma+中文同行，多条结果在有限高度面板内滚动。
+hosted cloud 另显示 streak、小型 sync state。个人 Mac desktop 不显示 Sync status 或 Sync now（DEC-059）。完整词库不得因 Home 首次绘制而被拉入首屏 bundle；搜索与下一句预览只读本地缓存，搜索首次输入才允许触发已有的 deferred catalog bootstrap。`VITE_APP_MODE=desktop` 与 standalone 的该 bootstrap 由 `PersonalLearningRepository` 把完整本地目录写入本机 `cached_cards`（DEC-059）。hosted cloud / PWA 搜索保持子串匹配且不播种全库；Mac desktop 与 standalone 的拼写容错见 DEC-055。首页视觉层级见 DEC-039：搜索是打开应用的主因，Next Session 是可选清队列入口。搜索呈现见 DEC-042：无「词库」标题，结果行 lemma+中文同行，多条结果在有限高度面板内滚动。
 
 ---
 
@@ -279,17 +279,17 @@ com.nextcenturyhappiness.wordeasy
 
 桌面 build 必须：
 
-- 将全部前端资源打入应用，启动不依赖 Preview 或 Cloudflare；首次界面不得等待 Supabase 网络请求；
+- 将全部前端资源打入应用，启动不依赖 Preview、Cloudflare 或 Supabase；首次界面不得等待网络请求；
 - 不生成或注册 Service Worker、Web Manifest、Workbox 或 Cloudflare `_headers`；
-- 使用严格 CSP、零应用 capability；远程导航默认拒绝，仅放行本地 WebView origin 与本项目 Supabase origin（`https` 与 `wss`，供 Auth / RPC / `review-sync` Edge Function）；
+- 使用严格 CSP、零应用 capability；远程导航默认拒绝，只放行本地 WebView origin。不放行 Supabase 或其他远程 origin（DEC-059）；
 - 不启用 shell、文件系统、HTTP、dialog、updater 等 Tauri plugin；
-- 客户端只读取 `VITE_SUPABASE_URL` 与 `VITE_SUPABASE_PUBLISHABLE_KEY`，读取方式与 cloud web build 相同（本地 `.env` / CI secrets）；不得把 publishable key 写入 git，不得包含或读取 `service_role`。
+- 不读取、不嵌入 `VITE_SUPABASE_URL`、publishable key 或 `service_role`。
 
-### DESKTOP-004 · P0 · 本地优先的云端学习边界
+### DESKTOP-004 · P0 · 本机个人学习边界
 
-macOS 个人版使用与 `npm run dev:cloud` 相同的云端学习 runtime：WebView 内 Email OTP，账户与浏览器同一 Supabase 项目。评分必须先写入 IndexedDB，再异步同步；同步失败不得阻塞学习。同一天 assignment 保持稳定。
+macOS 个人版使用与 standalone 相同的本地 `PersonalLearningRepository`（DEC-059）。不显示 Email OTP，不显示 Sync status / Sync now，正常学习不连接 Supabase。评分只写入 IndexedDB `wordeasy:desktop:v1:local-user`。同一台 Mac 上，同一天 assignment 保持稳定。与手机 standalone 的进度彼此独立。
 
-桌面使用与浏览器相同的云端账户，并保持 local-first；不得显示常驻 environment / deployment banner 来重复说明这些边界。不得把尚未接入同一账户的 Android standalone PWA 描述为已同步。Mac desktop 另播种完整本地词库到 `cached_cards` 供首页检索（DEC-056）；不得因此改写 assignment、评分或同步身份。
+不得显示常驻 environment / deployment banner。不得把 Mac 与手机描述为已同步。完整本地词库由个人 runtime 的 deferred bootstrap 写入本机 `cached_cards`，供首页检索与当日 New/Review。切换自旧的云端 Mac 账户会开始新的本机进度；不得静默删除 `article-english:cloud:*` 或其他无关库。
 
 ---
 
@@ -373,7 +373,7 @@ import allVocabulary from "./all-words.json";
 
 把完整词库打入初始或 Home bundle。
 
-Seed data 通过数据库 seed、导入脚本或测试 fixture 提供。standalone 与 Mac desktop 允许把完整约 900 张目录放在独立 deferred chunk，仅在搜索或 Study 的 deferred bootstrap 时加载（DEC-056）。hosted cloud / PWA 不得打入该 chunk。
+Seed data 通过数据库 seed、导入脚本或测试 fixture 提供。standalone 与 Mac desktop 允许把完整约 900 张目录放在独立 deferred chunk，仅在搜索或 Study 的 deferred bootstrap 时加载（DEC-059）。hosted cloud / PWA 不得打入该 chunk。
 
 ---
 

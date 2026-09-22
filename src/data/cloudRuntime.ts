@@ -33,6 +33,8 @@ import {
 import type { SupabaseRemoteServices } from "./supabaseRemote";
 
 const DEVICE_ID_STORAGE_KEY = "article-english:device-id:v1";
+// DEC-059: the Mac app does not boot this cloud runtime. The loader stays inert unless a
+// desktop-mode process constructs the cloud repository; hosted cloud builds leave it null.
 const desktopLexiconCatalogLoader =
   import.meta.env.VITE_APP_MODE === "desktop"
     ? () => import("./desktop/desktopLexiconCatalogSeed")
@@ -149,7 +151,7 @@ function requiredPublicEnvironment(): { url: string; publishableKey: string } {
     publishableKey.length === 0
   ) {
     throw new RuntimeConfigurationError(
-      "VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are required in cloud and desktop packaging."
+      "VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are required in cloud packaging."
     );
   }
   return { url, publishableKey };

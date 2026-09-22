@@ -434,16 +434,16 @@ Cloudflare Pages 上的 Preview 或正式 standalone PWA 发布前后必须保�
 
 必须分别记录自动证据与真实运行证据：
 
-1. `dist-desktop` 不包含 Service Worker、Manifest、Workbox、Cloudflare `_headers` 或 privileged secret；公开客户端只允许本项目 `VITE_SUPABASE_URL` 与 publishable key，且 key 不得写入 git；
-2. 完整词库不得进入首屏或 Home 可达 JavaScript；允许一个独立 deferred catalog chunk，供 desktop 云端 runtime 在首次搜索时把 Research / Medical / 必备医学英语 upsert 进 `cached_cards`（DEC-056）。hosted cloud / PWA 构建不得包含该 chunk。assignment / 评分 / 同步仍走云端 snapshot，不得退回 `desktop:v1`；
-3. `cargo fmt --check`、Clippy `-D warnings`、Cargo tests（含本项目 Supabase origin 放行与其他远程拒绝）通过；
+1. `dist-desktop` 不包含 Service Worker、Manifest、Workbox、Cloudflare `_headers`、Supabase origin、publishable key 或 privileged secret；
+2. 完整词库不得进入首屏或 Home 可达 JavaScript；允许一个独立 deferred catalog chunk，供本地 desktop runtime 在首次搜索或 Study 时把 Research / Medical / 必备医学英语写入 `wordeasy:desktop:v1:local-user`（DEC-059）。hosted cloud / PWA 构建不得包含该 chunk。不显示 Sync status / Sync now，不以 OTP 作为主路径；
+3. `cargo fmt --check`、Clippy `-D warnings`、Cargo tests（本地 WebView origin 放行，Supabase 与其他远程拒绝）通过；
 4. `.app` 与 `.dmg` 均实际生成，主二进制为 `arm64`，identifier 为 `com.nextcenturyhappiness.wordeasy`；
 5. ad-hoc `codesign --verify --deep --strict` 与 `hdiutil verify` 通过；
 6. DMG 实际挂载，挂载卷内包含应用和 Applications 安装入口；
-7. 应用以云端 runtime 启动：未登录时 WebView 内 Email OTP；已有本地 Session 时先显示缓存 Home，不得等待 Supabase 网络；
-8. 评分先写入 IndexedDB；同步失败不阻塞学习；退出并重开后本地进度仍保留；
-9. CSP / 导航仅放行本地 WebView origin 与本项目 Supabase `https` / `wss` origin；Tauri capability / plugin 清单保持最小，无 shell/fs/http/dialog/updater；
-10. 明确记录 Developer ID 签名、Apple 公证和第三方 Mac 分发未验证，不得把 ad-hoc 签名等同于公证。
+7. 应用以本地 runtime 启动：直接进入本机 Home，不得出现登录页，不得等待 Supabase 网络；
+8. 评分写入 IndexedDB `wordeasy:desktop:v1:local-user`；退出并重开后本机进度仍保留。与旧云端账户 `article-english:cloud:*` 和手机 standalone 进度独立，且不得静默删除那些库；
+9. CSP / 导航只放行本地 WebView origin；Tauri capability / plugin 清单保持最小，无 shell/fs/http/dialog/updater；
+10. 明确记录 Developer ID 签名、Apple 公证和第三方 Mac 分发未验证，不得把 ad-hoc 签名等同于公证。合并后的 Mac `.app` 需要在 Apple Silicon 上重新构建后才会变成这个本地路径。
 
 TEST-042 通过不能替代 TEST-027 的真实 Android Chrome PWA 安装验收。
 

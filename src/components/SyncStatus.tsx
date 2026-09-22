@@ -48,6 +48,10 @@ function statusText(state: SyncState): string {
 }
 
 export function SyncStatus({ state, onSync }: SyncStatusProps) {
+  if (import.meta.env.VITE_APP_MODE === "desktop") {
+    return null;
+  }
+
   return (
     <div className="sync-status-group">
       <p className={`sync-status sync-status--${state.status}`} role="status" aria-live="polite">

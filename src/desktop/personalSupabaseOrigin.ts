@@ -1,3 +1,5 @@
+// DEC-059 retired this helper for the personal Mac app. Desktop builds must not call it
+// or embed these values. The optional hosted cloud PWA still uses VITE_SUPABASE_* itself.
 export const PERSONAL_SUPABASE_PROJECT_REF = "kksllqgtjtfxfnknlrfn";
 export const PERSONAL_SUPABASE_HTTPS_ORIGIN = `https://${PERSONAL_SUPABASE_PROJECT_REF}.supabase.co`;
 export const PERSONAL_SUPABASE_WSS_ORIGIN = `wss://${PERSONAL_SUPABASE_PROJECT_REF}.supabase.co`;
