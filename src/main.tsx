@@ -119,13 +119,15 @@ async function switchCloudAccount(session: SessionView): Promise<void> {
 
 async function bootstrap(): Promise<void> {
   try {
+    const appMode = import.meta.env.VITE_APP_MODE;
     if (
-      import.meta.env.VITE_APP_MODE === "demo" ||
-      import.meta.env.VITE_APP_MODE === "preview" ||
-      import.meta.env.VITE_APP_MODE === "standalone"
+      appMode === "demo" ||
+      appMode === "preview" ||
+      appMode === "standalone" ||
+      appMode === "desktop"
     ) {
       const generation = ++runtimeGeneration;
-      const runtime = await createLearningRuntime({ mode: import.meta.env.VITE_APP_MODE });
+      const runtime = await createLearningRuntime({ mode: appMode });
       const session = await runtime.auth.restoreLocal();
       await renderRuntime(runtime, session, generation);
       return;

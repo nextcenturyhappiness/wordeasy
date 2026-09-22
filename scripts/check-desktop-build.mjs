@@ -136,11 +136,18 @@ const cloudRuntimeFiles = [...javascriptByName]
   .filter(([name]) => /^cloudRuntime-[^/]+\.js$/u.test(name))
   .map(([name]) => name);
 assert(
-  cloudRuntimeFiles.length === 1,
-  `Expected one desktop cloud runtime chunk; found ${String(cloudRuntimeFiles.length)}.`
+  cloudRuntimeFiles.length === 0,
+  `Desktop local build still contains a cloud runtime chunk (${cloudRuntimeFiles.join(", ")}).`
+);
+const personalRuntimeFiles = [...javascriptByName]
+  .filter(([, source]) => source.includes("desktop:v1") && source.includes("local-user"))
+  .map(([name]) => name);
+assert(
+  personalRuntimeFiles.length === 1,
+  `Expected one desktop local runtime chunk; found ${String(personalRuntimeFiles.length)}.`
 );
 const homeFiles = staticReachableJavaScript(
-  [...initialFiles, ...cloudRuntimeFiles],
+  [...initialFiles, ...personalRuntimeFiles],
   javascriptByName
 );
 const homeJavaScript = sourcesFor(homeFiles, javascriptByName);
@@ -207,22 +214,22 @@ assert(
   "Desktop initial + Home reachable JavaScript contains the FSRS implementation."
 );
 assert(
-  deferredSupabaseFiles.length === 1,
-  `Expected one deferred Supabase runtime chunk; found ${String(deferredSupabaseFiles.length)}.`
-);
-const deferredSupabaseFile = deferredSupabaseFiles[0];
-assert(deferredSupabaseFile !== undefined, "Desktop Supabase chunk could not be identified.");
-assert(
-  !homeFiles.has(deferredSupabaseFile),
-  "Desktop Home JavaScript statically includes the deferred Supabase runtime."
+  deferredSupabaseFiles.length === 0,
+  `Desktop local build still contains a Supabase runtime chunk (${deferredSupabaseFiles.join(", ")}).`
 );
 assert(
-  allJavaScript.includes(PERSONAL_SUPABASE_HTTPS_ORIGIN),
-  "Desktop build does not contain the personal Supabase HTTPS origin."
+  !allJavaScript.includes(PERSONAL_SUPABASE_HTTPS_ORIGIN) &&
+    !allJavaScript.includes(PERSONAL_SUPABASE_WSS_ORIGIN) &&
+    !allJavaScript.includes(PERSONAL_SUPABASE_HOST),
+  "Desktop build still contains the personal Supabase origin."
 );
 assert(
-  !allJavaScript.includes("desktop:v1") && !allJavaScript.includes("local-user"),
-  "Desktop cloud build still contains the retired local-only desktop identity."
+  allJavaScript.includes("desktop:v1") && allJavaScript.includes("local-user"),
+  "Desktop build is missing its stable local identity wordeasy:desktop:v1:local-user."
+);
+assert(
+  !allJavaScript.includes("article-english:cloud:"),
+  "Desktop build still contains the cloud account IndexedDB prefix."
 );
 assert(
   !allJavaScript.includes("SUPABASE_SERVICE_ROLE_KEY"),
@@ -272,13 +279,17 @@ assert(
 for (const directive of [
   "default-src 'none'",
   "script-src 'self'",
-  `connect-src 'self' ${PERSONAL_SUPABASE_HTTPS_ORIGIN} ${PERSONAL_SUPABASE_WSS_ORIGIN}`,
+  "connect-src 'self'",
   "worker-src 'none'",
   "manifest-src 'none'",
   "frame-ancestors 'none'"
 ]) {
   assert(tauriConfig.app.security.csp.includes(directive), `Tauri CSP is missing: ${directive}`);
 }
+assert(
+  !tauriConfig.app.security.csp.includes(PERSONAL_SUPABASE_HOST),
+  "Tauri CSP still allowlists the personal Supabase origin."
+);
 assert(
   tauriConfig.bundle.targets.join(",") === "app,dmg" &&
     tauriConfig.bundle.macOS.hardenedRuntime === true &&
@@ -293,10 +304,10 @@ assert(
   tauriSource.includes('new("navigation-guard")') &&
     tauriSource.includes(".on_navigation") &&
     tauriSource.includes("navigation_is_allowed") &&
-    tauriSource.includes(PERSONAL_SUPABASE_HOST) &&
+    !tauriSource.includes(PERSONAL_SUPABASE_HOST) &&
     !tauriSource.includes("invoke_handler") &&
     !tauriSource.includes("#[tauri::command]"),
-  "Desktop Rust boundary lacks its navigation guard or exposes an IPC command."
+  "Desktop Rust boundary lacks its navigation guard, still allowlists Supabase, or exposes an IPC command."
 );
 const capabilityDirectory = join(root, "src-tauri", "capabilities");
 const capabilityFiles = (await exists(capabilityDirectory))
@@ -309,59 +320,46 @@ assert(
 
 const viteEntry = join(root, "node_modules", "vite", "bin", "vite.js");
 const envGuardRoot = await mkdtemp(join(tmpdir(), "wordeasy-desktop-env-"));
-const desktopEnvGuardCases = [
-  {
-    name: "missing public env",
-    env: { VITE_SUPABASE_URL: "", VITE_SUPABASE_PUBLISHABLE_KEY: "" },
-    diagnostic: "VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY"
-  },
-  {
-    name: "wrong Supabase origin",
-    env: {
-      VITE_SUPABASE_URL: "https://another-project.supabase.co",
-      VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_desktop_test"
-    },
-    diagnostic: "personal Supabase origin"
-  },
-  {
-    name: "privileged credential",
-    env: {
-      VITE_SUPABASE_URL: PERSONAL_SUPABASE_HTTPS_ORIGIN,
-      VITE_SUPABASE_PUBLISHABLE_KEY: ["service", "role", "placeholder"].join("_")
-    },
-    diagnostic: "privileged Supabase credential"
-  }
-];
+const sentinelUrl = "https://desktop-must-not-embed.supabase.co";
+const sentinelKey = "sb_publishable_desktop_must_not_embed";
 try {
-  for (const [index, guard] of desktopEnvGuardCases.entries()) {
-    const result = spawnSync(
-      process.execPath,
-      [
-        "--",
-        viteEntry,
-        "build",
-        "--mode",
-        "desktop",
-        "--outDir",
-        join(envGuardRoot, String(index))
-      ],
-      {
-        cwd: root,
-        encoding: "utf8",
-        env: { ...process.env, ...guard.env }
+  const guardOutput = join(envGuardRoot, "with-supabase-env");
+  const result = spawnSync(
+    process.execPath,
+    ["--", viteEntry, "build", "--mode", "desktop", "--outDir", guardOutput],
+    {
+      cwd: root,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        VITE_SUPABASE_URL: sentinelUrl,
+        VITE_SUPABASE_PUBLISHABLE_KEY: sentinelKey
       }
-    );
-    const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
-    assert(result.status !== 0, `Desktop env guard allowed ${guard.name}.`);
-    assert(
-      output.includes(guard.diagnostic),
-      `Desktop env guard rejected ${guard.name} without the expected diagnostic.`
-    );
-  }
+    }
+  );
+  const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+  assert(
+    result.status === 0,
+    `Desktop build failed when unused Supabase env was present.\n${output}`
+  );
+  const guardAssets = await readdir(join(guardOutput, "assets"));
+  const guardJavaScript = (
+    await Promise.all(
+      guardAssets
+        .filter((name) => name.endsWith(".js"))
+        .map((name) => readFile(join(guardOutput, "assets", name), "utf8"))
+    )
+  ).join("\n");
+  assert(
+    !guardJavaScript.includes(sentinelUrl) &&
+      !guardJavaScript.includes(sentinelKey) &&
+      !guardJavaScript.includes(PERSONAL_SUPABASE_HOST),
+    "Desktop build embedded Supabase configuration from the environment."
+  );
 } finally {
   await rm(envGuardRoot, { recursive: true, force: true });
 }
 
 console.log(
-  `Desktop cloud boundary passed: ${(initialGzip / 1024).toFixed(2)} KiB initial JS, ${(homeGzip / 1024).toFixed(2)} KiB Home JS, deferred lexicon catalog, Supabase and FSRS chunks, ${(initialCssGzip / 1024).toFixed(2)} KiB CSS, personal Supabase origin allowlisted, zero capability/IPC/plugin, no PWA runtime or privileged secret.`
+  `Desktop local boundary passed: ${(initialGzip / 1024).toFixed(2)} KiB initial JS, ${(homeGzip / 1024).toFixed(2)} KiB Home JS, deferred lexicon catalog and FSRS chunks, ${(initialCssGzip / 1024).toFixed(2)} KiB CSS, wordeasy:desktop:v1:local-user, no Supabase origin, zero capability/IPC/plugin, no PWA runtime or privileged secret.`
 );

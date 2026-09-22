@@ -8,7 +8,7 @@ wordeasy is a local-first Research English + Medical English + 必备医学英�
 Context Card = word + domain-specific sense + article/medical context
 ```
 
-The product has three isolated modules (`research_english`, `medical_english`, `essential_medical`), stable daily New and Review queues, offline-first rating in IndexedDB, background Supabase synchronization, Email OTP authentication, a pinned FSRS adapter, and an installable Vite PWA.
+The product has three isolated modules (`research_english`, `medical_english`, `essential_medical`), stable daily New and Review queues, offline-first rating in IndexedDB, a pinned FSRS adapter, and an installable Vite PWA. The owner's Mac app and phone PWA each keep progress only on that device (DEC-059). The hosted cloud PWA can still use Email OTP and Supabase sync, but it is an optional legacy target.
 
 ## Agent handoff
 
@@ -21,17 +21,17 @@ Do not rely on chat memory. Before any product or quota change, read in this ord
 
 `docs/` is the source of truth. If this README or `AGENTS.md` disagrees with those files, follow the docs, record the conflict in `docs/DECISIONS.md`, and update `docs/TRACEABILITY.md`. Do not silently reinterpret.
 
-Make the smallest correct diff. Do not reintroduce Deferred features from SCOPE-002: Add Word, a global Search page or Search nav, AI generation, Anki / `.apkg`, statistics dashboards, social features, OCR, article/PDF import, CSV export, native Android packaging, or store / notarized distribution. Home local Context Card search is authorized (DEC-032 / DEC-039 / DEC-042); a separate search product is not.
+Make the smallest correct diff. Do not reintroduce Deferred features from SCOPE-002: Add Word, a global Search page or Search nav, AI generation, Anki / `.apkg`, statistics dashboards, social features, OCR, article/PDF import, CSV export, native Android packaging, or store / notarized distribution. Home local Context Card search is authorized (DEC-032 / DEC-039 / DEC-042); a separate search product is not. Do not reintroduce Supabase Sync as a requirement between the Mac app and the phone (DEC-059).
 
 ## Current status
 
 The repository is a release candidate with three formal personal distribution targets that share the same React learning core:
 
-- the hosted cloud PWA at [https://wordeasy-cloud.pages.dev](https://wordeasy-cloud.pages.dev) (`npm run build` / `npm run dev:cloud`);
-- an installable Android / macOS Chrome local-data PWA in `standalone` mode;
-- an Apple Silicon personal macOS `.app` / `.dmg` built with Tauri 2, which uses the same cloud account as the hosted PWA (DEC-030).
+- an installable Android / macOS Chrome local-data PWA in `standalone` mode (the phone product path);
+- an Apple Silicon personal macOS `.app` / `.dmg` built with Tauri 2, which uses the same local personal catalog and does not sync with the phone (DEC-059);
+- the hosted cloud PWA at [https://wordeasy-cloud.pages.dev](https://wordeasy-cloud.pages.dev) (`npm run build` / `npm run dev:cloud`), kept as an optional legacy target.
 
-The standalone PWA keeps the complete personal catalog on that device (900 cards: Research 60 + Medical 177 + 必备医学英语 663) and makes no Supabase request. The personal macOS App logs into the same cloud runtime as `npm run dev:cloud` / `wordeasy-cloud.pages.dev`, while still saving ratings in IndexedDB first. The older private, 20-card Preview remains deployment history rather than the current product delivery. Local automated checks exercise the formal PWA, desktop cloud boundary (including DEC-055 fuzzy search and DEC-056 full-catalog seed), demo learning flow, cloud adapters, sync failure and conflict handling, PWA offline launch, cached offline learning, bundle budgets, and startup under delayed or failed Supabase requests. The following still require an external environment and are intentionally not reported as passed:
+The standalone PWA and the personal macOS App each keep the complete personal catalog on that device (900 cards: Research 60 + Medical 177 + 必备医学英语 663) and make no Supabase request. Their IndexedDB identities stay separate: `wordeasy:standalone:v1:local-user` on the phone and `wordeasy:desktop:v1:local-user` on the Mac. Switching a Mac from the old cloud account to this local app starts a new local history; existing `article-english:cloud:*` data is left in place. The older private, 20-card Preview remains deployment history rather than the current product delivery. Local automated checks exercise the formal PWA, desktop local boundary (including DEC-055 fuzzy search and the deferred 900-card catalog), demo learning flow, cloud adapters, sync failure and conflict handling, PWA offline launch, cached offline learning, bundle budgets, and startup under delayed or failed Supabase requests. The following still require an external environment and are intentionally not reported as passed:
 
 - real Supabase migration, RLS, RPC, Edge Function, OTP, and two-client checks;
 - physical Android Chrome and macOS Chrome PWA installation;
@@ -51,7 +51,7 @@ See `docs/RELEASE_VERIFICATION.md` for the exact evidence boundary.
 - Immutable UUID review events are retried idempotently through an account-scoped outbox.
 - Study shows the lemma and the full context sentence on the front (no cloze). Reveal answers with meaning-in-context, not a missing-word prompt (DEC-046). 必备医学英语 examples are real clinical / physiological / chart contexts, not classroom frames or mad-lib shells (DEC-053 / DEC-054). Root/affix classroom notes go in `usage_note` when they help; otherwise that field may be empty (DEC-052).
 - Canonical catalog sizes: Research 60; Medical 177 (140 active, 37 deactivated specialty / shallow-chart cards); 必备医学英语 663. Standalone / personal full catalog is 900. Demo is an explicit 20-card Research + Medical subset; 必备医学英语 is shortage in Demo.
-- The full catalog is not shipped in the initial browser JavaScript bundle. Hosted cloud / PWA / demo search the local day-cache (and other already-cached cards) with case-insensitive substring matching (DEC-032 / DEC-039 / DEC-042). Mac desktop (`VITE_APP_MODE=desktop`) additionally seeds the full local catalog into IndexedDB for Home search (DEC-056) and allows bounded lemma / display-form fuzzy matching; standalone / personal local catalogs share that fuzzy rule (DEC-055). Hosted cloud / PWA search stays substring + day-cache unless a later decision documents otherwise.
+- The full catalog is not shipped in the initial browser JavaScript bundle. Hosted cloud / PWA / demo search the local day-cache (and other already-cached cards) with case-insensitive substring matching (DEC-032 / DEC-039 / DEC-042). Mac desktop (`VITE_APP_MODE=desktop`) and standalone seed the full local catalog into their own IndexedDB for Home search (DEC-059) and allow bounded lemma / display-form fuzzy matching (DEC-055). Hosted cloud / PWA search stays substring + day-cache unless a later decision documents otherwise.
 - Deferred features such as Add Word, a global Search page, AI, Anki, statistics dashboards, and social features have no placeholder routes or buttons. Home local search is not one of those Deferred items.
 
 ## Technology
@@ -76,7 +76,7 @@ npm run dev:demo
 
 The demo is explicit and uses its own IndexedDB namespace. It derives a controlled 20-card browser subset from the canonical dataset at build time: Research 5 + 2 + 3 and Medical 7 词根构词 + 3 病历用语. 必备医学英语 is not in that subset (Demo reports shortage / `newTotal` 0). The full catalog is never imported by demo or hosted-cloud browser source.
 
-For cloud mode or the personal Mac app, copy `.env.example` to `.env.local` and set only the public browser values:
+For the optional hosted cloud PWA, copy `.env.example` to `.env.local` and set only the public browser values:
 
 ```dotenv
 VITE_APP_MODE=cloud
@@ -90,7 +90,7 @@ Then run:
 npm run dev:cloud
 ```
 
-The desktop Vite mode reads the same `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from `.env` / `.env.local` / `.env.production` / CI secrets. Do not put those values in the committed `.env.desktop` file. Production and desktop packaging do not silently fall back to demo when configuration is absent.
+The desktop Vite mode does not read Supabase settings. Do not put those values in the committed `.env.desktop` file. Production cloud packaging does not silently fall back to demo when configuration is absent. Desktop packaging does not fall back to the cloud runtime.
 
 ## Run the formal personal PWA
 
@@ -104,13 +104,13 @@ npm run test:pwa:standalone
 npm run test:standalone:e2e
 ```
 
-Deploy `dist-standalone` to an HTTPS origin to install it from Android Chrome. The Android standalone PWA is local-only; it is not synced with the Mac cloud app, and neither device is a backup for the other.
+Deploy `dist-standalone` to an HTTPS origin to install it from Android Chrome. The phone PWA is local-only. It is not synced with the Mac app, and neither device is a backup for the other. After this local-Mac change, redeploy `dist-standalone` to the Access-protected Pages project when publishing the phone build; this repository change does not publish that site.
 
 The protected local-data Cloudflare project is at [https://wordeasy-preview.pages.dev](https://wordeasy-preview.pages.dev). Its legacy hostname still contains `preview`, but the current production deployment on that project is the formal `wordeasy` standalone PWA, not the 20-card trial. Cloudflare Access requires the configured owner identity before any App Shell, route, manifest, Service Worker, or JavaScript asset is delivered. The documented atomic deployment `d5aed166-71aa-434c-8785-e8bbca89039c` passed an authenticated Research + Medical rating/reload check; later catalog growth to 900 cards is in the repository contract, not a claim that every live asset was re-captured in this README. An already installed copy on the fixed hostname can continue to retain the previous name until its prompt update is accepted or all old client windows are closed and the new Service Worker takes control; do not clear site data merely to force the rename because that also removes local progress.
 
 On Android, open that URL in Chrome, complete the Cloudflare Access login, then use Chrome's **Install app** or **Add to Home screen** command. Physical Android installation remains a manual acceptance step; the repository does not claim it has been run on a real phone.
 
-The hosted **cloud** PWA is a different origin: [https://wordeasy-cloud.pages.dev](https://wordeasy-cloud.pages.dev). Use Email OTP there (and in the Mac app). Do not treat the Access-gated standalone hostname as the cloud product.
+The hosted **cloud** PWA is a different, optional origin: [https://wordeasy-cloud.pages.dev](https://wordeasy-cloud.pages.dev). Email OTP belongs there only. Do not treat the Access-gated standalone hostname as the cloud product, and do not treat the Mac app as a client of that cloud account.
 
 ## Build the personal macOS App
 
@@ -130,9 +130,9 @@ src-tauri/target/aarch64-apple-darwin/release/bundle/macos/wordeasy.app
 src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/wordeasy_0.1.0_aarch64.dmg
 ```
 
-The desktop build embeds the same frontend and the same cloud learning runtime as `npm run dev:cloud` / `wordeasy-cloud.pages.dev`: Email OTP in the webview, IndexedDB-first ratings, and background sync that never blocks learning (DEC-030). It still includes no Service Worker, Web Manifest, Cloudflare header file, Tauri IPC command, or plugin capability. CSP and navigation allow only this project's Supabase origin (`https` and `wss`) in addition to the local WebView origin. Its stable identifier is `com.nextcenturyhappiness.wordeasy`. Home search on this build seeds the full local catalog into `cached_cards` (DEC-056) and allows bounded fuzzy matching (DEC-055); that seed does not change assignment, rating, or sync identity.
+The desktop build embeds the same frontend and the local personal learning runtime (DEC-059): no Email OTP, no Sync status, and no Supabase request. Ratings stay in IndexedDB `wordeasy:desktop:v1:local-user`. It includes no Service Worker, Web Manifest, Cloudflare header file, Tauri IPC command, or plugin capability. CSP and navigation allow only the local WebView origin. Its stable identifier is `com.nextcenturyhappiness.wordeasy`. Home search loads the deferred 900-card catalog into that local database and allows bounded fuzzy matching (DEC-055).
 
-On Apple Silicon, `npm run desktop:build` requires the same public Supabase env as the cloud web build. Do not hardcode a publishable key in git, and never configure `SUPABASE_SERVICE_ROLE_KEY` for the client.
+On Apple Silicon, `npm run desktop:build` does not need Supabase env. Do not hardcode a publishable key in git, and never configure `SUPABASE_SERVICE_ROLE_KEY` for the client. Rebuild the `.app` after this change; an already installed cloud-era app keeps the old runtime until it is replaced. The new local database does not import or delete the previous cloud account.
 
 This is an ad-hoc-signed personal build, not a Developer ID signed/notarized public release. It is intended for the Mac that built it. Third-party distribution without Gatekeeper warnings requires a paid Apple Developer identity and notarization. IndexedDB is not encrypted by the app; macOS login security and FileVault protect data at rest.
 
@@ -190,7 +190,7 @@ After applying migrations and deploying the function, run the live acceptance sc
 
 For the formal local-data PWA, use `npm run build:standalone` and output directory `dist-standalone`, with no environment variables. Complete the fixed-hostname and wildcard Cloudflare Access gate before publication, then verify anonymous denial for the root page, a direct route, `sw.js`, the manifest, a current JavaScript asset, and the deployment-specific hostname. The current protected standalone deployment uses this target on `wordeasy-preview.pages.dev`. Keep `dist-preview` for a distinct historical trial project only.
 
-For the complete cloud product at [https://wordeasy-cloud.pages.dev](https://wordeasy-cloud.pages.dev):
+For the optional legacy cloud PWA at [https://wordeasy-cloud.pages.dev](https://wordeasy-cloud.pages.dev):
 
 1. Push this repository to GitHub.
 2. In Cloudflare Pages, import `nextcenturyhappiness/wordeasy` through Git integration.

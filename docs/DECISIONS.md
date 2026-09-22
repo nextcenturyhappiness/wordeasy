@@ -227,7 +227,7 @@ Tests/docs affected: `src/styles/tokens.css`, `src/styles/global.css`, theme/PWA
 ### DEC-030 · 个人 Mac 版改用与浏览器相同的云端学习 runtime
 
 Date: 2026-09-01
-Status: Accepted
+Status: Superseded by DEC-059 for the personal Mac Tauri app. The hosted cloud PWA remains an optional legacy target.
 Related requirements: DESKTOP-003/004, AUTH-001–003, SYNC-001/005, SEC-005, PERF-002/003, TEST-042; DEC-019/025
 Context: 所有者删除了仍使用改版前 UI 且仅本地保存的旧 macOS `.app`，并要求新的 Tauri Mac 应用使用 main 上的现代 UI，以及他们刚在浏览器里用过的同一套 Supabase Email OTP 与自动同步。当时有效的 DESKTOP-003 禁止桌面 build 包含 Supabase 配置或远程 API 请求，与这次明确授权冲突。
 Decision: 保留 `desktop` Vite/app mode 作为 Mac 包装身份（不生成 Service Worker、Web Manifest、Workbox 或 Cloudflare `_headers`），但启动路径改为与 `npm run dev:cloud` 相同的云端学习 runtime。客户端只读取 `VITE_SUPABASE_URL` 与 `VITE_SUPABASE_PUBLISHABLE_KEY`，来源与 cloud web build 相同：本地 `.env` / `.env.local` / `.env.production` 与 CI secrets。不得把 publishable key 写入 git，不得包含 `service_role`。Tauri 继续零 capability、无 shell/fs/http/dialog/updater plugin、无 IPC command、ad-hoc 个人签名。CSP 与导航默认拒绝，仅放行本地 WebView origin 与本项目 Supabase origin `https://kksllqgtjtfxfnknlrfn.supabase.co` 及其 `wss`。学习仍 local-first：评分先写 IndexedDB，同步失败不得阻塞。界面常驻说明这是个人 Mac 版、与浏览器同一云端账户，进度先保存在本机（该常驻横幅条款由 DEC-031 取代）。旧的 `desktop:v1` 本地-only identity 随被删除的旧 App 一起退役；新 App 使用 `article-english:cloud:${userId}`。
@@ -239,7 +239,7 @@ Tests/docs affected: `src-tauri` CSP/navigation, desktop Vite env, `src/main.tsx
 ### DEC-031 · 个人 Mac 版不显示常驻 environment banner
 
 Date: 2026-09-01
-Status: Accepted
+Status: Accepted — no persistent environment banner remains; the cloud-account sentence is superseded by DEC-059.
 Related requirements: DESKTOP-004, TEST-042; DEC-030
 Context: 所有者打开新的 Tauri Mac 应用后，明确不希望看到常驻文案 “Personal Mac edition · Same cloud account as the browser. Progress is saved on this Mac first; sync happens in the background and never blocks learning.”
 Decision: 从 desktop 启动路径删除传入 `ArticleEnglishApp` 的 `environmentNotice`。Mac 应用继续使用与浏览器相同的云端账户、Email OTP、IndexedDB-first 评分和后台同步；同步失败仍不得阻塞学习。产品合同是：desktop 使用同一云端账户且 local-first，但不显示常驻 environment banner。不引入 auto-updater。
@@ -719,6 +719,25 @@ Reason: 写作时查本地语境是打开应用的主因（DEC-039）。死点�
 Alternatives rejected: 在结果行展开另一套详情卡；lookup 允许评分；给 PWA 也强制 empty 显示空搜索；把搜索框绑在 `syncState === "synced"`。
 Consequences: Mac 客户端 UI 变更，需要重新打包 desktop 才能在已安装 App 里看到。hosted PWA 无本地卡时的 empty 文案不变。
 Tests/docs affected: `LexiconSearch`, `HomePage`, `StudyPage` lookup, repository `getLocalCard` / `hasLocalLexicon`, Home/Study UI tests, desktop catalog tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
+
+### DEC-059 · 个人 Mac 与手机都只保留本机进度，不再跨设备 Sync
+
+Date: 2026-09-22
+Status: Accepted
+Related requirements: DESKTOP-003/004, LOCAL-001/002, AUTH-001, SYNC-001/005, UI-001/015, PERF-006, TEST-042; DEC-030, DEC-031, DEC-055, DEC-056, DEC-057, DEC-058
+Context: DEC-030 让个人 Mac Tauri 应用走与 `wordeasy-cloud.pages.dev` 相同的 Email OTP + Supabase Sync。手机正式交付已经是 `standalone`（`wordeasy:standalone:v1:local-user`，`PersonalLearningRepository`，约 900 张目录，无 Supabase）。所有者决定 Mac 与手机都完全本地：两台设备的进度彼此独立，不再做跨设备 Sync。
+Decision:
+
+1. `VITE_APP_MODE=desktop` 的个人 Mac 应用启动与 standalone 相同的本地个人学习 runtime：`PersonalLearningRepository`、同一套 900 张目录、5+2+3 / 7+3 / 10 配额、DEC-055 模糊检索、DEC-057 以已学 sense 决定 New 资格、DEC-058 检索进入已 Reveal 查阅。正常学习不登录、不显示 Sync status / Sync now、不发起 Supabase 网络请求。
+2. IndexedDB 身份固定为 `wordeasy:desktop:v1:local-user`（namespace `desktop:v1`，用户 `local-user`）。不迁移、不删除既有 `article-english:cloud:${userId}` 或其他无关库。从云端 Mac 切到本地 Mac 会开始一份新的本机进度；所有者接受该取舍。若 WebView 里仍有更早的 `desktop:v1` 数据，继续使用，不静默清空。
+3. 不显示 OTP 登录作为 Mac 主路径，也不恢复 DEC-031 已取消的常驻 environment banner。hosted cloud PWA（`VITE_APP_MODE=cloud`，`wordeasy-cloud.pages.dev`）可留在仓库作为可选/历史目标，不是所有者的产品路径。手机继续使用 standalone；本决策不改手机学习行为。coordinator 另行把 `dist-standalone` 重新部署到 Access 保护的 Pages 项目。
+4. DEC-056 把完整目录播种进云端账户 `cached_cards` 的做法不再是 Mac 产品路径。目录改由个人 runtime 的 deferred bootstrap 写入 `desktop:v1`。hosted cloud / PWA 仍不得打入该目录 chunk，搜索仍是子串 + 已缓存卡片。
+5. Tauri 仍为零 capability、无 IPC command、无 Service Worker / Manifest。CSP 与导航只放行本地 WebView origin，不再放行 Supabase `https` / `wss`。desktop 构建不要求、不嵌入 `VITE_SUPABASE_URL` 或 publishable key。
+
+Reason: 所有者指定 Mac 与手机各自本地学习，Sync 不再是个人产品的一部分。
+Alternatives rejected: 继续 DEC-030 云端 Mac；把手机改成云端以便和 Mac 同步；静默把 `article-english:cloud:*` 拷进 `desktop:v1` 或清空旧库；把 hosted cloud PWA 从仓库删除。
+Consequences: 合并后必须在 Apple Silicon 上重新 `npm run desktop:build`，已安装的云端 Mac `.app` 不会自己变成本地版。新 App 的进度与旧云端账户、与手机 standalone 都互不备份。DEC-030 的云端 Mac 启动、Supabase CSP 放行，以及 DEC-056 的云端账户播种，对个人 Mac 应用失效。DEC-031 的「不显示常驻 banner」仍然有效。
+Tests/docs affected: `src/main.tsx`, `src/data/runtime.ts`, `SyncStatus`, Tauri CSP/navigation, `check-desktop-build.mjs`, runtime/Home tests, `AGENTS.md`, `README.md`, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`, `docs/RELEASE_VERIFICATION.md`.
 
 ## 新决策模板
 

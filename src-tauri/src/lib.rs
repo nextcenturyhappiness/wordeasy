@@ -1,5 +1,3 @@
-const PERSONAL_SUPABASE_HOST: &str = "kksllqgtjtfxfnknlrfn.supabase.co";
-
 fn navigation_is_local_for_build(url: &tauri::Url, debug: bool) -> bool {
     if debug {
         return url.scheme() == "http"
@@ -10,12 +8,8 @@ fn navigation_is_local_for_build(url: &tauri::Url, debug: bool) -> bool {
     url.scheme() == "tauri" && url.host_str() == Some("localhost")
 }
 
-fn navigation_is_personal_supabase(url: &tauri::Url) -> bool {
-    matches!(url.scheme(), "https" | "wss") && url.host_str() == Some(PERSONAL_SUPABASE_HOST)
-}
-
 fn navigation_is_allowed_for_build(url: &tauri::Url, debug: bool) -> bool {
-    navigation_is_local_for_build(url, debug) || navigation_is_personal_supabase(url)
+    navigation_is_local_for_build(url, debug)
 }
 
 fn navigation_is_allowed(url: &tauri::Url) -> bool {
@@ -36,7 +30,7 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{navigation_is_allowed_for_build, navigation_is_personal_supabase};
+    use super::navigation_is_allowed_for_build;
 
     #[test]
     fn rejects_unrelated_remote_navigation() {
@@ -59,26 +53,22 @@ mod tests {
     }
 
     #[test]
-    fn navigation_guard_allows_the_personal_supabase_origin() {
-        let auth = tauri::Url::parse("https://kksllqgtjtfxfnknlrfn.supabase.co/auth/v1/otp")
+    fn navigation_guard_rejects_supabase_and_other_remote_origins() {
+        let personal_host = ["kksllqgtjtfxfnknlrfn", "supabase", "co"].join(".");
+        let auth = tauri::Url::parse(&format!("https://{personal_host}/auth/v1/otp"))
             .expect("valid supabase auth URL");
         let functions =
-            tauri::Url::parse("https://kksllqgtjtfxfnknlrfn.supabase.co/functions/v1/review-sync")
+            tauri::Url::parse(&format!("https://{personal_host}/functions/v1/review-sync"))
                 .expect("valid supabase function URL");
-        let realtime =
-            tauri::Url::parse("wss://kksllqgtjtfxfnknlrfn.supabase.co/realtime/v1/websocket")
-                .expect("valid supabase realtime URL");
+        let realtime = tauri::Url::parse(&format!("wss://{personal_host}/realtime/v1/websocket"))
+            .expect("valid supabase realtime URL");
         let other_project = tauri::Url::parse("https://another-project.supabase.co/auth/v1/otp")
             .expect("valid other project URL");
-        let http = tauri::Url::parse("http://kksllqgtjtfxfnknlrfn.supabase.co/auth/v1/otp")
-            .expect("valid insecure supabase URL");
 
-        assert!(navigation_is_personal_supabase(&auth));
-        assert!(navigation_is_allowed_for_build(&auth, true));
-        assert!(navigation_is_allowed_for_build(&auth, false));
-        assert!(navigation_is_allowed_for_build(&functions, false));
-        assert!(navigation_is_allowed_for_build(&realtime, false));
+        assert!(!navigation_is_allowed_for_build(&auth, true));
+        assert!(!navigation_is_allowed_for_build(&auth, false));
+        assert!(!navigation_is_allowed_for_build(&functions, false));
+        assert!(!navigation_is_allowed_for_build(&realtime, false));
         assert!(!navigation_is_allowed_for_build(&other_project, false));
-        assert!(!navigation_is_allowed_for_build(&http, false));
     }
 }

@@ -22,6 +22,7 @@ import {
 } from "./fixtures";
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
 
@@ -537,6 +538,18 @@ describe("Home and Today", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("Saved on this device · 1 local review");
     expect(screen.queryByRole("button", { name: "Sync now" })).not.toBeInTheDocument();
+  });
+
+  it("hides sync status and Sync now on the local desktop path", () => {
+    vi.stubEnv("VITE_APP_MODE", "desktop");
+    renderWithLearningApp(<HomePage />, {
+      syncState: { status: "pending", pendingCount: 2 }
+    });
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sync now" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Synced|Sync now|Saved on this device/u)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Sign in" })).not.toBeInTheDocument();
   });
 
   it("keeps New, Review, and Total progress separate and reports pending sync", async () => {

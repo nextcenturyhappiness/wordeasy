@@ -31,7 +31,7 @@ Context Card
 AGENTS.md
 docs/00_REQUIREMENTS_INDEX.md
 任务相关需求文件（按该索引的阅读矩阵）
-docs/DECISIONS.md          # 读到最新 Accepted 条目，当前至 DEC-058
+docs/DECISIONS.md          # 读到最新 Accepted 条目，当前至 DEC-059
 docs/TRACEABILITY.md
 ```
 
@@ -51,9 +51,9 @@ docs/TRACEABILITY.md
 - 所有数据库结构变更必须通过 SQL migration。
 - 所有用户私有表必须启用 RLS。
 - 前端禁止使用或暴露 Supabase `service_role` key。
-- 每次学习评分必须先本地持久化，再异步同步云端。
+- 每次学习评分必须先本地持久化。hosted cloud 目标再异步同步云端。个人 Mac 与 standalone 手机只保存在本机，两台设备进度独立，不得把 Sync 加回 Mac↔手机（DEC-059）。
 - Review event 必须不可变、具有全局唯一 UUID，并支持幂等重试。
-- 同一天的 daily assignment 必须稳定，刷新和换设备不能改变。
+- 同一台设备上，同一天的 daily assignment 必须稳定，刷新不能改变。Mac 与手机不共享当日队列。
 - Research English 每天严格分配 5 + 2 + 3 个新词。
 - Medical English 每天严格分配 7 词根构词 + 3 病历用语（合计仍是 10；不是笼统的 10，也不是滚动分类平衡配额）。
 - 必备医学英语（`essential_medical`）每天分配 10 个 `core` 新词。
@@ -61,7 +61,7 @@ docs/TRACEABILITY.md
 - 首页不得等待 Supabase 网络请求后才首次显示。
 - 完整词库不得打入首屏 JavaScript bundle。
 - 不使用远程字体作为首屏依赖。
-- 首页本地 Context Card 检索已授权（DEC-032 / DEC-039 / DEC-042），不是 Deferred。Mac desktop 的拼写容错（DEC-055）与完整本地词库播种供检索（DEC-056）以 `docs/DECISIONS.md` 为准；hosted cloud / PWA 仍为子串匹配 + 当日缓存，除非后续决策另有规定。不得把该检索做成独立 Search 页、公共词典或 Add Word。
+- 首页本地 Context Card 检索已授权（DEC-032 / DEC-039 / DEC-042），不是 Deferred。个人 Mac（`VITE_APP_MODE=desktop`）与 standalone 手机都走本地 `PersonalLearningRepository`：约 900 张目录、DEC-055 模糊检索、DEC-057 本地 New 资格、DEC-058 已 Reveal 查阅。Mac IndexedDB 是 `wordeasy:desktop:v1:local-user`，不登录、不同步（DEC-059）。hosted cloud / PWA 仍为子串匹配 + 当日缓存，并且只是可选/历史目标。不得把该检索做成独立 Search 页、公共词典或 Add Word。
 - 不实现需求中明确标记为 Deferred 的功能。
 - 不得声称未实际运行或未实际验证的场景已经通过。
 - 不得删除用户已有未提交修改，不得执行 destructive reset。
