@@ -17,6 +17,7 @@ import essentialClinicalSql from "../../supabase/migrations/20260910001700_essen
 import essentialQualitySql from "../../supabase/migrations/20260910001800_essential_medical_sentence_quality.sql?raw";
 import shortageSelfHealSql from "../../supabase/migrations/20260908001500_assignment_shortage_self_heal.sql?raw";
 import newEligibilitySql from "../../supabase/migrations/20260917001900_new_assignment_eligibility_learned.sql?raw";
+import themeDefaultSql from "../../supabase/migrations/20260923002000_theme_default_light.sql?raw";
 import medicalChartMidlevelSql from "../../supabase/migrations/20260907001200_medical_chart_midlevel.sql?raw";
 import syncSql from "../../supabase/migrations/20260826000300_review_sync_rpcs.sql?raw";
 import edgeFsrs from "../../supabase/functions/_shared/fsrs.ts?raw";
@@ -35,6 +36,7 @@ const ESSENTIAL_CLINICAL = essentialClinicalSql.toLowerCase();
 const ESSENTIAL_QUALITY = essentialQualitySql.toLowerCase();
 const SHORTAGE_SELF_HEAL = shortageSelfHealSql.toLowerCase();
 const NEW_ELIGIBILITY = newEligibilitySql.toLowerCase();
+const THEME_DEFAULT = themeDefaultSql.toLowerCase();
 const EFFECTIVE_ASSIGNMENTS = `${ASSIGNMENTS}\n${HARDENING}\n${MEDICAL_QUOTAS}\n${MEDICAL_QUOTA_FLIP}\n${ESSENTIAL_ASSIGNMENT}\n${SHORTAGE_SELF_HEAL}\n${NEW_ELIGIBILITY}`;
 const EFFECTIVE_SYNC = `${SYNC}\n${HARDENING}\n${MEDICAL_QUOTAS}`;
 const SEED_PDF_EXPANSION = medicalPdfExpansionSql.toLowerCase();
@@ -471,5 +473,12 @@ describe("Supabase migration contracts", () => {
     expect(ESSENTIAL_QUALITY).not.toContain("insert into public.cards");
     expect(ESSENTIAL_QUALITY).not.toContain("episode was cube-shaped enough");
     expect(ESSENTIAL_QUALITY).not.toContain("progress line mentioned");
+  });
+
+  it("defaults a missing account theme to light without rewriting stored preferences", () => {
+    expect(SCHEMA).toContain("theme text not null default 'system'");
+    expect(THEME_DEFAULT).toContain("alter table public.user_settings");
+    expect(THEME_DEFAULT).toContain("alter column theme set default 'light'");
+    expect(THEME_DEFAULT).not.toContain("update public.user_settings");
   });
 });

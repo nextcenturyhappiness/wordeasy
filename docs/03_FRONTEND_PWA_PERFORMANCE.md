@@ -158,11 +158,11 @@ Reveal 后 sticky 原句下的 IPA 行是按钮。点击/轻触使用 `window.sp
 
 ### UI-013 · P0 · Light / Dark
 
-- 支持系统主题；
-- 支持用户手动切换；
-- 保存偏好；
-- React 启动前应用主题，避免 dark mode 先闪白；
-- Manifest `background_color` 与页面协调。
+- 未保存偏好时默认固定浅色，不因操作系统深色模式变暗（DEC-062）；
+- 支持用户选择系统、浅色或深色；只有明确选择 System 时才读取 `prefers-color-scheme`；
+- 保存偏好；已保存的 `light`、`dark`、`system` 继续生效；
+- React 启动前应用主题。未保存时首屏保持浅色；已选深色时避免先闪白；
+- Manifest `background_color` 与浅色 canvas 协调。
 
 ### PERF-001 · P0 · 不使用远程字体
 

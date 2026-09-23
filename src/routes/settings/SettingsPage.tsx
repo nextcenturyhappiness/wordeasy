@@ -68,7 +68,9 @@ export function SettingsPage() {
       <section className="settings-section" aria-labelledby="theme-title">
         <div>
           <h2 id="theme-title">Appearance</h2>
-          <p className="muted-copy">Use your device theme or choose a fixed appearance.</p>
+          <p className="muted-copy">
+            Light is the default. Follow the device theme, or choose a fixed appearance.
+          </p>
         </div>
         <fieldset className="choice-fieldset" disabled={themeSaving}>
           <legend className="sr-only">Theme</legend>

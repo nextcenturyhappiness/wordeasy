@@ -1,15 +1,16 @@
-import type {
-  ContextCardView,
-  HomeSnapshot,
-  LearningRepository,
-  LexiconSearchHit,
-  ModuleSlug,
-  ModuleSummary,
-  RateCardInput,
-  RateCardResult,
-  ReviewScheduler,
-  StudyQueueSnapshot,
-  TodaySnapshot
+import {
+  defaultThemePreference,
+  type ContextCardView,
+  type HomeSnapshot,
+  type LearningRepository,
+  type LexiconSearchHit,
+  type ModuleSlug,
+  type ModuleSummary,
+  type RateCardInput,
+  type RateCardResult,
+  type ReviewScheduler,
+  type StudyQueueSnapshot,
+  type TodaySnapshot
 } from "../application/contracts";
 import { searchLocalLexicon } from "../domain/lexiconSearch";
 import { MODULE_SLUGS } from "../domain/learning";
@@ -233,7 +234,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
           await this.#database.local_settings.add({
             userId: this.#userId,
             key: "theme",
-            value: "system",
+            value: defaultThemePreference,
             updatedAt: initializedAt
           });
         }

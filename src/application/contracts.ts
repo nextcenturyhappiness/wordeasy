@@ -4,6 +4,9 @@ export type QueueKind = "new" | "review";
 export type ReviewRating = "again" | "hard" | "good" | "easy";
 export type ThemePreference = "system" | "light" | "dark";
 
+/** First-run and missing preference. System is opt-in (DEC-062). */
+export const defaultThemePreference: ThemePreference = "light";
+
 export interface CardSourceView {
   type: "original_example" | "verified_source";
   title: string | null;

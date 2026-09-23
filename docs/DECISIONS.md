@@ -777,6 +777,23 @@ Alternatives rejected: 只在本地模式隐藏、云端保留；把按钮改成
 Consequences: 已安装的 Mac 应用要重新 `desktop:build` 后这块才会消失。DEC-060 里「本地 UI 含 Next Session」的表面描述由本决策收窄。Study 队列与评分不变。
 Tests/docs affected: `HomePage`, removed `NextSessionCard`, Home UI tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
 
+### DEC-062 · 未保存的外观默认固定浅色
+
+Date: 2026-09-23
+Status: Accepted
+Related requirements: UI-013, PWA-001; DEC-041
+Context: 主题偏好缺省为 `system`。`public/theme-init.js` 在 localStorage 为空时走 `prefers-color-scheme`，`index.html` 初始 `data-theme="system"`，`tokens.css` 用 `:root:not([data-theme="light"])` 在操作系统深色时把缺失或 `system` 的根节点涂暗。个人 Mac、standalone 与 hosted cloud 共用这套首屏脚本和 token。手机系统深色时，首次安装会直接显示深色界面。
+Decision:
+
+1. 首次运行和没有已存偏好时，外观固定为浅色（canvas `#f5f6f8`，白卡片）。不读取 `prefers-color-scheme`。
+2. Settings 仍提供 Light / Dark / System。只有用户明确选择 System 时才跟随操作系统；选择 Dark 时直接使用深色 token。已保存的 `light`、`dark`、`system` 保持原值，不把历史 `system` 改写成 `light`。
+3. 同一默认适用于共用该前端的 standalone、Mac desktop 与 hosted cloud。本地 IndexedDB 首次写入、缺失或非法 theme、未登录 localStorage 回退，以及 Postgres `user_settings.theme` 的列默认值，都是 `light`。已有行不更新。
+
+Reason: 所有者要默认现代浅色，而不是让手机系统深色决定第一次打开的界面。
+Alternatives rejected: 只改 standalone；删掉 Dark / System；把已存 `system` 全部迁移成 `light`；继续用「非 light 即跟随系统」的 CSS。
+Consequences: 已安装且 IndexedDB / localStorage / 云端账户里已经写下 `system` 的设备仍跟随系统，直到用户在 Settings 改选或清空存储。远程 Postgres 须另行 apply `20260923002000`；仓库落地不等于远程已迁移。
+Tests/docs affected: `public/theme-init.js`, `src/app/theme.ts`, `src/styles/tokens.css`, settings seed, `docs/03_FRONTEND_PWA_PERFORMANCE.md` UI-013, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text

@@ -64,7 +64,7 @@ describe("account cloud settings", () => {
     });
     expect(call).toHaveBeenNthCalledWith(1, "ensure_account_preferences", {
       p_timezone: "Asia/Shanghai",
-      p_theme: "system"
+      p_theme: "light"
     });
     expect(call).toHaveBeenNthCalledWith(2, "set_account_preferences", {
       p_timezone: "Asia/Shanghai",
@@ -126,7 +126,7 @@ describe("account cloud settings", () => {
     expect(call).toHaveBeenCalledTimes(1);
     expect(call).toHaveBeenCalledWith("set_account_preferences", {
       p_timezone: "America/New_York",
-      p_theme: "system"
+      p_theme: "light"
     });
     expect(await gateway.getTimezone()).toBe("America/New_York");
     expect((await database.local_profile.get("account-a"))?.timezone).toBe("America/New_York");
@@ -160,6 +160,6 @@ describe("account cloud settings", () => {
 
     await expect(gateway.syncRemote()).rejects.toThrow("escaped their account scope");
     expect(await gateway.getTimezone()).toBe("Asia/Shanghai");
-    expect(await gateway.getTheme()).toBe("system");
+    expect(await gateway.getTheme()).toBe("light");
   });
 });
