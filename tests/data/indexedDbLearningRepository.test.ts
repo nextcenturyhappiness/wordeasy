@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { IndexedDbLearningRepository } from "../../src/data/indexedDbLearningRepository";
+import { themeSystemMigrationMetadataKey } from "../../src/data/themePreferenceMigration";
 import { LearningDatabase } from "../../src/db/learningDatabase";
 import { FsrsSchedulerAdapter } from "../../src/scheduler/fsrsScheduler";
 import { LocalSyncStateStore } from "../../src/sync/localSyncState";
@@ -40,6 +41,9 @@ describe("IndexedDbLearningRepository", () => {
       userId: "cloud-account-a",
       timezone: "Asia/Shanghai"
     });
+    expect(await database.local_settings.get(["cloud-account-a", "theme"])).toMatchObject({
+      value: "light"
+    });
     expect(await database.cached_cards.count()).toBe(0);
     expect(await database.cached_daily_assignments.count()).toBe(0);
     expect(await database.sync_outbox.count()).toBe(0);
@@ -47,6 +51,106 @@ describe("IndexedDbLearningRepository", () => {
     expect(await repository.hasLocalLexicon()).toBe(false);
     expect(await repository.getLocalCard("missing-card")).toBeNull();
     expect(schedulerLoads).toBe(0);
+  });
+
+  it("keeps an explicit stored theme when the account store is opened again", async () => {
+    const database = new LearningDatabase(`wordeasy-theme-keep-${crypto.randomUUID()}`);
+    activeDatabase = database;
+    const options = {
+      database,
+      userId: "cloud-account-a",
+      email: "account-a@example.invalid",
+      timezone: "Asia/Shanghai",
+      deviceId: "cloud-device-a",
+      scheduler: new FsrsSchedulerAdapter(),
+      syncState: new LocalSyncStateStore(),
+      now: () => new Date("2026-08-26T08:00:00.000Z")
+    };
+    await new IndexedDbLearningRepository(options).initialize();
+    await database.local_settings.put({
+      userId: "cloud-account-a",
+      key: "theme",
+      value: "dark",
+      updatedAt: "2026-08-26T09:00:00.000Z"
+    });
+
+    await new IndexedDbLearningRepository(options).initialize();
+
+    expect(await database.local_settings.get(["cloud-account-a", "theme"])).toMatchObject({
+      value: "dark"
+    });
+  });
+
+  it("rewrites an old system default to light once, then keeps an explicit system choice", async () => {
+    const database = new LearningDatabase(`wordeasy-theme-migrate-${crypto.randomUUID()}`);
+    activeDatabase = database;
+    const options = {
+      database,
+      userId: "cloud-account-a",
+      email: "account-a@example.invalid",
+      timezone: "Asia/Shanghai",
+      deviceId: "cloud-device-a",
+      scheduler: new FsrsSchedulerAdapter(),
+      syncState: new LocalSyncStateStore(),
+      now: () => new Date("2026-08-26T08:00:00.000Z")
+    };
+    await new IndexedDbLearningRepository(options).initialize();
+    await database.local_settings.put({
+      userId: "cloud-account-a",
+      key: "theme",
+      value: "system",
+      updatedAt: "2026-08-26T08:00:00.000Z"
+    });
+    await database.sync_metadata.delete(["cloud-account-a", themeSystemMigrationMetadataKey]);
+
+    await new IndexedDbLearningRepository(options).initialize();
+
+    expect(await database.local_settings.get(["cloud-account-a", "theme"])).toMatchObject({
+      value: "light"
+    });
+    expect(
+      await database.sync_metadata.get(["cloud-account-a", themeSystemMigrationMetadataKey])
+    ).toBeDefined();
+
+    await database.local_settings.put({
+      userId: "cloud-account-a",
+      key: "theme",
+      value: "system",
+      updatedAt: "2026-08-26T10:00:00.000Z"
+    });
+    await new IndexedDbLearningRepository(options).initialize();
+    expect(await database.local_settings.get(["cloud-account-a", "theme"])).toMatchObject({
+      value: "system"
+    });
+  });
+
+  it("keeps rewriting system to light on personal runtimes", async () => {
+    const database = new LearningDatabase(`wordeasy-theme-personal-${crypto.randomUUID()}`);
+    activeDatabase = database;
+    const options = {
+      database,
+      userId: "local-user",
+      email: "local@wordeasy.invalid",
+      timezone: "Asia/Shanghai",
+      deviceId: "desktop-device",
+      scheduler: new FsrsSchedulerAdapter(),
+      syncState: new LocalSyncStateStore(),
+      now: () => new Date("2026-08-26T08:00:00.000Z"),
+      allowSystemTheme: false
+    };
+    await new IndexedDbLearningRepository(options).initialize();
+    await database.local_settings.put({
+      userId: "local-user",
+      key: "theme",
+      value: "system",
+      updatedAt: "2026-08-26T09:00:00.000Z"
+    });
+
+    await new IndexedDbLearningRepository(options).initialize();
+
+    expect(await database.local_settings.get(["local-user", "theme"])).toMatchObject({
+      value: "light"
+    });
   });
 
   it("uses the injected system IANA zone for study dates even when the stored profile differs", async () => {

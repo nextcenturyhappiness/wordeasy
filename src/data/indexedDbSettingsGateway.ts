@@ -1,4 +1,8 @@
-import type { SettingsGateway, ThemePreference } from "../application/contracts";
+import {
+  defaultThemePreference,
+  type SettingsGateway,
+  type ThemePreference
+} from "../application/contracts";
 import { assertIanaTimezone } from "../domain/time";
 import type { LearningDatabase } from "../db/learningDatabase";
 
@@ -13,7 +17,7 @@ export class IndexedDbSettingsGateway implements SettingsGateway {
     if (setting?.value === "system" || setting?.value === "light" || setting?.value === "dark") {
       return setting.value;
     }
-    return "system";
+    return defaultThemePreference;
   }
 
   async setTheme(theme: ThemePreference): Promise<void> {

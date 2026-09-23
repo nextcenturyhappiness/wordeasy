@@ -1,16 +1,17 @@
-import type {
-  AuthGateway,
-  ContextCardView,
-  LearningRepository,
-  LexiconSearchHit,
-  ModuleSlug,
-  QueueKind,
-  RateCardInput,
-  SettingsGateway,
-  StudyQueueSnapshot,
-  SyncGateway,
-  SyncState,
-  ThemePreference
+import {
+  defaultThemePreference,
+  type AuthGateway,
+  type ContextCardView,
+  type LearningRepository,
+  type LexiconSearchHit,
+  type ModuleSlug,
+  type QueueKind,
+  type RateCardInput,
+  type SettingsGateway,
+  type StudyQueueSnapshot,
+  type SyncGateway,
+  type SyncState,
+  type ThemePreference
 } from "../application/contracts";
 import { themeStorageKey } from "../app/theme";
 import { BrowserSessionCache, type SessionCache } from "../auth/SupabaseAuthGateway";
@@ -43,9 +44,11 @@ const desktopLexiconCatalogLoader =
 function cachedTheme(): ThemePreference {
   try {
     const value = localStorage.getItem(themeStorageKey);
-    return value === "system" || value === "light" || value === "dark" ? value : "system";
+    return value === "system" || value === "light" || value === "dark"
+      ? value
+      : defaultThemePreference;
   } catch {
-    return "system";
+    return defaultThemePreference;
   }
 }
 
