@@ -13,6 +13,7 @@ import {
   type TodaySnapshot
 } from "../application/contracts";
 import { searchLocalLexicon } from "../domain/lexiconSearch";
+import { migrateStoredSystemTheme } from "./themePreferenceMigration";
 import { MODULE_SLUGS } from "../domain/learning";
 import { calculateStreak, studyDateFor, systemIanaTimezone } from "../domain/time";
 import type { LearningDatabase } from "../db/learningDatabase";
@@ -57,6 +58,8 @@ export interface IndexedDbLearningRepositoryOptions {
   now?: () => Date;
   eventIdFactory?: () => string;
   fuzzyLexiconSearch?: boolean;
+  /** Desktop and standalone have no Settings control, so `system` is always rewritten to light. */
+  allowSystemTheme?: boolean;
 }
 
 function defaultEventIdFactory(): string {
@@ -157,6 +160,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
   readonly #now: () => Date;
   readonly #eventIdFactory: () => string;
   readonly #fuzzyLexiconSearch: boolean;
+  readonly #allowSystemTheme: boolean;
   #initialization: Promise<void> | null = null;
   readonly #dailyBootstraps = new Map<string, Promise<void>>();
   readonly #deferredBootstraps = new Map<string, Promise<void>>();
@@ -179,6 +183,7 @@ export class IndexedDbLearningRepository implements LearningRepository {
     this.#now = options.now ?? (() => new Date());
     this.#eventIdFactory = options.eventIdFactory ?? defaultEventIdFactory;
     this.#fuzzyLexiconSearch = options.fuzzyLexiconSearch === true;
+    this.#allowSystemTheme = options.allowSystemTheme !== false;
   }
 
   #studyTimezone(): string {
@@ -264,6 +269,12 @@ export class IndexedDbLearningRepository implements LearningRepository {
         }
       }
     );
+    await migrateStoredSystemTheme({
+      database: this.#database,
+      userId: this.#userId,
+      updatedAt: initializedAt,
+      allowSystemTheme: this.#allowSystemTheme
+    });
 
     const studyDate = this.#studyDate();
     const context = this.#bootstrapContext(initializedAt);

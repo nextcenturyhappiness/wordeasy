@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { AccountCloudSettingsGateway } from "../../src/data/cloud/accountPreferences";
 import type { CloudRpcClient } from "../../src/data/cloud/rpcClient";
 import { IndexedDbLearningRepository } from "../../src/data/indexedDbLearningRepository";
+import { themeSystemMigrationMetadataKey } from "../../src/data/themePreferenceMigration";
 import { LearningDatabase } from "../../src/db/learningDatabase";
 import { FsrsSchedulerAdapter } from "../../src/scheduler/fsrsScheduler";
 import { LocalSyncStateStore } from "../../src/sync/localSyncState";
@@ -108,7 +109,7 @@ describe("account cloud settings", () => {
     const call = vi.fn<CloudRpcClient["call"]>().mockResolvedValue({
       user_id: "account-a",
       timezone: "America/New_York",
-      theme: "system"
+      theme: "dark"
     });
     const gateway = new AccountCloudSettingsGateway(
       database,
@@ -121,7 +122,7 @@ describe("account cloud settings", () => {
 
     await expect(gateway.syncRemote()).resolves.toEqual({
       timezone: "America/New_York",
-      theme: "system"
+      theme: "dark"
     });
     expect(call).toHaveBeenCalledTimes(1);
     expect(call).toHaveBeenCalledWith("set_account_preferences", {
@@ -161,5 +162,82 @@ describe("account cloud settings", () => {
     await expect(gateway.syncRemote()).rejects.toThrow("escaped their account scope");
     expect(await gateway.getTimezone()).toBe("Asia/Shanghai");
     expect(await gateway.getTheme()).toBe("light");
+  });
+
+  it("pushes light over a remote system default once, then keeps a later explicit system choice", async () => {
+    database = new LearningDatabase(`account-settings-theme-${crypto.randomUUID()}`);
+    const options = {
+      database,
+      userId: "account-a",
+      email: "learner@example.com",
+      timezone: "Asia/Shanghai",
+      deviceId: "device-a",
+      scheduler: new FsrsSchedulerAdapter(),
+      syncState: new LocalSyncStateStore(),
+      now: () => new Date("2026-08-26T08:00:00.000Z")
+    };
+    await new IndexedDbLearningRepository(options).initialize();
+    await database.local_settings.put({
+      userId: "account-a",
+      key: "theme",
+      value: "system",
+      updatedAt: "2026-08-26T08:00:00.000Z"
+    });
+    await database.sync_metadata.delete(["account-a", themeSystemMigrationMetadataKey]);
+    await new IndexedDbLearningRepository(options).initialize();
+    expect(await database.local_settings.get(["account-a", "theme"])).toMatchObject({
+      value: "light"
+    });
+
+    const call = vi
+      .fn<CloudRpcClient["call"]>()
+      .mockResolvedValueOnce({
+        user_id: "account-a",
+        timezone: "Asia/Shanghai",
+        theme: "system"
+      })
+      .mockResolvedValueOnce({
+        user_id: "account-a",
+        timezone: "Asia/Shanghai",
+        theme: "light"
+      })
+      .mockResolvedValueOnce({
+        user_id: "account-a",
+        timezone: "Asia/Shanghai",
+        theme: "system"
+      });
+    const gateway = new AccountCloudSettingsGateway(
+      database,
+      "account-a",
+      { call },
+      {
+        resolveTimezone: () => "Asia/Shanghai"
+      }
+    );
+
+    await expect(gateway.syncRemote()).resolves.toEqual({
+      timezone: "Asia/Shanghai",
+      theme: "light"
+    });
+    expect(call).toHaveBeenNthCalledWith(1, "ensure_account_preferences", {
+      p_timezone: "Asia/Shanghai",
+      p_theme: "light"
+    });
+    expect(call).toHaveBeenNthCalledWith(2, "set_account_preferences", {
+      p_timezone: "Asia/Shanghai",
+      p_theme: "light"
+    });
+    expect(await gateway.getTheme()).toBe("light");
+
+    await gateway.setTheme("system");
+    await expect(gateway.syncRemote()).resolves.toEqual({
+      timezone: "Asia/Shanghai",
+      theme: "system"
+    });
+    expect(call).toHaveBeenNthCalledWith(3, "set_account_preferences", {
+      p_timezone: "Asia/Shanghai",
+      p_theme: "system"
+    });
+    expect(await gateway.getTheme()).toBe("system");
   });
 });

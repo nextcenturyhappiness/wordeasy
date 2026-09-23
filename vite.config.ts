@@ -161,6 +161,26 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       {
+        name: "article-english-app-mode",
+        transformIndexHtml: {
+          order: "pre" as const,
+          handler(html: string) {
+            const knownMode =
+              appMode === "desktop" ||
+              appMode === "standalone" ||
+              appMode === "cloud" ||
+              appMode === "demo" ||
+              appMode === "preview"
+                ? appMode
+                : "";
+            return html.replace(
+              '<html lang="en" data-theme="light">',
+              `<html lang="en" data-theme="light" data-app-mode="${knownMode}">`
+            );
+          }
+        }
+      },
+      {
         name: "article-english-demo-seed",
         resolveId(id: string) {
           return id === demoSeedModuleId ? resolvedDemoSeedModuleId : null;

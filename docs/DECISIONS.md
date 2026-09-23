@@ -780,19 +780,21 @@ Tests/docs affected: `HomePage`, removed `NextSessionCard`, Home UI tests, `docs
 ### DEC-062 · 未保存的外观默认固定浅色
 
 Date: 2026-09-23
-Status: Accepted
-Related requirements: UI-013, PWA-001; DEC-041
-Context: 主题偏好缺省为 `system`。`public/theme-init.js` 在 localStorage 为空时走 `prefers-color-scheme`，`index.html` 初始 `data-theme="system"`，`tokens.css` 用 `:root:not([data-theme="light"])` 在操作系统深色时把缺失或 `system` 的根节点涂暗。个人 Mac、standalone 与 hosted cloud 共用这套首屏脚本和 token。手机系统深色时，首次安装会直接显示深色界面。
+Status: Accepted — revised the same day: an upgrade rewrites the old implicit `system` default to light. Personal runtimes do not follow the OS.
+Related requirements: UI-013, PWA-001; DEC-041, DEC-059
+Context: 主题偏好缺省为 `system`。`public/theme-init.js` 在 localStorage 为空时走 `prefers-color-scheme`，`index.html` 初始 `data-theme="system"`，`tokens.css` 用 `:root:not([data-theme="light"])` 在操作系统深色时把缺失或 `system` 的根节点涂暗。个人 Mac、standalone 与 hosted cloud 共用这套首屏脚本和 token。手机系统深色时，首次安装会直接显示深色界面。Mac desktop 与 standalone 不挂载 Settings，已经写下的旧默认 `system` 无法在应用内改成浅色。
 Decision:
 
 1. 首次运行和没有已存偏好时，外观固定为浅色（canvas `#f5f6f8`，白卡片）。不读取 `prefers-color-scheme`。
-2. Settings 仍提供 Light / Dark / System。只有用户明确选择 System 时才跟随操作系统；选择 Dark 时直接使用深色 token。已保存的 `light`、`dark`、`system` 保持原值，不把历史 `system` 改写成 `light`。
-3. 同一默认适用于共用该前端的 standalone、Mac desktop 与 hosted cloud。本地 IndexedDB 首次写入、缺失或非法 theme、未登录 localStorage 回退，以及 Postgres `user_settings.theme` 的列默认值，都是 `light`。已有行不更新。
+2. 本变更第一次加载时，把已存的旧默认 `system` 一次性改成 `light`：`localStorage` 键 `article-english:theme`，以及 IndexedDB `local_settings` 的 theme 行。hosted cloud 在这次迁移后的第一次账户同步里，若远程 `user_settings.theme` 仍是 `system` 且本地已经是 light 或 dark，则把远程改成本地值。已保存的 `light` 与 `dark` 不改。
+3. desktop 与 standalone 没有 Settings。这两种模式不读取 `prefers-color-scheme`；存储里的 `system` 一律改写成 `light`，包括迁移标记已经写过之后。
+4. hosted cloud 的 Settings 仍提供 Light / Dark / System。只有迁移完成之后用户再选择的 System 才跟随操作系统。Dark 仍是显式选项。
+5. 同一浅色默认适用于共用该前端的 standalone、Mac desktop 与 hosted cloud。本地 IndexedDB 首次写入、缺失或非法 theme、未登录 localStorage 回退，以及 Postgres `user_settings.theme` 的列默认值，都是 `light`。
 
-Reason: 所有者要默认现代浅色，而不是让手机系统深色决定第一次打开的界面。
-Alternatives rejected: 只改 standalone；删掉 Dark / System；把已存 `system` 全部迁移成 `light`；继续用「非 light 即跟随系统」的 CSS。
-Consequences: 已安装且 IndexedDB / localStorage / 云端账户里已经写下 `system` 的设备仍跟随系统，直到用户在 Settings 改选或清空存储。远程 Postgres 须另行 apply `20260923002000`；仓库落地不等于远程已迁移。
-Tests/docs affected: `public/theme-init.js`, `src/app/theme.ts`, `src/styles/tokens.css`, settings seed, `docs/03_FRONTEND_PWA_PERFORMANCE.md` UI-013, `docs/TRACEABILITY.md`.
+Reason: 所有者要默认现代浅色，而且已经装在手机上的旧默认 `system` 不能继续跟着系统深色走。个人版没有入口可以自己改回来。
+Alternatives rejected: 只改 standalone；删掉 Dark / System；要求用户清空存储；让个人版在没有 Settings 时继续跟随系统；每次启动都把 cloud 上用户后来选择的 System 再改回 light。
+Consequences: 升级后打开一次即可离开旧的系统跟随。cloud 上若有人在本变更之前就明确选过 System，这次升级也会先变成 light，需要在 Settings 里再选一次。远程 Postgres 列默认值仍须另行 apply `20260923002000`；已有远程 `system` 行由客户端这次同步改写，而不是一条无差别 SQL update。
+Tests/docs affected: `public/theme-init.js`, `src/app/theme.ts`, `src/data/themePreferenceMigration.ts`, `src/styles/tokens.css`, settings seed, `docs/03_FRONTEND_PWA_PERFORMANCE.md` UI-013, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
 

@@ -2,6 +2,10 @@ import type { SettingsGateway, ThemePreference } from "../../application/contrac
 import { assertIanaTimezone, systemIanaTimezone } from "../../domain/time";
 import type { LearningDatabase } from "../../db/learningDatabase";
 import { IndexedDbSettingsGateway } from "../indexedDbSettingsGateway";
+import {
+  themeMigrationRemoteAdjusted,
+  themeSystemMigrationMetadataKey
+} from "../themePreferenceMigration";
 import type { CloudRpcClient } from "./rpcClient";
 
 const PENDING_PREFERENCES_KEY = "pending-account-preferences-v1";
@@ -97,6 +101,7 @@ export class AccountCloudSettingsGateway implements SettingsGateway {
       });
       remote = parsePreferences(payload, this.userId);
     }
+    remote = await this.#replaceLegacyRemoteSystem(remote, osTimezone);
     const updatedAt = this.#now().toISOString();
 
     await this.database.transaction(
@@ -123,9 +128,49 @@ export class AccountCloudSettingsGateway implements SettingsGateway {
           updatedAt
         });
         await this.database.sync_metadata.delete([this.userId, PENDING_PREFERENCES_KEY]);
+        const migrationKey: [string, string] = [this.userId, themeSystemMigrationMetadataKey];
+        const migration = await this.database.sync_metadata.get(migrationKey);
+        const migratedAt =
+          typeof migration?.value === "object" &&
+          migration.value !== null &&
+          "migratedAt" in migration.value &&
+          typeof migration.value.migratedAt === "string"
+            ? migration.value.migratedAt
+            : updatedAt;
+        await this.database.sync_metadata.put({
+          userId: this.userId,
+          key: themeSystemMigrationMetadataKey,
+          value: { migratedAt, remoteAdjusted: true },
+          updatedAt
+        });
       }
     );
     return { timezone: osTimezone, theme: remote.theme };
+  }
+
+  async #replaceLegacyRemoteSystem(
+    remote: AccountPreferences,
+    osTimezone: string
+  ): Promise<AccountPreferences> {
+    if (remote.theme !== "system") {
+      return remote;
+    }
+    const marker = await this.database.sync_metadata.get([
+      this.userId,
+      themeSystemMigrationMetadataKey
+    ]);
+    if (themeMigrationRemoteAdjusted(marker?.value)) {
+      return remote;
+    }
+    const localTheme = (await this.#readLocal()).theme;
+    if (localTheme === "system") {
+      return remote;
+    }
+    const payload = await this.rpc.call("set_account_preferences", {
+      p_timezone: osTimezone,
+      p_theme: localTheme
+    });
+    return parsePreferences(payload, this.userId);
   }
 
   async #readLocal(): Promise<AccountPreferences> {

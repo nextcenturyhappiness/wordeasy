@@ -159,9 +159,9 @@ Reveal 后 sticky 原句下的 IPA 行是按钮。点击/轻触使用 `window.sp
 ### UI-013 · P0 · Light / Dark
 
 - 未保存偏好时默认固定浅色，不因操作系统深色模式变暗（DEC-062）；
-- 支持用户选择系统、浅色或深色；只有明确选择 System 时才读取 `prefers-color-scheme`；
-- 保存偏好；已保存的 `light`、`dark`、`system` 继续生效；
-- React 启动前应用主题。未保存时首屏保持浅色；已选深色时避免先闪白；
+- 升级后把已存的旧默认 `system` 一次性改成 `light`（localStorage、IndexedDB；云端在下次同步时推送）。desktop 与 standalone 之后仍把 `system` 改写成 `light`，不读取 `prefers-color-scheme`；
+- hosted cloud 的 Settings 仍提供系统、浅色或深色。迁移完成后再选择的 System 才跟随操作系统；已保存的 `light` 与 `dark` 保持不变；
+- React 启动前应用主题。旧默认 `system` 与未保存偏好的首屏都是浅色；已选深色时避免先闪白；
 - Manifest `background_color` 与浅色 canvas 协调。
 
 ### PERF-001 · P0 · 不使用远程字体

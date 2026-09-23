@@ -1,6 +1,7 @@
 import type { ThemePreference } from "../application/contracts";
 
 export const themeStorageKey = "article-english:theme";
+export const themeSystemMigrationStorageKey = "article-english:theme-system-migrated";
 
 const themeColors = {
   light: "#f5f6f8",

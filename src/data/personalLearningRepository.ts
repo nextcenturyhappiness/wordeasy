@@ -132,6 +132,7 @@ export class PersonalLearningRepository extends IndexedDbLearningRepository {
 
     super({
       ...options,
+      allowSystemTheme: false,
       fuzzyLexiconSearch: true,
       dailyBootstrap: async (context) => {
         await migrateLegacyEmptyReviewSets(context);

@@ -6,7 +6,12 @@ import { runInThisContext } from "node:vm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { defaultThemePreference } from "../../src/application/contracts";
-import { applyThemePreference, resolveTheme, themeStorageKey } from "../../src/app/theme";
+import {
+  applyThemePreference,
+  resolveTheme,
+  themeStorageKey,
+  themeSystemMigrationStorageKey
+} from "../../src/app/theme";
 import { IndexedDbSettingsGateway } from "../../src/data/indexedDbSettingsGateway";
 import { LearningDatabase, openLearningDatabase } from "../../src/db/learningDatabase";
 
@@ -51,6 +56,7 @@ describe("default theme preference", () => {
   afterEach(async () => {
     document.documentElement.dataset.theme = "light";
     document.documentElement.style.colorScheme = "light";
+    delete document.documentElement.dataset.appMode;
     vi.unstubAllGlobals();
     if (database !== null) {
       database.close();
@@ -65,6 +71,7 @@ describe("default theme preference", () => {
     expect(tokensCss).toContain(':root[data-theme="system"]');
     expect(tokensCss).not.toContain(':root:not([data-theme="light"])');
     expect(themeInitSource).toContain(': "light"');
+    expect(themeInitSource).toContain(themeSystemMigrationStorageKey);
     expect(themeInitSource).not.toContain('|| "system"');
   });
 
@@ -109,17 +116,60 @@ describe("default theme preference", () => {
     expect(themeColorMeta().content).toBe("#f5f6f8");
   });
 
-  it("follows the OS scheme only after an explicit system preference", () => {
+  it("rewrites a stored system default to light before the first paint", () => {
     const matchMedia = installMatchMedia(true);
     localStorage.setItem(themeStorageKey, "system");
 
+    runThemeInit();
+
+    expect(matchMedia).not.toHaveBeenCalled();
+    expect(localStorage.getItem(themeStorageKey)).toBe("light");
+    expect(localStorage.getItem(themeSystemMigrationStorageKey)).toBe("1");
+    expect(document.documentElement.dataset.theme).toBe("light");
+    expect(document.documentElement.style.colorScheme).toBe("light");
+    expect(themeColorMeta().content).toBe("#f5f6f8");
+  });
+
+  it("follows the OS scheme only after an explicit system choice on cloud", () => {
+    installMatchMedia(true);
+    localStorage.setItem(themeStorageKey, "system");
+    runThemeInit();
+
+    localStorage.setItem(themeStorageKey, "system");
+    const matchMedia = installMatchMedia(true);
     runThemeInit();
 
     expect(matchMedia).toHaveBeenCalledWith("(prefers-color-scheme: dark)");
     expect(document.documentElement.dataset.theme).toBe("system");
     expect(document.documentElement.style.colorScheme).toBe("light dark");
     expect(themeColorMeta().content).toBe("#0c0e12");
+    expect(localStorage.getItem(themeStorageKey)).toBe("system");
     expect(resolveTheme("system")).toBe("dark");
+  });
+
+  it("rewrites system to light on desktop and standalone even after the migration flag", () => {
+    for (const appMode of ["desktop", "standalone"] as const) {
+      document.documentElement.dataset.appMode = appMode;
+      localStorage.setItem(themeSystemMigrationStorageKey, "1");
+      localStorage.setItem(themeStorageKey, "system");
+      const matchMedia = installMatchMedia(true);
+
+      runThemeInit();
+
+      expect(matchMedia).not.toHaveBeenCalled();
+      expect(localStorage.getItem(themeStorageKey)).toBe("light");
+      expect(document.documentElement.dataset.theme).toBe("light");
+      expect(document.documentElement.style.colorScheme).toBe("light");
+      expect(themeColorMeta().content).toBe("#f5f6f8");
+    }
+
+    document.documentElement.dataset.appMode = "desktop";
+    localStorage.setItem(themeStorageKey, "dark");
+    const darkMedia = installMatchMedia(true);
+    runThemeInit();
+    expect(darkMedia).not.toHaveBeenCalled();
+    expect(localStorage.getItem(themeStorageKey)).toBe("dark");
+    expect(document.documentElement.dataset.theme).toBe("dark");
   });
 
   it("resolves and applies light, dark, and system without dropping the preference", () => {
