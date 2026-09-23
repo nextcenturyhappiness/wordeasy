@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { runInThisContext } from "node:vm";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -41,8 +42,7 @@ function themeColorMeta(): HTMLMetaElement {
 }
 
 function runThemeInit(): void {
-  const run = new Function(themeInitSource);
-  run();
+  runInThisContext(themeInitSource);
 }
 
 describe("default theme preference", () => {
