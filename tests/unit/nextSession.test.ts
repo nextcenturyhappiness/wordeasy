@@ -47,6 +47,29 @@ describe("selectNextSession", () => {
     });
   });
 
+  it("ignores 必备医学英语 when the local surface only offers two modules", () => {
+    expect(
+      selectNextSession(
+        buildHomeSnapshot({
+          modules: {
+            essential_medical: {
+              module: "essential_medical",
+              new: { completed: 0, total: 40 },
+              review: { completed: 0, total: 0 },
+              wordsLearned: 0
+            }
+          }
+        }),
+        ["research_english", "medical_english"]
+      )
+    ).toEqual({
+      module: "research_english",
+      queue: "review",
+      remainingNew: 4,
+      remainingReview: 6
+    });
+  });
+
   it("returns null when all modules are clear", () => {
     expect(
       selectNextSession(

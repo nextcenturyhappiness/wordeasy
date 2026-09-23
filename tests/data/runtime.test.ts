@@ -1,6 +1,7 @@
 import Dexie from "dexie";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { FULL_CATALOG_TOTAL } from "../../src/data/local/fullCatalog";
 import { RuntimeConfigurationError, createLearningRuntime } from "../../src/data/runtime";
 import { LearningDatabase } from "../../src/db/learningDatabase";
 
@@ -95,7 +96,7 @@ describe("createLearningRuntime", () => {
         modules: {
           research_english: { new: { completed: 0, total: 10 } },
           medical_english: { new: { completed: 0, total: 10 } },
-          essential_medical: { new: { completed: 0, total: 10 } }
+          essential_medical: { new: { completed: 0, total: 0 } }
         }
       });
       const inspectionDatabase = new LearningDatabase(databaseName);
@@ -104,7 +105,7 @@ describe("createLearningRuntime", () => {
       expect((await runtime.learning.getStudyQueue("research_english", "new")).cards).toHaveLength(
         10
       );
-      expect(await inspectionDatabase.cached_cards.count()).toBe(900);
+      expect(await inspectionDatabase.cached_cards.count()).toBe(FULL_CATALOG_TOTAL);
       inspectionDatabase.close();
       await runtime.dispose();
     }

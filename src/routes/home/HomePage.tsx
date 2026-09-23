@@ -7,6 +7,7 @@ import { LexiconSearch } from "../../components/LexiconSearch";
 import { SyncStatus } from "../../components/SyncStatus";
 import { useLearningApp } from "../../app/LearningAppContext";
 import { prefetchHomeLearning, scheduleIdlePrefetch } from "../../app/homePrefetch";
+import { homeModuleOrder } from "../../app/moduleRoutes";
 import { selectNextSession } from "../../app/nextSession";
 import { markPerformanceAfterPaint, measurePerformance } from "../../application/performance";
 
@@ -65,11 +66,12 @@ export function HomePage() {
     }
 
     const snapshot = home.snapshot;
+    const moduleOrder = homeModuleOrder();
     let active = true;
     let cancelIdlePrefetch: () => void = () => undefined;
 
     async function peekNextCard() {
-      const target = selectNextSession(snapshot);
+      const target = selectNextSession(snapshot, moduleOrder);
       if (target === null) {
         if (active) {
           setNextCard(null);
@@ -164,7 +166,8 @@ export function HomePage() {
   }
 
   const { snapshot } = home;
-  const nextSession = selectNextSession(snapshot);
+  const moduleOrder = homeModuleOrder();
+  const nextSession = selectNextSession(snapshot, moduleOrder);
 
   return (
     <section className="home-page">
@@ -181,9 +184,9 @@ export function HomePage() {
       <NextSessionCard target={nextSession} nextCard={nextCard} />
 
       <div className="module-grid">
-        <ModuleSummaryCard summary={snapshot.modules.research_english} />
-        <ModuleSummaryCard summary={snapshot.modules.medical_english} />
-        <ModuleSummaryCard summary={snapshot.modules.essential_medical} />
+        {moduleOrder.map((module) => (
+          <ModuleSummaryCard key={module} summary={snapshot.modules[module]} />
+        ))}
       </div>
 
       <p className="streak-line">

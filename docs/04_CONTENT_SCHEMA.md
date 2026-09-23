@@ -50,6 +50,7 @@
 - `context_sentence` / paraphrase / 中文翻译须用多样真实生理、临床或病历语境（细胞与宿主防御、体内结构与功能、典型临床表现、病程/化验/影像写法），lemma 必须按其实际医学义出现；不得使用课堂框架（查房提问、讲课幻灯、教材插图点名、老师指图、测验题干等），不得把 lemma 填进与词义无关的模板句（如 “progress line mentioned X”、“episode was ADJ enough”、“operative report used X to map”），也不得让单一句式占主导；`target_text` 等于 lemma 且必须出现在原句中；
 - `source_type` 仅为 `original_example`，citation 字段为 null；
 - 首次 catalog 由 `20260908001400_essential_medical_seed.sql` 按 stable_key upsert；此后文案刷新用 additive UPDATE，不重写已应用 seed，也不改写 Research / Medical seed。
+- 本地 Mac / standalone 目录在构建时把该数据集与 active Medical 卡做 lemma 并集，写入 `medical_english`（DEC-060）。不把这些卡合并进 `data/seed-data.json`，以免破坏 Research/Medical 的 237 张契约，也不改云端三模块 seed。去重规则、1+1+8 配额和停用卡是否离开本地目录见 DEC-060。
 
 ---
 

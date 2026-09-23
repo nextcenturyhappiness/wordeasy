@@ -16,7 +16,7 @@ const STUDY_DATE = "2026-09-17";
 
 let activeDatabase: LearningDatabase | null = null;
 
-function requireCard(module: "research_english" | "medical_english" | "essential_medical") {
+function requireCard(module: "research_english" | "medical_english") {
   const card = STANDALONE_CARDS.find((candidate) => candidate.sense.module === module);
   if (card === undefined) {
     throw new Error(`Expected a ${module} catalog card.`);
@@ -80,10 +80,11 @@ describe("desktop cloud lexicon catalog seed", () => {
     const medical = STANDALONE_CARDS.find(
       (card) => card.sense.module === "medical_english" && card.card.active
     );
-    const essential =
-      STANDALONE_CARDS.find(
-        (card) => card.sense.module === "essential_medical" && card.word.lemma === "phagocytosis"
-      ) ?? requireCard("essential_medical");
+    const essential = STANDALONE_CARDS.find((card) => card.word.lemma === "phagocytosis");
+    if (essential === undefined) {
+      throw new Error("Expected phagocytosis in the merged Medical catalog.");
+    }
+    expect(essential.sense.module).toBe("medical_english");
     if (medical === undefined) {
       throw new Error("Expected an active Medical catalog card.");
     }

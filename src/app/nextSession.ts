@@ -1,10 +1,5 @@
 import type { HomeSnapshot, ModuleSlug, Progress, QueueKind } from "../application/contracts";
-
-const MODULE_ORDER: readonly ModuleSlug[] = [
-  "research_english",
-  "medical_english",
-  "essential_medical"
-];
+import { homeModuleOrder } from "./moduleRoutes";
 
 export interface NextSessionTarget {
   module: ModuleSlug;
@@ -21,11 +16,14 @@ export function moduleRemaining(summary: { new: Progress; review: Progress }): n
   return remainingProgress(summary.new) + remainingProgress(summary.review);
 }
 
-export function selectNextSession(snapshot: HomeSnapshot): NextSessionTarget | null {
+export function selectNextSession(
+  snapshot: HomeSnapshot,
+  moduleOrder: readonly ModuleSlug[] = homeModuleOrder()
+): NextSessionTarget | null {
   let selected: ModuleSlug | null = null;
   let selectedRemaining = 0;
 
-  for (const module of MODULE_ORDER) {
+  for (const module of moduleOrder) {
     const remaining = moduleRemaining(snapshot.modules[module]);
     if (remaining > selectedRemaining) {
       selected = module;

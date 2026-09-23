@@ -3,6 +3,7 @@ import {
   eligibleNewCandidates,
   selectEssentialMedicalAssignment,
   selectMedicalAssignment,
+  selectMergedMedicalAssignment,
   selectResearchAssignment,
   type AssignmentCandidate,
   type ResearchSelectionResult
@@ -54,6 +55,13 @@ export class LocalAssignmentService {
 
   async ensureMedicalNew(studyDate: string, createdAt: string): Promise<EnsureAssignmentResult> {
     return this.ensureNew("medical_english", studyDate, createdAt, selectMedicalAssignment);
+  }
+
+  async ensureMergedMedicalNew(
+    studyDate: string,
+    createdAt: string
+  ): Promise<EnsureAssignmentResult> {
+    return this.ensureNew("medical_english", studyDate, createdAt, selectMergedMedicalAssignment);
   }
 
   async ensureEssentialMedicalNew(

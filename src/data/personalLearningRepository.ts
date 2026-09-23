@@ -1,9 +1,5 @@
 import type { ReviewScheduler } from "../application/contracts";
-import {
-  MODULE_SLUGS,
-  type DomainModuleSlug,
-  type NormalizedContextCard
-} from "../domain/learning";
+import type { NormalizedContextCard } from "../domain/learning";
 import type { LearningDatabase } from "../db/learningDatabase";
 import {
   IndexedDbLearningRepository,
@@ -14,14 +10,15 @@ import { LocalAssignmentService } from "./localAssignmentService";
 import {
   assertCompleteFullCatalog,
   cachedFullCatalogIsComplete,
+  FULL_CATALOG_SIZE,
   FULL_CATALOG_VERSION
 } from "./local/fullCatalog";
+import { migrateEssentialProgressIntoMedical } from "./local/migrateEssentialProgress";
 
-const MODULES = MODULE_SLUGS;
-const PERSONAL_ACTIVE_NEW_POOL: Record<DomainModuleSlug, number> = {
-  research_english: 60,
-  medical_english: 140,
-  essential_medical: 663
+const PERSONAL_SURFACE_MODULES = ["research_english", "medical_english"] as const;
+const PERSONAL_ACTIVE_NEW_POOL: Record<(typeof PERSONAL_SURFACE_MODULES)[number], number> = {
+  research_english: FULL_CATALOG_SIZE.research_english,
+  medical_english: FULL_CATALOG_SIZE.medical_english
 };
 const PERSONAL_DAILY_QUOTA = 10;
 const PERSONAL_CATALOG_VERSION_KEY = "personal-catalog-version";
@@ -64,7 +61,7 @@ async function migrateLegacyEmptyReviewSets({
         return;
       }
 
-      for (const module of MODULES) {
+      for (const module of PERSONAL_SURFACE_MODULES) {
         const reviewAssignments = await database.cached_daily_review_assignments
           .where("[userId+module+studyDate]")
           .equals([userId, module, studyDate])
@@ -90,8 +87,7 @@ async function prepareDailyAssignments(
   const assignments = new LocalAssignmentService(context.database, context.userId);
   if (catalogIsComplete) {
     await assignments.ensureResearchNew(context.studyDate, context.initializedAt);
-    await assignments.ensureMedicalNew(context.studyDate, context.initializedAt);
-    await assignments.ensureEssentialMedicalNew(context.studyDate, context.initializedAt);
+    await assignments.ensureMergedMedicalNew(context.studyDate, context.initializedAt);
   } else {
     await assignments.ensureProvisionalNewSummary(
       "research_english",
@@ -107,15 +103,8 @@ async function prepareDailyAssignments(
       PERSONAL_DAILY_QUOTA,
       context.initializedAt
     );
-    await assignments.ensureProvisionalNewSummary(
-      "essential_medical",
-      context.studyDate,
-      PERSONAL_ACTIVE_NEW_POOL.essential_medical,
-      PERSONAL_DAILY_QUOTA,
-      context.initializedAt
-    );
   }
-  for (const module of MODULES) {
+  for (const module of PERSONAL_SURFACE_MODULES) {
     await assignments.ensureDueReviewSet(
       module,
       context.studyDate,
@@ -156,6 +145,13 @@ export class PersonalLearningRepository extends IndexedDbLearningRepository {
         if (!complete) {
           const cards = await loadCards();
           assertCompleteFullCatalog(cards);
+          await migrateEssentialProgressIntoMedical({
+            database: context.database,
+            userId: context.userId,
+            studyDate: context.studyDate,
+            nextCards: cards,
+            updatedAt: context.initializedAt
+          });
           const { DemoContentCatalog } = await import("./demo/demoContentCatalog");
           await new DemoContentCatalog(context.database, context.userId, cards).replace(
             context.initializedAt

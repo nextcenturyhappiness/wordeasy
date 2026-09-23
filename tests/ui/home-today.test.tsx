@@ -8,7 +8,7 @@ import type {
   SyncGateway,
   SyncState
 } from "../../src/application/contracts";
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import { Route, Routes } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -69,6 +69,52 @@ function HomeStudyRoutes() {
 }
 
 describe("Home and Today", () => {
+  it("shows only Research and Medical on the local surface", () => {
+    vi.stubEnv("VITE_APP_MODE", "standalone");
+    renderWithLearningApp(<HomePage />, {
+      initialHome: buildHomeSnapshot({
+        modules: {
+          essential_medical: {
+            module: "essential_medical",
+            new: { completed: 0, total: 40 },
+            review: { completed: 0, total: 0 },
+            wordsLearned: 12
+          }
+        }
+      })
+    });
+
+    expect(screen.getByRole("article", { name: "Research English" })).toBeInTheDocument();
+    expect(screen.getByRole("article", { name: "Medical English" })).toBeInTheDocument();
+    expect(screen.queryByRole("article", { name: "必备医学英语" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /continue/i })).toHaveLength(2);
+    expect(screen.getByText("1 词根构词 + 1 病历用语 + 8 课堂词汇")).toBeInTheDocument();
+    expect(screen.getByText("Research English · Review · 6 reviews due")).toBeInTheDocument();
+    expect(screen.queryByText(/必备医学英语/u)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Start next session" })).toHaveAttribute(
+      "href",
+      "/study/research?queue=review"
+    );
+  });
+
+  it("rejects the essential route on the local surface and keeps it for cloud", async () => {
+    vi.stubEnv("VITE_APP_MODE", "desktop");
+    const localRepository = createRepository();
+    renderWithLearningApp(<TodayRoute />, {
+      repository: localRepository,
+      initialEntries: ["/today/essential"]
+    });
+    expect(
+      screen.getByRole("heading", { name: "This learning module does not exist." })
+    ).toBeInTheDocument();
+
+    cleanup();
+    vi.stubEnv("VITE_APP_MODE", "cloud");
+    renderWithLearningApp(<TodayRoute />, { initialEntries: ["/today/essential"] });
+    expect(await screen.findByRole("heading", { name: "Today" })).toBeInTheDocument();
+    expect(screen.getByText("每天 10 个新词")).toBeInTheDocument();
+  });
+
   it("shows an honest offline empty state without inventing a Home assignment", async () => {
     const getCachedHome = vi.fn<LearningRepository["getCachedHome"]>(() => Promise.resolve(null));
     const getToday = vi.fn<LearningRepository["getToday"]>();

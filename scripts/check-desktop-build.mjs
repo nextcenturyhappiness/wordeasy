@@ -4,6 +4,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
+import {
+  MERGED_LOCAL_CATALOG_TOTAL,
+  mergeLocalMedicalCatalog
+} from "../src/data/local/mergeMedicalCatalog.ts";
+
 const PERSONAL_SUPABASE_HTTPS_ORIGIN = "https://kksllqgtjtfxfnknlrfn.supabase.co";
 const PERSONAL_SUPABASE_WSS_ORIGIN = "wss://kksllqgtjtfxfnknlrfn.supabase.co";
 const PERSONAL_SUPABASE_HOST = "kksllqgtjtfxfnknlrfn.supabase.co";
@@ -159,7 +164,8 @@ const homeGzip = (
 ).reduce((total, size) => total + size, 0);
 const activeCardIds = canonicalSeed.cards.filter((card) => card.active).map((card) => card.id);
 const essentialCardIds = essentialSeed.cards.map((card) => card.id);
-const catalogCardIds = [...activeCardIds, ...essentialCardIds];
+const mergedCatalog = mergeLocalMedicalCatalog(canonicalSeed.cards, essentialSeed.cards);
+const catalogCardIds = mergedCatalog.cards.map((card) => card.id);
 const cardCatalogFiles = filesContainingEvery(javascriptByName, catalogCardIds);
 const fsrsMarkers = ["ts-fsrs@5.4.1/default-v1", "wordeasy-fsrs-card-v1"];
 const fsrsFiles = filesContainingEvery(javascriptByName, fsrsMarkers);
@@ -180,7 +186,14 @@ assert(
   "Desktop JavaScript contains Service Worker registration code."
 );
 assert(activeCardIds.length === 200, "Canonical catalog must contain 200 active cards.");
-assert(essentialCardIds.length === 663, "Desktop catalog must include 663 必备医学英语 cards.");
+assert(
+  essentialCardIds.length === 663,
+  "Desktop source must still include 663 必备医学英语 cards."
+);
+assert(
+  catalogCardIds.length === MERGED_LOCAL_CATALOG_TOTAL,
+  `Desktop merged catalog must contain ${String(MERGED_LOCAL_CATALOG_TOTAL)} cards.`
+);
 assert(
   cardCatalogFiles.length === 1,
   `Expected one dedicated desktop lexicon catalog chunk; found ${String(cardCatalogFiles.length)}.`

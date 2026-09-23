@@ -10,7 +10,9 @@ import type {
 } from "../../src/application/contracts";
 import { LocalAssignmentService } from "../../src/data/localAssignmentService";
 import { PersonalLearningRepository } from "../../src/data/personalLearningRepository";
+import { FULL_CATALOG_TOTAL } from "../../src/data/local/fullCatalog";
 import { STANDALONE_CARDS } from "../../src/data/standalone/standaloneCards";
+import { cachedCardFromNormalized } from "../../src/db/records";
 import { LearningDatabase, openLearningDatabase } from "../../src/db/learningDatabase";
 import { LocalSyncStateStore } from "../../src/sync/localSyncState";
 
@@ -136,7 +138,7 @@ describe("PersonalLearningRepository", () => {
       modules: {
         research_english: { new: { completed: 0, total: 10 }, review: { completed: 0, total: 0 } },
         medical_english: { new: { completed: 0, total: 10 }, review: { completed: 0, total: 0 } },
-        essential_medical: { new: { completed: 0, total: 10 }, review: { completed: 0, total: 0 } }
+        essential_medical: { new: { completed: 0, total: 0 }, review: { completed: 0, total: 0 } }
       }
     });
     expect(await repository.peekNextSessionCard("research_english", "new")).toBeNull();
@@ -158,7 +160,7 @@ describe("PersonalLearningRepository", () => {
 
     expect(loadCards).toHaveBeenCalledTimes(1);
     expect(loadScheduler).not.toHaveBeenCalled();
-    expect(await database.cached_cards.count()).toBe(900);
+    expect(await database.cached_cards.count()).toBe(FULL_CATALOG_TOTAL);
     expect(first.cards).toHaveLength(10);
     expect(second.cards.map((card) => card.cardId)).toEqual(first.cards.map((card) => card.cardId));
     expect(categories).toEqual({
@@ -167,8 +169,12 @@ describe("PersonalLearningRepository", () => {
       bioinformatics: 3
     });
     const medical = await repository.getStudyQueue("medical_english", "new");
-    expect(medical.cards.filter((card) => card.category === "morphology")).toHaveLength(7);
-    expect(medical.cards.filter((card) => card.category !== "morphology")).toHaveLength(3);
+    expect(medical.cards.filter((card) => card.category === "morphology")).toHaveLength(1);
+    expect(medical.cards.filter((card) => card.category === "core")).toHaveLength(8);
+    expect(
+      medical.cards.filter((card) => card.category !== "morphology" && card.category !== "core")
+    ).toHaveLength(1);
+    expect(medical.cards.every((card) => card.module === "medical_english")).toBe(true);
   });
 
   it("fuzzy-matches English lemma typos against the seeded personal catalog", async () => {
@@ -177,7 +183,7 @@ describe("PersonalLearningRepository", () => {
     const hits = await repository.searchLocalCards("phagocytoss");
     expect(hits.map((hit) => hit.lemma)).toEqual(["phagocytosis"]);
     expect(hits[0]).toMatchObject({
-      module: "essential_medical",
+      module: "medical_english",
       meaningZh: "吞噬作用"
     });
   });
@@ -240,7 +246,7 @@ describe("PersonalLearningRepository", () => {
 
     await repository.getStudyQueue("research_english", "new");
 
-    expect(await database.cached_cards.count()).toBe(900);
+    expect(await database.cached_cards.count()).toBe(FULL_CATALOG_TOTAL);
     expect(await database.cached_cards.get([USER_ID, "stale-card"])).toBeUndefined();
   });
 
@@ -410,7 +416,7 @@ describe("PersonalLearningRepository", () => {
       modules: {
         research_english: { new: { completed: 0, total: 10 } },
         medical_english: { new: { completed: 0, total: 10 } },
-        essential_medical: { new: { completed: 0, total: 10 } }
+        essential_medical: { new: { completed: 0, total: 0 } }
       }
     });
     expect(loadCards).not.toHaveBeenCalled();
@@ -473,6 +479,125 @@ describe("PersonalLearningRepository", () => {
       )
     ).toEqual([priorAssignment.cardId]);
     expect(reopened.loadCards).not.toHaveBeenCalled();
+  });
+
+  it("folds 必备医学英语 progress into Medical and replaces the old 7+3 queue", async () => {
+    const { database, repository } = await createHarness();
+    const phagocytosis = requireValue(
+      STANDALONE_CARDS.find((card) => card.word.lemma === "phagocytosis"),
+      "Expected phagocytosis in the merged catalog."
+    );
+    const hepatitis = requireValue(
+      STANDALONE_CARDS.find(
+        (card) => card.word.lemma === "hepatitis" && card.sense.category === "morphology"
+      ),
+      "Expected the morphology hepatitis card."
+    );
+    const cachedAt = DAY_ONE_NOW.toISOString();
+    await database.cached_cards.bulkPut([
+      cachedCardFromNormalized(
+        USER_ID,
+        { ...phagocytosis, sense: { ...phagocytosis.sense, module: "essential_medical" } },
+        cachedAt
+      ),
+      cachedCardFromNormalized(
+        USER_ID,
+        {
+          ...hepatitis,
+          sense: {
+            ...hepatitis.sense,
+            id: "essential-hepatitis-sense",
+            module: "essential_medical"
+          },
+          context: { ...hepatitis.context, wordSenseId: "essential-hepatitis-sense" },
+          card: {
+            ...hepatitis.card,
+            id: "essential-hepatitis-old",
+            wordSenseId: "essential-hepatitis-sense"
+          }
+        },
+        cachedAt
+      )
+    ]);
+    await database.learned_word_senses.bulkPut([
+      {
+        userId: USER_ID,
+        module: "essential_medical",
+        wordSenseId: phagocytosis.sense.id,
+        firstCardId: phagocytosis.card.id,
+        firstEventId: "event-phagocytosis",
+        firstLearnedAt: cachedAt
+      },
+      {
+        userId: USER_ID,
+        module: "essential_medical",
+        wordSenseId: "essential-hepatitis-sense",
+        firstCardId: "essential-hepatitis-old",
+        firstEventId: "event-hepatitis",
+        firstLearnedAt: cachedAt
+      }
+    ]);
+    await database.local_review_states.put({
+      userId: USER_ID,
+      cardId: phagocytosis.card.id,
+      module: "essential_medical",
+      schedulerState: { migrated: true },
+      dueAt: "2026-08-26T00:00:00.000Z",
+      lastReviewedAt: "2026-08-25T08:00:00.000Z",
+      revision: 1,
+      schedulerImplementationVersion: "legacy-essential",
+      updatedAt: cachedAt
+    });
+    await database.cached_assignment_sets.put({
+      userId: USER_ID,
+      module: "medical_english",
+      studyDate: DAY_ONE,
+      queue: "new",
+      status: "ready",
+      shortage: null,
+      createdAt: cachedAt
+    });
+    await database.cached_daily_assignments.bulkAdd(
+      Array.from({ length: 10 }, (_, index) => ({
+        userId: USER_ID,
+        module: "medical_english" as const,
+        studyDate: DAY_ONE,
+        cardId: `old-medical-${String(index)}`,
+        wordSenseId: `old-medical-sense-${String(index)}`,
+        category: index < 7 ? "morphology" : "symptoms",
+        position: index,
+        completedAt: null,
+        createdAt: cachedAt
+      }))
+    );
+
+    const medical = await repository.getStudyQueue("medical_english", "new");
+    const review = await repository.getStudyQueue("medical_english", "review");
+
+    expect(medical.cards.filter((card) => card.category === "morphology")).toHaveLength(1);
+    expect(medical.cards.filter((card) => card.category === "core")).toHaveLength(8);
+    expect(medical.cards.some((card) => card.cardId === phagocytosis.card.id)).toBe(false);
+    expect(medical.cards.some((card) => card.cardId === hepatitis.card.id)).toBe(false);
+    expect(review.cards.map((card) => card.cardId)).toContain(phagocytosis.card.id);
+    expect(
+      await database.learned_word_senses.get([USER_ID, "medical_english", phagocytosis.sense.id])
+    ).toMatchObject({ firstCardId: phagocytosis.card.id });
+    expect(
+      await database.learned_word_senses.get([USER_ID, "medical_english", hepatitis.sense.id])
+    ).toMatchObject({ firstCardId: hepatitis.card.id });
+    expect(
+      await database.learned_word_senses
+        .where("[userId+module]")
+        .equals([USER_ID, "essential_medical"])
+        .count()
+    ).toBe(0);
+    expect(
+      await database.cached_cards
+        .where("[userId+module]")
+        .equals([USER_ID, "essential_medical"])
+        .count()
+    ).toBe(0);
+    expect(await database.cached_cards.get([USER_ID, "essential-hepatitis-old"])).toBeUndefined();
   });
 });
 

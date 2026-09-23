@@ -4,15 +4,20 @@ import {
   type NormalizedContextCard
 } from "../../domain/learning";
 import type { LearningDatabase } from "../../db/learningDatabase";
+import {
+  MERGED_LOCAL_CATALOG_TOTAL,
+  MERGED_LOCAL_MEDICAL_COUNT,
+  MERGED_LOCAL_RESEARCH_COUNT
+} from "./mergeMedicalCatalog";
 
 export const FULL_CATALOG_SIZE: Record<DomainModuleSlug, number> = {
-  research_english: 60,
-  medical_english: 177,
-  essential_medical: 663
+  research_english: MERGED_LOCAL_RESEARCH_COUNT,
+  medical_english: MERGED_LOCAL_MEDICAL_COUNT,
+  essential_medical: 0
 };
 
-export const FULL_CATALOG_VERSION = "canonical-essential-medical-v5";
-export const FULL_CATALOG_TOTAL = 900;
+export const FULL_CATALOG_VERSION = "canonical-merged-medical-v1";
+export const FULL_CATALOG_TOTAL = MERGED_LOCAL_CATALOG_TOTAL;
 
 function requiredCatalogSize(module: DomainModuleSlug): number {
   switch (module) {
