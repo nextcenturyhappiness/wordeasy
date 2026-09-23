@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
 
-import type { ContextCardView } from "../../application/contracts";
 import { ModuleSummaryCard } from "../../components/ModuleSummaryCard";
-import { NextSessionCard } from "../../components/NextSessionCard";
 import { LexiconSearch } from "../../components/LexiconSearch";
 import { SyncStatus } from "../../components/SyncStatus";
 import { useLearningApp } from "../../app/LearningAppContext";
 import { prefetchHomeLearning, scheduleIdlePrefetch } from "../../app/homePrefetch";
 import { homeModuleOrder } from "../../app/moduleRoutes";
-import { selectNextSession } from "../../app/nextSession";
 import { markPerformanceAfterPaint, measurePerformance } from "../../application/performance";
 
 function greetingFor(timeZone: string): string {
@@ -38,7 +35,6 @@ function greetingFor(timeZone: string): string {
 
 export function HomePage() {
   const { home, repository, syncState, syncNow } = useLearningApp();
-  const [nextCard, setNextCard] = useState<ContextCardView | null>(null);
   const [localLexiconAvailable, setLocalLexiconAvailable] = useState(false);
 
   useEffect(() => {
@@ -66,32 +62,8 @@ export function HomePage() {
     }
 
     const snapshot = home.snapshot;
-    const moduleOrder = homeModuleOrder();
     let active = true;
     let cancelIdlePrefetch: () => void = () => undefined;
-
-    async function peekNextCard() {
-      const target = selectNextSession(snapshot, moduleOrder);
-      if (target === null) {
-        if (active) {
-          setNextCard(null);
-        }
-        return;
-      }
-
-      try {
-        const card = await repository.peekNextSessionCard(target.module, target.queue);
-        if (active) {
-          setNextCard(card);
-        }
-      } catch {
-        if (active) {
-          setNextCard(null);
-        }
-      }
-    }
-
-    void peekNextCard();
 
     const cancelAfterPaint = markPerformanceAfterPaint("cached-home-ready", () => {
       measurePerformance("app-shell-to-cached-home", "app-shell-visible", "cached-home-ready");
@@ -99,11 +71,7 @@ export function HomePage() {
         return;
       }
       cancelIdlePrefetch = scheduleIdlePrefetch(() => {
-        void prefetchHomeLearning(repository, snapshot).then(() => {
-          if (active) {
-            void peekNextCard();
-          }
-        });
+        void prefetchHomeLearning(repository, snapshot);
       });
     });
 
@@ -167,7 +135,6 @@ export function HomePage() {
 
   const { snapshot } = home;
   const moduleOrder = homeModuleOrder();
-  const nextSession = selectNextSession(snapshot, moduleOrder);
 
   return (
     <section className="home-page">
@@ -180,8 +147,6 @@ export function HomePage() {
       </header>
 
       <LexiconSearch repository={repository} />
-
-      <NextSessionCard target={nextSession} nextCard={nextCard} />
 
       <div className="module-grid">
         {moduleOrder.map((module) => (

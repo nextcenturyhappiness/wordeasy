@@ -226,17 +226,12 @@ core
 
 ### UI-001 · P0 · 简单首页
 
-首页保持简单。打开应用的主因是检索自己学过的 Context Card，而不是清掉到期队列。主表面是个人词库搜索；Next Session 仍在，但降为搜索（及搜索结果）下方的次级一键入口。模块入口继续作为更次一级的摘要。本地产品只有 Research 与 Medical 两张摘要（DEC-060）。不得把模块 Continue 拉回同等英雄位。参考（本地）：
+首页保持简单。打开应用的主因是检索自己学过的 Context Card，而不是清掉到期队列。主表面是个人词库搜索。学习从模块 Continue 进入 Today，再进入 Study。首页不显示 Next Session 卡片、下一句预览或「Start next session」（DEC-061）。模块摘要留在搜索下方。本地产品只有 Research 与 Medical 两张摘要（DEC-060）。不得把模块 Continue 拉回同等英雄位。参考（本地）：
 
 ```text
 Good morning                         Synced
 
 [ search ]
-
-Start the next card
-Research English · Review
-The association was substantially attenuated after adjustment for age and BMI.
-[ Start next session ]
 
 Research English    Medical English
 6 / 10 new today    3 / 10 new today
@@ -264,7 +259,7 @@ Offline
 - 社交动态；
 - 复杂图表。
 
-问候语根据计算机当前 IANA timezone 本地计算，不等待网络。Next Session 选择规则见 DEC-032；首页视觉层级见 DEC-039；搜索呈现见 DEC-042。
+问候语根据计算机当前 IANA timezone 本地计算，不等待网络。首页不设 Next Session（DEC-061）。搜索仍是主表面（DEC-039）；搜索呈现见 DEC-042。
 
 ### UI-015 · P1 · 首页个人词库搜索
 
@@ -274,7 +269,7 @@ Offline
 
 空查询只显示搜索框，不显示「词库」标题，不打开独立搜索页。输入框不放中文或英文 placeholder 提示，可访问名称由 `aria-label` / label 提供。无匹配时显示诚实空文案「还没有学过相关的词」，不得回退到公共词典、翻译器或编造释义。不新增 Search 主导航。
 
-有结果时：lemma 与中文释义同一行（lemma 在左），其下是 `meaning_en`，再下是更安静的语境句。不得另加「解释」一类标签。多条结果放在有限高度的纵向可滚动区域内，Next Session 仍在搜索区下方。点击结果进入既有 Study 查阅（`/study/:module?card=`）：同一套 lemma + 完整例句 + 已 Reveal 的释义/usage，跳过正面提问；不评分、不改当日队列（DEC-058）。
+有结果时：lemma 与中文释义同一行（lemma 在左），其下是 `meaning_en`，再下是更安静的语境句。不得另加「解释」一类标签。多条结果放在有限高度的纵向可滚动区域内。点击结果进入既有 Study 查阅（`/study/:module?card=`）：同一套 lemma + 完整例句 + 已 Reveal 的释义/usage，跳过正面提问；不评分、不改当日队列（DEC-058）。
 
 ---
 
