@@ -16,6 +16,7 @@ export function moduleRemaining(summary: { new: Progress; review: Progress }): n
   return remainingProgress(summary.new) + remainingProgress(summary.review);
 }
 
+/** Module with the most remaining New + Review work. Home idle prefetch uses this; it is not a Home control (DEC-061). */
 export function selectNextSession(
   snapshot: HomeSnapshot,
   moduleOrder: readonly ModuleSlug[] = homeModuleOrder()

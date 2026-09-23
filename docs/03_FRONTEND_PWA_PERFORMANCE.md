@@ -50,7 +50,7 @@ inputmode="numeric"
 
 本地缓存可用时，Supabase 慢或断网不能造成白屏或长时间全屏 loading。后台 Sync 标为 synced 后，只要本地已有任一模块的当日 summary，Home 就必须从 empty 升级为模块卡；不得因另一模块缺失而保持整页 empty（DEC-049）。
 
-首页先显示个人词库搜索主表面，再显示次级 Next Session 和两个更次一级的模块摘要。本地词库已就绪时（desktop 全量目录 seed，或 IndexedDB 已有 `cached_cards`），即使当日 assignment / Sync 尚未完成，也必须显示搜索框；点击结果走既有 Study 查阅，不新增 Search 页（DEC-058）。模块卡至少显示：
+首页先显示个人词库搜索主表面，再显示模块摘要。不显示 Next Session 卡片或「Start next session」（DEC-061）。本地词库已就绪时（desktop 全量目录 seed，或 IndexedDB 已有 `cached_cards`），即使当日 assignment / Sync 尚未完成，也必须显示搜索框；点击结果走既有 Study 查阅，不新增 Search 页（DEC-058）。模块卡至少显示：
 
 ```text
 module name
@@ -59,7 +59,7 @@ words learned
 Continue
 ```
 
-hosted cloud 另显示 streak、小型 sync state。个人 Mac desktop 不显示 Sync status 或 Sync now（DEC-059）。完整词库不得因 Home 首次绘制而被拉入首屏 bundle；搜索与下一句预览只读本地缓存，搜索首次输入才允许触发已有的 deferred catalog bootstrap。`VITE_APP_MODE=desktop` 与 standalone 的该 bootstrap 由 `PersonalLearningRepository` 把完整本地目录写入本机 `cached_cards`（DEC-059）。hosted cloud / PWA 搜索保持子串匹配且不播种全库；Mac desktop 与 standalone 的拼写容错见 DEC-055。首页视觉层级见 DEC-039：搜索是打开应用的主因，Next Session 是可选清队列入口。搜索呈现见 DEC-042：无「词库」标题，结果行 lemma+中文同行，多条结果在有限高度面板内滚动。
+hosted cloud 另显示 streak、小型 sync state。个人 Mac desktop 不显示 Sync status 或 Sync now（DEC-059）。完整词库不得因 Home 首次绘制而被拉入首屏 bundle；搜索只读本地缓存，搜索首次输入才允许触发已有的 deferred catalog bootstrap。`VITE_APP_MODE=desktop` 与 standalone 的该 bootstrap 由 `PersonalLearningRepository` 把完整本地目录写入本机 `cached_cards`（DEC-059）。hosted cloud / PWA 搜索保持子串匹配且不播种全库；Mac desktop 与 standalone 的拼写容错见 DEC-055。首页视觉层级见 DEC-039 与 DEC-061：搜索是打开应用的主因，学习从模块 Continue 进入 Today / Study。搜索呈现见 DEC-042：无「词库」标题，结果行 lemma+中文同行，多条结果在有限高度面板内滚动。
 
 ---
 

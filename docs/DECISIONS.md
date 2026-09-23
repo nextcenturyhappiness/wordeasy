@@ -251,7 +251,7 @@ Tests/docs affected: `src/main.tsx`, `tests/ui/app-shell.test.tsx`, `docs/03_FRO
 ### DEC-032 · Home 为单一 Next Session + 本地 Context Card 检索
 
 Date: 2026-09-01
-Status: Accepted — Home visual hierarchy superseded by DEC-039; Next Session selection, peek, and local-search rules remain.
+Status: Accepted — Home visual hierarchy superseded by DEC-039; the Home Next Session CTA is removed by DEC-061. Local-search rules remain. The remaining-work selector is only an idle prefetch hint.
 Related requirements: UI-001, UI-006, UI-015, CORE-005, SCOPE-002, PERF-003/005; DEC-011
 Context: Home 原先并排两个同等 Continue，下方留下大块空白；写作时也没有办法检索自己学过的 Context Card。SCOPE-002 / DEC-011 将“Vocabulary 全局搜索”列为 Deferred，但所有者明确要求在本 PR 于首页加入个人词库检索，并把 Home 收成一个 Next Session，而不是 Anki 统计看板或 Duolingo 游戏化。
 Decision:
@@ -367,7 +367,7 @@ Tests/docs affected: `public/icons/**`, `src-tauri/icons/**`, `docs/TRACEABILITY
 ### DEC-039 · Home 以个人词库搜索为主，Next Session 为次
 
 Date: 2026-09-03
-Status: Accepted — search-desk chrome and result-row layout superseded by DEC-042; search-primary / Next Session-secondary hierarchy remains.
+Status: Accepted — search-desk chrome and result-row layout superseded by DEC-042; Next Session on Home superseded by DEC-061. Search stays the primary Home surface.
 Related requirements: UI-001, UI-006, UI-015; DEC-032, DEC-034
 Context: DEC-032 把 Next Session 做成首页英雄，搜索只是顶部紧凑胶囊。打开应用因此像还债（你欠一批复习），而不是写作时查已学语境。所有者要求反转层级：个人词库搜索是打开应用的主因，Next Session 是可选的清队列入口。不引入 streak 压力文案、XP、排行榜、每日目标或打卡日历。
 Decision:
@@ -420,7 +420,7 @@ Tests/docs affected: `src/styles/tokens.css`, `src/styles/global.css`, font-stac
 ### DEC-042 · Home 搜索去掉「词库」标题，结果行收成 lemma+中文
 
 Date: 2026-09-06
-Status: Accepted
+Status: Accepted — “Next Session 仍在搜索区下方” superseded by DEC-061; result-row layout remains.
 Related requirements: UI-001, UI-015; DEC-034, DEC-039
 Context: DEC-039 把个人词库搜索做成首页主表面，并加上中文「词库」标题。所有者反馈标题多余，结果卡层数太多（lemma、英文释义、中文、语境句各自占一行），多条近义结果还会把 Home 无限拉长。不改检索范围、排序、空 placeholder，也不把 Next Session 拉回英雄位。
 Decision:
@@ -742,7 +742,7 @@ Tests/docs affected: `src/main.tsx`, `src/data/runtime.ts`, `SyncStatus`, Tauri 
 ### DEC-060 · 本地产品合并 Medical English 与必备医学英语
 
 Date: 2026-09-23
-Status: Accepted
+Status: Accepted — the local Next Session surface named below is removed by DEC-061; the two-module union remains.
 Related requirements: CORE-005, CORE-011, MED-001, MED-002, ASSIGN-004, ASSIGN-008, CONTENT-002, CONTENT-013, UI-001, DESKTOP-001, LOCAL-001, PERF-006; DEC-044, DEC-047, DEC-059
 Context: DEC-047 把《医学专业英语的重点单词终结版》做成第三个顶层模块 `essential_medical`。DEC-059 之后所有者实际使用的产品是 Mac desktop 与手机 standalone，都走 `PersonalLearningRepository`，不 Sync。所有者决定本地产品只保留 Research English 与 Medical English，Medical 词库改为两者的并集。hosted cloud PWA 仍是可选历史目标。
 Decision:
@@ -759,6 +759,23 @@ Reason: 所有者要在本地产品里学完整医学词表，但不想再看见
 Alternatives rejected: 继续三块磁贴只合并检索；把 663 张卡写进 `seed-data.json` 或重写云端 seed；每天仍是 7+3 并把 core 挤进病历池；每天 7+3+10；跨池补足；改写 review event；静默清空 Mac / 手机 IndexedDB。
 Consequences: Mac 需要重新 `desktop:build`，手机需要重新部署 standalone 后，已安装的客户端才会看到两个模块和 791 张目录。升级当天 Medical 的 New / Review 队列会重算。云端 PWA 行为不变。停用且不在必备词表中的 30 个 Medical lemma 离开本地目录。
 Tests/docs affected: `mergeMedicalCatalog`, `selectMergedMedicalAssignment`, `PersonalLearningRepository`, Home/Today/Next Session, catalog version, standalone/desktop build checks, `AGENTS.md`, `README.md`, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
+
+### DEC-061 · Home 不再显示 Next Session
+
+Date: 2026-09-23
+Status: Accepted
+Related requirements: UI-001, UI-006, UI-015; DEC-032, DEC-039, DEC-042, DEC-060
+Context: DEC-039 把 Next Session 降为搜索下方的次级入口。所有者要求从 Home 去掉整块：eyebrow「NEXT SESSION」、标题「Start the next card」、队列摘要、下一句和「Start next session」。学习仍从各模块 Continue 进入 Today，再进入既有 Study。
+Decision:
+
+1. Home 不渲染 Next Session 区块，也不提供直达 Study 队列的「Start next session」。当天队列清空时也不显示「Nothing is due right now.」。搜索仍是主表面（DEC-039 / DEC-042）。模块摘要与 Continue 保留，继续通往 `/today/:module`。`/study/:module` 与检索查阅不变。
+2. 本地产品（desktop / standalone）与同一套 Home 一样不显示该区块。不得把模块 Continue 拉回英雄位，也不得为此加回统计或打卡。
+3. DEC-032 的「单一学习 CTA」和 DEC-039 的「Next Session 次级入口」对 Home 失效。本地检索规则不变。空闲预取仍可暖剩余工作最多的模块的 Today 数据；该选择不再对应任何首页控件，也不再 peek 下一句。
+
+Reason: 所有者打开 Home 是为了查已学语境，并从模块摘要进入当天学习，不需要第三块清队列卡片。
+Alternatives rejected: 只在本地模式隐藏、云端保留；把按钮改成更小的文字链；删掉 Continue、Today 或 Study。
+Consequences: 已安装的 Mac 应用要重新 `desktop:build` 后这块才会消失。DEC-060 里「本地 UI 含 Next Session」的表面描述由本决策收窄。Study 队列与评分不变。
+Tests/docs affected: `HomePage`, removed `NextSessionCard`, Home UI tests, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/TRACEABILITY.md`.
 
 ## 新决策模板
 
