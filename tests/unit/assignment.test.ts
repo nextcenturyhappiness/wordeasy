@@ -4,6 +4,7 @@ import {
   eligibleNewCandidates,
   selectEssentialMedicalAssignment,
   selectMedicalAssignment,
+  selectMergedMedicalAssignment,
   selectResearchAssignment
 } from "../../src/domain/assignment";
 
@@ -170,5 +171,76 @@ describe("daily assignment quotas", () => {
     const first = selectEssentialMedicalAssignment(cards([["core", 20]]), "user-a", "2026-09-08");
     const second = selectEssentialMedicalAssignment(cards([["core", 20]]), "user-a", "2026-09-08");
     expect(first).toEqual(second);
+  });
+
+  it("selects merged Medical 1 morphology + 1 chart + 8 core without backfill", () => {
+    const ready = selectMergedMedicalAssignment(
+      cards([
+        ["morphology", 4],
+        ["symptoms", 3],
+        ["core", 12]
+      ]),
+      "user-a",
+      "2026-09-23"
+    );
+    expect(ready.status).toBe("ready");
+    if (ready.status === "ready") {
+      expect(ready.cards.filter((card) => card.category === "morphology")).toHaveLength(1);
+      expect(ready.cards.filter((card) => card.category === "core")).toHaveLength(8);
+      expect(
+        ready.cards.filter((card) => card.category !== "morphology" && card.category !== "core")
+      ).toHaveLength(1);
+      expect(ready.cards).toHaveLength(10);
+    }
+
+    expect(
+      selectMergedMedicalAssignment(
+        cards([
+          ["symptoms", 4],
+          ["core", 20]
+        ]),
+        "user-a",
+        "2026-09-23"
+      )
+    ).toMatchObject({
+      status: "shortage",
+      shortage: { category: "morphology", required: 1, available: 0 }
+    });
+    expect(
+      selectMergedMedicalAssignment(
+        cards([
+          ["morphology", 4],
+          ["core", 20]
+        ]),
+        "user-a",
+        "2026-09-23"
+      )
+    ).toMatchObject({
+      status: "shortage",
+      shortage: { category: "clinical", required: 1, available: 0 }
+    });
+    expect(
+      selectMergedMedicalAssignment(
+        cards([
+          ["morphology", 4],
+          ["symptoms", 4],
+          ["core", 7]
+        ]),
+        "user-a",
+        "2026-09-23"
+      )
+    ).toMatchObject({
+      status: "shortage",
+      shortage: { category: "core", required: 8, available: 7 }
+    });
+
+    const candidates = cards([
+      ["morphology", 3],
+      ["signs", 3],
+      ["core", 10]
+    ]);
+    expect(selectMergedMedicalAssignment(candidates, "user-a", "2026-09-23")).toEqual(
+      selectMergedMedicalAssignment(candidates, "user-a", "2026-09-23")
+    );
   });
 });

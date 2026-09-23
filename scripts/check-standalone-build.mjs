@@ -2,6 +2,11 @@ import { readFile, readdir } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { gzipSync } from "node:zlib";
 
+import {
+  MERGED_LOCAL_CATALOG_TOTAL,
+  mergeLocalMedicalCatalog
+} from "../src/data/local/mergeMedicalCatalog.ts";
+
 const root = new URL("..", import.meta.url).pathname;
 const output = join(root, "dist-standalone");
 const limits = {
@@ -178,7 +183,8 @@ const compressedPrecache = (await Promise.all(precacheFiles.map((path) => gzipSi
 );
 const activeCardIds = canonicalSeed.cards.filter((card) => card.active).map((card) => card.id);
 const essentialCardIds = essentialSeed.cards.map((card) => card.id);
-const catalogCardIds = [...activeCardIds, ...essentialCardIds];
+const mergedCatalog = mergeLocalMedicalCatalog(canonicalSeed.cards, essentialSeed.cards);
+const catalogCardIds = mergedCatalog.cards.map((card) => card.id);
 const cardCatalogFiles = filesContainingEvery(javascriptByName, catalogCardIds);
 const fsrsMarkers = ["ts-fsrs@5.4.1/default-v1", "wordeasy-fsrs-card-v1"];
 const fsrsFiles = filesContainingEvery(javascriptByName, fsrsMarkers);
@@ -194,7 +200,14 @@ assert(
   "Standalone origin is missing its local-only security headers."
 );
 assert(activeCardIds.length === 200, "Canonical standalone catalog must contain 200 active cards.");
-assert(essentialCardIds.length === 663, "Standalone catalog must include 663 必备医学英语 cards.");
+assert(
+  essentialCardIds.length === 663,
+  "Standalone source must still include 663 必备医学英语 cards."
+);
+assert(
+  catalogCardIds.length === MERGED_LOCAL_CATALOG_TOTAL,
+  `Standalone merged catalog must contain ${String(MERGED_LOCAL_CATALOG_TOTAL)} cards.`
+);
 assert(
   cardCatalogFiles.length === 1,
   `Expected one dedicated standalone catalog chunk; found ${String(cardCatalogFiles.length)}.`

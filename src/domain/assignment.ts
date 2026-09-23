@@ -5,6 +5,10 @@ import {
   MEDICAL_DAILY_NEW_QUOTA,
   MEDICAL_MORPHOLOGY_CATEGORY,
   MEDICAL_MORPHOLOGY_DAILY_QUOTA,
+  MERGED_MEDICAL_CLINICAL_DAILY_QUOTA,
+  MERGED_MEDICAL_CORE_DAILY_QUOTA,
+  MERGED_MEDICAL_DAILY_NEW_QUOTA,
+  MERGED_MEDICAL_MORPHOLOGY_DAILY_QUOTA,
   RESEARCH_CATEGORY_QUOTAS,
   type ContentShortageRecord,
   type ResearchCategory
@@ -150,6 +154,96 @@ export function selectMedicalAssignment(
   ];
   if (selected.length !== MEDICAL_DAILY_NEW_QUOTA) {
     throw new Error("Medical 7 morphology + 3 chart selection was not atomic.");
+  }
+
+  return { status: "ready", cards: selected };
+}
+
+function isCoreCandidate(candidate: AssignmentCandidate): boolean {
+  return candidate.category === ESSENTIAL_MEDICAL_CATEGORY;
+}
+
+export function isMergedMedicalNewAssignment(categories: readonly string[]): boolean {
+  if (categories.length !== MERGED_MEDICAL_DAILY_NEW_QUOTA) {
+    return false;
+  }
+  const morphology = categories.filter(
+    (category) => category === MEDICAL_MORPHOLOGY_CATEGORY
+  ).length;
+  const core = categories.filter((category) => category === ESSENTIAL_MEDICAL_CATEGORY).length;
+  const clinical = categories.length - morphology - core;
+  return (
+    morphology === MERGED_MEDICAL_MORPHOLOGY_DAILY_QUOTA &&
+    clinical === MERGED_MEDICAL_CLINICAL_DAILY_QUOTA &&
+    core === MERGED_MEDICAL_CORE_DAILY_QUOTA
+  );
+}
+
+export function selectMergedMedicalAssignment(
+  candidates: AssignmentCandidate[],
+  userId: string,
+  studyDate: string
+): MedicalSelectionResult {
+  const morphology = deterministicOrder(
+    candidates.filter(isMorphologyCandidate),
+    userId,
+    studyDate
+  );
+  const clinical = deterministicOrder(
+    candidates.filter(
+      (candidate) => !isMorphologyCandidate(candidate) && !isCoreCandidate(candidate)
+    ),
+    userId,
+    studyDate
+  );
+  const core = deterministicOrder(candidates.filter(isCoreCandidate), userId, studyDate);
+
+  if (morphology.length < MERGED_MEDICAL_MORPHOLOGY_DAILY_QUOTA) {
+    return {
+      status: "shortage",
+      shortage: {
+        code: "content_shortage",
+        category: MEDICAL_MORPHOLOGY_CATEGORY,
+        required: MERGED_MEDICAL_MORPHOLOGY_DAILY_QUOTA,
+        available: morphology.length,
+        message: "Not enough new 词根构词 cards are available."
+      }
+    };
+  }
+
+  if (clinical.length < MERGED_MEDICAL_CLINICAL_DAILY_QUOTA) {
+    return {
+      status: "shortage",
+      shortage: {
+        code: "content_shortage",
+        category: "clinical",
+        required: MERGED_MEDICAL_CLINICAL_DAILY_QUOTA,
+        available: clinical.length,
+        message: "Not enough new Medical chart cards are available."
+      }
+    };
+  }
+
+  if (core.length < MERGED_MEDICAL_CORE_DAILY_QUOTA) {
+    return {
+      status: "shortage",
+      shortage: {
+        code: "content_shortage",
+        category: ESSENTIAL_MEDICAL_CATEGORY,
+        required: MERGED_MEDICAL_CORE_DAILY_QUOTA,
+        available: core.length,
+        message: "Not enough new Medical core cards are available."
+      }
+    };
+  }
+
+  const selected = [
+    ...morphology.slice(0, MERGED_MEDICAL_MORPHOLOGY_DAILY_QUOTA),
+    ...clinical.slice(0, MERGED_MEDICAL_CLINICAL_DAILY_QUOTA),
+    ...core.slice(0, MERGED_MEDICAL_CORE_DAILY_QUOTA)
+  ];
+  if (selected.length !== MERGED_MEDICAL_DAILY_NEW_QUOTA) {
+    throw new Error("Merged Medical 1 morphology + 1 chart + 8 core selection was not atomic.");
   }
 
   return { status: "ready", cards: selected };

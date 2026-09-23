@@ -739,6 +739,27 @@ Alternatives rejected: 继续 DEC-030 云端 Mac；把手机改成云端以便�
 Consequences: 合并后必须在 Apple Silicon 上重新 `npm run desktop:build`，已安装的云端 Mac `.app` 不会自己变成本地版。新 App 的进度与旧云端账户、与手机 standalone 都互不备份。DEC-030 的云端 Mac 启动、Supabase CSP 放行，以及 DEC-056 的云端账户播种，对个人 Mac 应用失效。DEC-031 的「不显示常驻 banner」仍然有效。
 Tests/docs affected: `src/main.tsx`, `src/data/runtime.ts`, `SyncStatus`, Tauri CSP/navigation, `check-desktop-build.mjs`, runtime/Home tests, `AGENTS.md`, `README.md`, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`, `docs/RELEASE_VERIFICATION.md`.
 
+### DEC-060 · 本地产品合并 Medical English 与必备医学英语
+
+Date: 2026-09-23
+Status: Accepted
+Related requirements: CORE-005, CORE-011, MED-001, MED-002, ASSIGN-004, ASSIGN-008, CONTENT-002, CONTENT-013, UI-001, DESKTOP-001, LOCAL-001, PERF-006; DEC-044, DEC-047, DEC-059
+Context: DEC-047 把《医学专业英语的重点单词终结版》做成第三个顶层模块 `essential_medical`。DEC-059 之后所有者实际使用的产品是 Mac desktop 与手机 standalone，都走 `PersonalLearningRepository`，不 Sync。所有者决定本地产品只保留 Research English 与 Medical English，Medical 词库改为两者的并集。hosted cloud PWA 仍是可选历史目标。
+Decision:
+
+1. 本地 UI（`VITE_APP_MODE` 为 `desktop` 或 `standalone`）的 Home、Today、Study 路由、Next Session 和检索分组标签只出现 `research_english` 与 `medical_english`。不渲染「必备医学英语」Continue。`/today/essential` 与 `/study/essential` 在这两种模式下不是有效模块。Demo 与 hosted cloud 仍可显示第三模块，直到云端退役。
+2. 本地目录并集不改 `data/seed-data.json`、不改 `data/essential-medical/cards.json`、不改已应用的云端 seed migration。Research 60 张原样保留。纳入全部 active Medical 卡和全部必备医学英语卡。不纳入 `active=false` 的 Medical 卡；若该 lemma 已在必备词表中，留下必备卡，否则该停用卡离开本地目录。
+3. 去重键是 lemma 的 trim + 小写，同一 lemma 只留一张。丰富度依次为：非空 collocations 数量、非空 `usage_note`、`verified_source`、语境句长度（上限 400）。分数高者留下。平分时优先 active，再优先原本的 `medical_english` 卡，再比较 card id。留下的必备卡把 `module` 改成 `medical_english`，`category` 仍为 `core`，card / word / sense / context id 不变。`category === "core"` 与云端 `essential_medical` 一样允许空 collocations。
+4. 当前语料里，72 个与 active Medical 重叠的 lemma 全部留下 Medical 卡（都有搭配），丢掉对应必备卡。并集后本地目录 791 张：Research 60 + Medical 731（140 张原 active Medical + 591 张必备卡），Medical 全部 active。catalog 版本 `canonical-merged-medical-v1`，下次本地启动重写 `cached_cards`。
+5. 本地 Medical 每日 New 改为稳定的 **1 词根构词 + 1 病历用语 + 8 课堂词汇（core）**，合计仍是 10，all-or-nothing，不跨池补足。Research 仍是 5+2+3。不保留 7+3：词根池 70、病历池 70、core 池 591。每天 7 张词根会在约 10 天后耗尽词根并让整组 shortage，同时 core 几乎进不了 New。1+1+8 每天都用到词根和病历，core 占多数，三池大约一起在 70 天左右学完。Demo 与云端 RPC 仍是 Medical 7+3、必备医学英语每天 10 张 core。本地选择器是 `selectMergedMedicalAssignment`，不改云端 SQL。
+6. 本机进度迁移只发生在 personal / desktop / standalone IndexedDB，不碰云端账户。版本不是 `canonical-merged-medical-v1` 时，替换目录前把 `essential_medical` 的已学 sense 与 review state 改挂到并集后的 Medical 卡。卡 id 仍在目录里的只改 module。被丢掉的卡按 lemma 挂到留下的那张；目标 sense 已学或目标卡已有 review state 时保留目标。不改写不可变 review event。删除全部 `essential_medical` assignment / summary。升级当天的 Medical New 队列若还不是 1+1+8 则重算；当天 Medical Review 队列重算，使改挂后的到期卡能进入。已经写入 `learned_word_senses` 的卡不会再次作为 New。不迁移、不删除其他 IndexedDB（例如旧的 `article-english:cloud:*`）。
+7. DEC-047 的「第三个顶层模块」以及 CORE-005「三模块必须并存」对本地 Mac / standalone 失效。云端三模块、空 collocations、例句质量规则仍然约束 `data/essential-medical/` 与云端解析。DEC-059 的本地 runtime、不 Sync、模糊检索、已 Reveal 查阅不变。
+
+Reason: 所有者要在本地产品里学完整医学词表，但不想再看见第三块磁贴。词根和病历仍然每天出现，课堂词表成为 Medical New 的主体。
+Alternatives rejected: 继续三块磁贴只合并检索；把 663 张卡写进 `seed-data.json` 或重写云端 seed；每天仍是 7+3 并把 core 挤进病历池；每天 7+3+10；跨池补足；改写 review event；静默清空 Mac / 手机 IndexedDB。
+Consequences: Mac 需要重新 `desktop:build`，手机需要重新部署 standalone 后，已安装的客户端才会看到两个模块和 791 张目录。升级当天 Medical 的 New / Review 队列会重算。云端 PWA 行为不变。停用且不在必备词表中的 30 个 Medical lemma 离开本地目录。
+Tests/docs affected: `mergeMedicalCatalog`, `selectMergedMedicalAssignment`, `PersonalLearningRepository`, Home/Today/Next Session, catalog version, standalone/desktop build checks, `AGENTS.md`, `README.md`, `docs/01_PRODUCT_CORE.md`, `docs/03_FRONTEND_PWA_PERFORMANCE.md`, `docs/04_CONTENT_SCHEMA.md`, `docs/05_ACCEPTANCE_TESTS.md`, `docs/TRACEABILITY.md`.
+
 ## 新决策模板
 
 ```text

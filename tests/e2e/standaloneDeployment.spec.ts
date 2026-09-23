@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { FULL_CATALOG_TOTAL } from "../../src/data/local/fullCatalog";
+
 async function cachedCardCount(page: Page): Promise<number> {
   return page.evaluate(async () => {
     const request = indexedDB.open("wordeasy:standalone:v1:local-user");
@@ -68,6 +70,12 @@ test("runs the formal personal PWA with the complete catalog and offline local p
   await expect(page.getByRole("status").filter({ hasText: "Saved on this device" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Sync now" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Sign in" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Research English" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Medical English" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "必备医学英语" })).toHaveCount(0);
+  await expect(page.getByRole("article", { name: "Medical English" })).toContainText(
+    "1 词根构词 + 1 病历用语 + 8 课堂词汇"
+  );
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
@@ -80,10 +88,19 @@ test("runs the formal personal PWA with the complete catalog and offline local p
       window as typeof window & { __runArticleEnglishIdlePrefetch: () => void }
     ).__runArticleEnglishIdlePrefetch();
   });
-  await expect.poll(() => cachedCardCount(page)).toBe(900);
+  await expect.poll(() => cachedCardCount(page)).toBe(FULL_CATALOG_TOTAL);
+  await page.getByRole("searchbox", { name: "Search learned Context Cards" }).fill("phagocytosis");
+  const phagocytosis = page.getByRole("link", { name: /phagocytosis/u });
+  await expect(phagocytosis).toBeVisible();
+  await expect(phagocytosis).toContainText("Medical English");
+  await page.goto("/today/essential");
+  await expect(
+    page.getByRole("heading", { name: "This learning module does not exist." })
+  ).toBeVisible();
+  await page.goto("/");
 
   await page.getByRole("link", { name: /Continue Research English/u }).click();
-  expect(await cachedCardCount(page)).toBe(900);
+  expect(await cachedCardCount(page)).toBe(FULL_CATALOG_TOTAL);
   await page.getByRole("link", { name: /Continue New/u }).click();
   await page.getByRole("button", { name: /Reveal answer/u }).click();
   await page.getByRole("button", { name: /^Good/u }).click();

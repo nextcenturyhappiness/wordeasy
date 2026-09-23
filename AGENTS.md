@@ -2,14 +2,13 @@
 
 ## 1. 项目目标
 
-本仓库实现一个个人长期使用的 **Research English + Medical English + 必备医学英语** 跨平台 PWA。
+本仓库实现一个个人长期使用的 **Research English + Medical English** 跨平台 PWA。必备医学英语词表并入本地 Medical English，不再作为本地第三个顶层模块（DEC-060）。hosted cloud 仍可保留三个模块，直到退役。
 
-三个顶层模块必须并存，不得互相替换或删除：
+本地产品（Mac desktop 与 standalone 手机）只有两个顶层模块：
 
 ```text
 research_english
-medical_english
-essential_medical   # 显示名「必备医学英语」
+medical_english   # 词库 = active Medical ∪ 必备医学英语，lemma 去重后留下更丰富的语境
 ```
 
 核心学习目标不是记忆孤立单词的中文翻译，而是理解单词在科研论文、医学文章、英文教材、指南和临床资料中的具体语境含义。
@@ -31,7 +30,7 @@ Context Card
 AGENTS.md
 docs/00_REQUIREMENTS_INDEX.md
 任务相关需求文件（按该索引的阅读矩阵）
-docs/DECISIONS.md          # 读到最新 Accepted 条目，当前至 DEC-059
+docs/DECISIONS.md          # 读到最新 Accepted 条目，当前至 DEC-060
 docs/TRACEABILITY.md
 ```
 
@@ -55,13 +54,13 @@ docs/TRACEABILITY.md
 - Review event 必须不可变、具有全局唯一 UUID，并支持幂等重试。
 - 同一台设备上，同一天的 daily assignment 必须稳定，刷新不能改变。Mac 与手机不共享当日队列。
 - Research English 每天严格分配 5 + 2 + 3 个新词。
-- Medical English 每天严格分配 7 词根构词 + 3 病历用语（合计仍是 10；不是笼统的 10，也不是滚动分类平衡配额）。
-- 必备医学英语（`essential_medical`）每天分配 10 个 `core` 新词。
+- 本地 Medical English 每天严格分配 1 词根构词 + 1 病历用语 + 8 课堂词汇（`core`）。合计仍是 10，不是滚动分类平衡配额（DEC-060）。
+- hosted cloud / Demo 的 Medical English 仍是 7 词根构词 + 3 病历用语；云端 `essential_medical` 仍是每天 10 个 `core` 新词，直到该目标退役。
 - New 与 Review 必须分开计算。
 - 首页不得等待 Supabase 网络请求后才首次显示。
 - 完整词库不得打入首屏 JavaScript bundle。
 - 不使用远程字体作为首屏依赖。
-- 首页本地 Context Card 检索已授权（DEC-032 / DEC-039 / DEC-042），不是 Deferred。个人 Mac（`VITE_APP_MODE=desktop`）与 standalone 手机都走本地 `PersonalLearningRepository`：约 900 张目录、DEC-055 模糊检索、DEC-057 本地 New 资格、DEC-058 已 Reveal 查阅。Mac IndexedDB 是 `wordeasy:desktop:v1:local-user`，不登录、不同步（DEC-059）。hosted cloud / PWA 仍为子串匹配 + 当日缓存，并且只是可选/历史目标。不得把该检索做成独立 Search 页、公共词典或 Add Word。
+- 首页本地 Context Card 检索已授权（DEC-032 / DEC-039 / DEC-042），不是 Deferred。个人 Mac（`VITE_APP_MODE=desktop`）与 standalone 手机都走本地 `PersonalLearningRepository`：合并后的本地目录（Research 60 + Medical 731）、DEC-055 模糊检索、DEC-057 本地 New 资格、DEC-058 已 Reveal 查阅。Mac IndexedDB 是 `wordeasy:desktop:v1:local-user`，不登录、不同步（DEC-059）。hosted cloud / PWA 仍为子串匹配 + 当日缓存，并且只是可选/历史目标。不得把该检索做成独立 Search 页、公共词典或 Add Word。
 - 不实现需求中明确标记为 Deferred 的功能。
 - 不得声称未实际运行或未实际验证的场景已经通过。
 - 不得删除用户已有未提交修改，不得执行 destructive reset。

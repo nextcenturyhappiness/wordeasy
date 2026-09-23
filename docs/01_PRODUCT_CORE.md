@@ -91,19 +91,18 @@ Common collocations（仅非空时；必备医学英语不显示）
 
 ---
 
-## 3. 三个学习模块
+## 3. 学习模块
 
 ### CORE-005 · P0 · 模块隔离
 
-首页必须有三个独立入口：
+本地产品（Mac desktop 与 standalone 手机，DEC-060）首页只有两个入口：
 
 ```text
 Research English
 Medical English
-必备医学英语
 ```
 
-三个模块分别维护：
+hosted cloud 与 Demo 仍可显示第三个入口「必备医学英语」，直到云端目标退役。每个仍在使用的模块分别维护：
 
 - 每日新词分配；
 - 今日新词进度；
@@ -113,11 +112,13 @@ Medical English
 - 模块级统计；
 - 本地缓存。
 
-一个模块的操作不能修改另外两个模块的进度。Medical English（含词根构词）与 必备医学英语 并存，不得互相替换或删除。
+一个模块的操作不能修改另一个模块的进度。本地产品不再把必备医学英语当作独立顶层模块；它的词卡进入 Medical English（DEC-060）。
 
-### CORE-011 · P0 · 必备医学英语
+### CORE-011 · P0 · 必备医学英语词表
 
-`essential_medical` 是第三个顶层学习选项，显示名「必备医学英语」。词库覆盖 `data/essential-medical/lemmas.txt` 中的全部 lemma。每日分配 10 个新词，来自单一 `core`（课堂词汇）池。本模块 Context Card 不提供 collocations；能拆词根词缀时把课堂构词写入 `usage_note`，否则可空。例句为多样真实生理 / 临床 / 病历场景的 `original_example`，lemma 必须按其实际医学义出现（如 phagocytosis：中性粒细胞/巨噬细胞吞入细菌），不得使用查房提问、讲课幻灯、老师指图一类课堂框架，不得把 lemma 填进不通顺的模板句，不得编造 DOI/PMID。Medical English 的 7 词根构词 + 3 病历用语配额不变。
+`data/essential-medical/lemmas.txt` 中的全部 lemma 仍然要有 Context Card。本地产品把这些卡并入 `medical_english`（DEC-060），不再提供单独的 Home / Today / Study 入口。hosted cloud 仍把 `essential_medical` 当作第三个顶层模块，显示名「必备医学英语」，每日 10 个 `core` 新词，直到该目标退役。
+
+本词表的 Context Card 不提供 collocations；能拆词根词缀时把课堂构词写入 `usage_note`，否则可空。例句为多样真实生理 / 临床 / 病历场景的 `original_example`，lemma 必须按其实际医学义出现（如 phagocytosis：中性粒细胞/巨噬细胞吞入细菌），不得使用查房提问、讲课幻灯、老师指图一类课堂框架，不得把 lemma 填进不通顺的模板句，不得编造 DOI/PMID。云端 Medical English 的 7 词根构词 + 3 病历用语配额不变。本地 Medical 配额见 MED-001。
 
 ---
 
@@ -171,7 +172,15 @@ Not enough new Bioinformatics cards are available.
 
 ### MED-001 · P0 · 每日 10 个新词
 
-Medical English 每天分配 10 个新词，严格分成：
+本地产品（Mac desktop 与 standalone）每天分配 10 个新词，严格分成：
+
+```text
+1 词根构词（morphology）
+1 病历用语（chart / class vocabulary，非 morphology 且非 core）
+8 课堂词汇（core，来自必备医学英语词表）
+```
+
+hosted cloud 与 Demo 仍严格分成：
 
 ```text
 7 词根构词（morphology）
@@ -182,9 +191,10 @@ Medical English 每天分配 10 个新词，严格分成：
 
 ```text
 morphology
+core
 ```
 
-其余既有 Medical 分类共同组成每日 3 张病历用语池。不得用另一池补足缺口，也不得重复已学卡片冒充新词。
+本地三池都不足时整组 shortage，不得用另一池补足，也不得重复已学卡片冒充新词。云端病历池仍是非 `morphology` 的既有 Medical 分类，每天 3 张。选择 1+1+8 而不是 7+3 的原因见 DEC-060：词根和病历池各约 70 张，课堂词表约 591 张。
 
 ### MED-002 · P0 · 长期分类覆盖
 
@@ -216,7 +226,7 @@ morphology
 
 ### UI-001 · P0 · 简单首页
 
-首页保持简单。打开应用的主因是检索自己学过的 Context Card，而不是清掉到期队列。主表面是个人词库搜索；Next Session 仍在，但降为搜索（及搜索结果）下方的次级一键入口。模块入口继续作为更次一级的摘要。不得把三个模块 Continue 拉回同等英雄位。参考：
+首页保持简单。打开应用的主因是检索自己学过的 Context Card，而不是清掉到期队列。主表面是个人词库搜索；Next Session 仍在，但降为搜索（及搜索结果）下方的次级一键入口。模块入口继续作为更次一级的摘要。本地产品只有 Research 与 Medical 两张摘要（DEC-060）。不得把模块 Continue 拉回同等英雄位。参考（本地）：
 
 ```text
 Good morning                         Synced
@@ -228,10 +238,10 @@ Research English · Review
 The association was substantially attenuated after adjustment for age and BMI.
 [ Start next session ]
 
-Research English    Medical English    必备医学英语
-6 / 10 new today    3 / 10 new today    0 / 10 new today
-128 words learned   74 words learned    0 words learned
-[ Continue ]        [ Continue ]        [ Continue ]
+Research English    Medical English
+6 / 10 new today    3 / 10 new today
+128 words learned   74 words learned
+[ Continue ]        [ Continue ]
 
 Streak: 12 days
 ```
@@ -260,7 +270,7 @@ Offline
 
 首页把本地 Context Card 检索做成主表面：更大、更可点的搜索区，而不是顶部一条紧凑胶囊。检索当前设备 IndexedDB 中的 Context Cards。
 
-匹配字段：中文释义、英文 lemma / display form、语境句、搭配。已学/已复习卡片优先，但仍搜索本地词库，避免第一天搜索为空。`VITE_APP_MODE=desktop` 的 Mac 应用与 standalone 一样使用本地 `PersonalLearningRepository`，把完整目录（Research + Medical + 必备医学英语，当前约 900 张）写入 `wordeasy:desktop:v1:local-user` 的 `cached_cards`（DEC-059）。该应用以及 standalone / personal 本地目录在 lemma / displayForm 上允许有界编辑距离的拼写容错，中文释义仅在低成本单字近邻时容错（DEC-055）。hosted cloud / PWA / demo 仍只检索已缓存卡片，并只做大小写不敏感的子串匹配，不得对纯拼写错误给出结果。本地词库已就绪时，搜索框不得等云端 Sync 或当日 assignment 才出现（DEC-058）。Mac 与手机进度彼此独立，检索和评分都不依赖 Sync。
+匹配字段：中文释义、英文 lemma / display form、语境句、搭配。已学/已复习卡片优先，但仍搜索本地词库，避免第一天搜索为空。`VITE_APP_MODE=desktop` 的 Mac 应用与 standalone 一样使用本地 `PersonalLearningRepository`，把合并后的目录（Research 60 + Medical 731，DEC-060）写入 `wordeasy:desktop:v1:local-user` 的 `cached_cards`（DEC-059）。检索分组标签只有 Research English 与 Medical English。该应用以及 standalone / personal 本地目录在 lemma / displayForm 上允许有界编辑距离的拼写容错，中文释义仅在低成本单字近邻时容错（DEC-055）。hosted cloud / PWA / demo 仍只检索已缓存卡片，并只做大小写不敏感的子串匹配，不得对纯拼写错误给出结果。本地词库已就绪时，搜索框不得等云端 Sync 或当日 assignment 才出现（DEC-058）。Mac 与手机进度彼此独立，检索和评分都不依赖 Sync。
 
 空查询只显示搜索框，不显示「词库」标题，不打开独立搜索页。输入框不放中文或英文 placeholder 提示，可访问名称由 `aria-label` / label 提供。无匹配时显示诚实空文案「还没有学过相关的词」，不得回退到公共词典、翻译器或编造释义。不新增 Search 主导航。
 
@@ -404,7 +414,7 @@ Space = Reveal
 6. Session 恢复和登出。
 7. 两个学习模块。
 8. Research 每日 5 + 2 + 3。
-9. Medical 每日 7 词根构词 + 3 病历用语。
+9. Medical 每日新词：本地 1 词根构词 + 1 病历用语 + 8 课堂词汇；云端 / Demo 仍是 7 词根构词 + 3 病历用语（DEC-060）。
 10. Context-first 卡片。
 11. Again / Hard / Good / Easy。
 12. New 与 Review 分离。

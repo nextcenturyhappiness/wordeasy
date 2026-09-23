@@ -2,13 +2,13 @@
 
 ![wordeasy — Research and Medical English in context](public/og.png)
 
-wordeasy is a local-first Research English + Medical English + 必备医学英语 PWA. Its learning unit is a Context Card, not an isolated translation:
+wordeasy is a local-first Research English + Medical English PWA. Its learning unit is a Context Card, not an isolated translation:
 
 ```text
 Context Card = word + domain-specific sense + article/medical context
 ```
 
-The product has three isolated modules (`research_english`, `medical_english`, `essential_medical`), stable daily New and Review queues, offline-first rating in IndexedDB, a pinned FSRS adapter, and an installable Vite PWA. The owner's Mac app and phone PWA each keep progress only on that device (DEC-059). The hosted cloud PWA can still use Email OTP and Supabase sync, but it is an optional legacy target.
+The local product has two modules (`research_english` and `medical_english`). Medical English is the union of the active Medical cards and the 必备医学英语 vocabulary (DEC-060). Daily New and Review queues are stable. Ratings are offline-first in IndexedDB, FSRS sits behind a pinned adapter, and the app is an installable Vite PWA. The owner's Mac app and phone PWA each keep progress only on that device (DEC-059). The hosted cloud PWA can still use Email OTP, Supabase sync, and a third `essential_medical` module, but it is an optional legacy target.
 
 ## Agent handoff
 
@@ -31,7 +31,7 @@ The repository is a release candidate with three formal personal distribution ta
 - an Apple Silicon personal macOS `.app` / `.dmg` built with Tauri 2, which uses the same local personal catalog and does not sync with the phone (DEC-059);
 - the hosted cloud PWA at [https://wordeasy-cloud.pages.dev](https://wordeasy-cloud.pages.dev) (`npm run build` / `npm run dev:cloud`), kept as an optional legacy target.
 
-The standalone PWA and the personal macOS App each keep the complete personal catalog on that device (900 cards: Research 60 + Medical 177 + 必备医学英语 663) and make no Supabase request. Their IndexedDB identities stay separate: `wordeasy:standalone:v1:local-user` on the phone and `wordeasy:desktop:v1:local-user` on the Mac. Switching a Mac from the old cloud account to this local app starts a new local history; existing `article-english:cloud:*` data is left in place. The older private, 20-card Preview remains deployment history rather than the current product delivery. Local automated checks exercise the formal PWA, desktop local boundary (including DEC-055 fuzzy search and the deferred 900-card catalog), demo learning flow, cloud adapters, sync failure and conflict handling, PWA offline launch, cached offline learning, bundle budgets, and startup under delayed or failed Supabase requests. The following still require an external environment and are intentionally not reported as passed:
+The standalone PWA and the personal macOS App each keep the merged personal catalog on that device (791 cards: Research 60 + Medical 731) and make no Supabase request. Their IndexedDB identities stay separate: `wordeasy:standalone:v1:local-user` on the phone and `wordeasy:desktop:v1:local-user` on the Mac. Switching a Mac from the old cloud account to this local app starts a new local history; existing `article-english:cloud:*` data is left in place. The older private, 20-card Preview remains deployment history rather than the current product delivery. Local automated checks exercise the formal PWA, desktop local boundary (including DEC-055 fuzzy search and the deferred merged catalog), demo learning flow, cloud adapters, sync failure and conflict handling, PWA offline launch, cached offline learning, bundle budgets, and startup under delayed or failed Supabase requests. The following still require an external environment and are intentionally not reported as passed:
 
 - real Supabase migration, RLS, RPC, Edge Function, OTP, and two-client checks;
 - physical Android Chrome and macOS Chrome PWA installation;
@@ -42,16 +42,15 @@ See `docs/RELEASE_VERIFICATION.md` for the exact evidence boundary.
 
 ## Product behavior
 
-- Three modules: Research English (`research_english`), Medical English (`medical_english`), and 必备医学英语 (`essential_medical`, ~663 cards). They keep separate assignments, progress, review state, and caches (CORE-005 / CORE-011 / DEC-047).
+- Local modules: Research English (`research_english`) and Medical English (`medical_english`). 必备医学英语 is not a third Home tile on Mac or the phone (DEC-060). Hosted cloud can still show `essential_medical` until that target is retired.
 - Research English assigns exactly 5 General Research + 2 Statistics/Methodology + 3 Bioinformatics cards per study date.
-- Medical English assigns 7 词根构词 (`morphology`) + 3 病历用语 (chart / class vocabulary). That 7+3 split is the quota; it is not a rolling 10-card category balance (DEC-044).
-- 必备医学英语 assigns 10 new cards per day from a single `core` pool (DEC-047).
+- Local Medical English assigns 1 词根构词 (`morphology`) + 1 病历用语 + 8 课堂词汇 (`core`). That split is stable and all-or-nothing; it is not a rolling category balance (DEC-060). Cloud and Demo Medical English stay at 7 词根构词 + 3 病历用语 (DEC-044). Cloud `essential_medical` still assigns 10 `core` cards per day (DEC-047).
 - New and Review totals are separate and stable for the profile-local study date.
 - A rating is committed locally before the UI advances. Sync failure never blocks learning.
 - Immutable UUID review events are retried idempotently through an account-scoped outbox.
 - Study shows the lemma and the full context sentence on the front (no cloze). Reveal answers with meaning-in-context, not a missing-word prompt (DEC-046). 必备医学英语 examples are real clinical / physiological / chart contexts, not classroom frames or mad-lib shells (DEC-053 / DEC-054). Root/affix classroom notes go in `usage_note` when they help; otherwise that field may be empty (DEC-052).
-- Canonical catalog sizes: Research 60; Medical 177 (140 active, 37 deactivated specialty / shallow-chart cards); 必备医学英语 663. Standalone / personal full catalog is 900. Demo is an explicit 20-card Research + Medical subset; 必备医学英语 is shortage in Demo.
-- The full catalog is not shipped in the initial browser JavaScript bundle. Hosted cloud / PWA / demo search the local day-cache (and other already-cached cards) with case-insensitive substring matching (DEC-032 / DEC-039 / DEC-042). Mac desktop (`VITE_APP_MODE=desktop`) and standalone seed the full local catalog into their own IndexedDB for Home search (DEC-059) and allow bounded lemma / display-form fuzzy matching (DEC-055). Hosted cloud / PWA search stays substring + day-cache unless a later decision documents otherwise.
+- Source catalog sizes stay separate: Research 60; Medical 177 (140 active, 37 deactivated specialty / shallow-chart cards); 必备医学英语 663. The local standalone / personal catalog is the DEC-060 union: 791 cards (Research 60 + Medical 731). Overlapping lemmas keep the richer card, which on the current corpus is the active Medical card. Demo is an explicit 20-card Research + Medical subset; 必备医学英语 is shortage in Demo.
+- The full catalog is not shipped in the initial browser JavaScript bundle. Hosted cloud / PWA / demo search the local day-cache (and other already-cached cards) with case-insensitive substring matching (DEC-032 / DEC-039 / DEC-042). Mac desktop (`VITE_APP_MODE=desktop`) and standalone seed the merged local catalog into their own IndexedDB for Home search (DEC-059 / DEC-060) and allow bounded lemma / display-form fuzzy matching (DEC-055). Search labels are Research English or Medical English. Hosted cloud / PWA search stays substring + day-cache unless a later decision documents otherwise.
 - Deferred features such as Add Word, a global Search page, AI, Anki, statistics dashboards, and social features have no placeholder routes or buttons. Home local search is not one of those Deferred items.
 
 ## Technology
@@ -94,7 +93,7 @@ The desktop Vite mode does not read Supabase settings. Do not put those values i
 
 ## Run the formal personal PWA
 
-The formal local-data PWA is not the old Preview. It uses a stable `standalone:v1` IndexedDB identity and the complete 900-card personal catalog (Research 60 + Medical 177 + 必备医学英语 663):
+The formal local-data PWA is not the old Preview. It uses a stable `standalone:v1` IndexedDB identity and the merged 791-card personal catalog (Research 60 + Medical 731):
 
 ```bash
 npm run dev:standalone
@@ -106,7 +105,7 @@ npm run test:standalone:e2e
 
 Deploy `dist-standalone` to an HTTPS origin to install it from Android Chrome. The phone PWA is local-only. It is not synced with the Mac app, and neither device is a backup for the other. After this local-Mac change, redeploy `dist-standalone` to the Access-protected Pages project when publishing the phone build; this repository change does not publish that site.
 
-The protected local-data Cloudflare project is at [https://wordeasy-preview.pages.dev](https://wordeasy-preview.pages.dev). Its legacy hostname still contains `preview`, but the current production deployment on that project is the formal `wordeasy` standalone PWA, not the 20-card trial. Cloudflare Access requires the configured owner identity before any App Shell, route, manifest, Service Worker, or JavaScript asset is delivered. The documented atomic deployment `d5aed166-71aa-434c-8785-e8bbca89039c` passed an authenticated Research + Medical rating/reload check; later catalog growth to 900 cards is in the repository contract, not a claim that every live asset was re-captured in this README. An already installed copy on the fixed hostname can continue to retain the previous name until its prompt update is accepted or all old client windows are closed and the new Service Worker takes control; do not clear site data merely to force the rename because that also removes local progress.
+The protected local-data Cloudflare project is at [https://wordeasy-preview.pages.dev](https://wordeasy-preview.pages.dev). Its legacy hostname still contains `preview`, but the current production deployment on that project is the formal `wordeasy` standalone PWA, not the 20-card trial. Cloudflare Access requires the configured owner identity before any App Shell, route, manifest, Service Worker, or JavaScript asset is delivered. The documented atomic deployment `d5aed166-71aa-434c-8785-e8bbca89039c` passed an authenticated Research + Medical rating/reload check; later catalog growth, including the DEC-060 local union of 791 cards, is in the repository contract, not a claim that every live asset was re-captured in this README. The phone standalone deploy still has to be republished before that union is what the installed PWA serves. An already installed copy on the fixed hostname can continue to retain the previous name until its prompt update is accepted or all old client windows are closed and the new Service Worker takes control; do not clear site data merely to force the rename because that also removes local progress.
 
 On Android, open that URL in Chrome, complete the Cloudflare Access login, then use Chrome's **Install app** or **Add to Home screen** command. Physical Android installation remains a manual acceptance step; the repository does not claim it has been run on a real phone.
 
@@ -130,7 +129,7 @@ src-tauri/target/aarch64-apple-darwin/release/bundle/macos/wordeasy.app
 src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/wordeasy_0.1.0_aarch64.dmg
 ```
 
-The desktop build embeds the same frontend and the local personal learning runtime (DEC-059): no Email OTP, no Sync status, and no Supabase request. Ratings stay in IndexedDB `wordeasy:desktop:v1:local-user`. It includes no Service Worker, Web Manifest, Cloudflare header file, Tauri IPC command, or plugin capability. CSP and navigation allow only the local WebView origin. Its stable identifier is `com.nextcenturyhappiness.wordeasy`. Home search loads the deferred 900-card catalog into that local database and allows bounded fuzzy matching (DEC-055).
+The desktop build embeds the same frontend and the local personal learning runtime (DEC-059): no Email OTP, no Sync status, and no Supabase request. Ratings stay in IndexedDB `wordeasy:desktop:v1:local-user`. It includes no Service Worker, Web Manifest, Cloudflare header file, Tauri IPC command, or plugin capability. CSP and navigation allow only the local WebView origin. Its stable identifier is `com.nextcenturyhappiness.wordeasy`. Home search loads the deferred merged catalog into that local database and allows bounded fuzzy matching (DEC-055 / DEC-060). A rebuild is required before an installed Mac app shows the two-module Medical library.
 
 On Apple Silicon, `npm run desktop:build` does not need Supabase env. Do not hardcode a publishable key in git, and never configure `SUPABASE_SERVICE_ROLE_KEY` for the client. Rebuild the `.app` after this change; an already installed cloud-era app keeps the old runtime until it is replaced. The new local database does not import or delete the previous cloud account.
 

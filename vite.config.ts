@@ -6,6 +6,12 @@ import { loadEnv, type Plugin } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
 import { VitePWA } from "vite-plugin-pwa";
 
+import {
+  MERGED_LOCAL_CATALOG_TOTAL,
+  mergeLocalMedicalCatalog
+} from "./src/data/local/mergeMedicalCatalog.ts";
+import type { SeedCard } from "./src/data/local/seedCardNormalization.ts";
+
 const demoSeedModuleId = "virtual:article-english-demo-seed";
 const resolvedDemoSeedModuleId = `\0${demoSeedModuleId}`;
 const standaloneSeedModuleId = "virtual:article-english-standalone-seed";
@@ -32,25 +38,19 @@ const localOnlySecurityHeaders = `/*
 `;
 const medicalDemoClinicalCategories = ["symptoms", "signs", "clinical_expressions"];
 
-interface BuildSeedCard {
-  active: boolean;
-  category: string;
-  module: string;
-}
-
-function loadCanonicalSeed(): { cards: BuildSeedCard[] } {
+function loadCanonicalSeed(): { cards: SeedCard[] } {
   return JSON.parse(
     readFileSync(fileURLToPath(new URL("./data/seed-data.json", import.meta.url)), "utf8")
-  ) as { cards: BuildSeedCard[] };
+  ) as { cards: SeedCard[] };
 }
 
-function loadEssentialSeed(): { cards: BuildSeedCard[] } {
+function loadEssentialSeed(): { cards: SeedCard[] } {
   return JSON.parse(
     readFileSync(
       fileURLToPath(new URL("./data/essential-medical/cards.json", import.meta.url)),
       "utf8"
     )
-  ) as { cards: BuildSeedCard[] };
+  ) as { cards: SeedCard[] };
 }
 
 function loadDemoSeedModule(): string {
@@ -88,10 +88,13 @@ function loadDemoSeedModule(): string {
 }
 
 function loadStandaloneSeedModule(): string {
-  const selected = [...loadCanonicalSeed().cards, ...loadEssentialSeed().cards];
-  if (selected.length !== 900) {
+  const selected = mergeLocalMedicalCatalog(
+    loadCanonicalSeed().cards,
+    loadEssentialSeed().cards
+  ).cards;
+  if (selected.length !== MERGED_LOCAL_CATALOG_TOTAL) {
     throw new Error(
-      `Canonical seed produced ${String(selected.length)} catalog cards; expected 900.`
+      `Canonical seed produced ${String(selected.length)} catalog cards; expected ${String(MERGED_LOCAL_CATALOG_TOTAL)}.`
     );
   }
   return `export default ${JSON.stringify(selected)};`;

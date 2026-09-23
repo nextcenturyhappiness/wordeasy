@@ -1,14 +1,11 @@
 import standaloneSeedCards from "virtual:article-english-standalone-seed";
 
 import type { DomainModuleSlug, NormalizedContextCard } from "../../domain/learning";
+import { FULL_CATALOG_SIZE, FULL_CATALOG_TOTAL } from "../local/fullCatalog";
 import { normalizeSeedCard, type SeedCard } from "../local/seedCardNormalization";
 
 const seedCards = standaloneSeedCards as SeedCard[];
-const EXPECTED_CARD_COUNTS: Record<DomainModuleSlug, number> = {
-  research_english: 60,
-  medical_english: 177,
-  essential_medical: 663
-};
+const EXPECTED_CARD_COUNTS = FULL_CATALOG_SIZE;
 
 function requireCompleteCatalog(): NormalizedContextCard[] {
   for (const [module, expected] of Object.entries(EXPECTED_CARD_COUNTS) as Array<
@@ -22,18 +19,27 @@ function requireCompleteCatalog(): NormalizedContextCard[] {
     }
   }
 
-  const activeMedical = seedCards.filter(
-    (card) => card.module === "medical_english" && card.active
+  const inactiveMedical = seedCards.filter(
+    (card) => card.module === "medical_english" && !card.active
   ).length;
-  if (activeMedical !== 140) {
+  if (inactiveMedical !== 0) {
     throw new Error(
-      `Canonical standalone seed has ${String(activeMedical)} active Medical cards; expected 140.`
+      `Merged local Medical catalog includes ${String(inactiveMedical)} inactive cards; expected none.`
     );
   }
 
-  if (seedCards.length !== 900) {
+  const activeMedical = seedCards.filter(
+    (card) => card.module === "medical_english" && card.active
+  ).length;
+  if (activeMedical !== FULL_CATALOG_SIZE.medical_english) {
     throw new Error(
-      `Canonical standalone seed has ${String(seedCards.length)} cards; expected 900.`
+      `Canonical standalone seed has ${String(activeMedical)} active Medical cards; expected ${String(FULL_CATALOG_SIZE.medical_english)}.`
+    );
+  }
+
+  if (seedCards.length !== FULL_CATALOG_TOTAL) {
+    throw new Error(
+      `Canonical standalone seed has ${String(seedCards.length)} cards; expected ${String(FULL_CATALOG_TOTAL)}.`
     );
   }
 

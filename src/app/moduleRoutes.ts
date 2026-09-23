@@ -18,9 +18,39 @@ const moduleNames: Record<ModuleSlug, string> = {
   essential_medical: "必备医学英语"
 };
 
-export function parseModuleRoute(value: string | undefined): ModuleSlug | null {
+const CLOUD_MODULE_ORDER = [
+  "research_english",
+  "medical_english",
+  "essential_medical"
+] as const satisfies readonly ModuleSlug[];
+
+const LOCAL_MODULE_ORDER = [
+  "research_english",
+  "medical_english"
+] as const satisfies readonly ModuleSlug[];
+
+export function isLocalTwoModuleSurface(
+  appMode: string | undefined = import.meta.env.VITE_APP_MODE
+): boolean {
+  return appMode === "desktop" || appMode === "standalone";
+}
+
+export function homeModuleOrder(
+  appMode: string | undefined = import.meta.env.VITE_APP_MODE
+): readonly ModuleSlug[] {
+  return isLocalTwoModuleSurface(appMode) ? LOCAL_MODULE_ORDER : CLOUD_MODULE_ORDER;
+}
+
+export function parseModuleRoute(
+  value: string | undefined,
+  appMode: string | undefined = import.meta.env.VITE_APP_MODE
+): ModuleSlug | null {
   if (value === "research" || value === "medical" || value === "essential") {
-    return routeModules[value];
+    const module = routeModules[value];
+    if (module === "essential_medical" && isLocalTwoModuleSurface(appMode)) {
+      return null;
+    }
+    return module;
   }
 
   return null;

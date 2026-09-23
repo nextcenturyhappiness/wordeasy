@@ -19,6 +19,15 @@ export const MEDICAL_DAILY_NEW_QUOTA =
 export const ESSENTIAL_MEDICAL_CATEGORY = "core" as const;
 export const ESSENTIAL_MEDICAL_DAILY_NEW_QUOTA = 10;
 
+/** Local Mac / standalone Medical New quota after the DEC-060 union. */
+export const MERGED_MEDICAL_MORPHOLOGY_DAILY_QUOTA = 1;
+export const MERGED_MEDICAL_CLINICAL_DAILY_QUOTA = 1;
+export const MERGED_MEDICAL_CORE_DAILY_QUOTA = 8;
+export const MERGED_MEDICAL_DAILY_NEW_QUOTA =
+  MERGED_MEDICAL_MORPHOLOGY_DAILY_QUOTA +
+  MERGED_MEDICAL_CLINICAL_DAILY_QUOTA +
+  MERGED_MEDICAL_CORE_DAILY_QUOTA;
+
 export type ResearchCategory = keyof typeof RESEARCH_CATEGORY_QUOTAS;
 export type MedicalAssignmentBucket = "clinical" | typeof MEDICAL_MORPHOLOGY_CATEGORY;
 
@@ -92,7 +101,10 @@ export function assertNormalizedContextCard(value: NormalizedContextCard): void 
   if (!value.context.contextSentence.includes(value.context.targetText)) {
     throw new Error(`Card ${value.card.id} target text is absent from its context.`);
   }
-  if (value.sense.module !== "essential_medical" && value.context.collocations.length === 0) {
+  const allowsEmptyCollocations =
+    value.sense.module === "essential_medical" ||
+    value.sense.category === ESSENTIAL_MEDICAL_CATEGORY;
+  if (!allowsEmptyCollocations && value.context.collocations.length === 0) {
     throw new Error(`Card ${value.card.id} must include collocations.`);
   }
 }

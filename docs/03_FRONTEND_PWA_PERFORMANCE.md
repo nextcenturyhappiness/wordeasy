@@ -373,7 +373,7 @@ import allVocabulary from "./all-words.json";
 
 把完整词库打入初始或 Home bundle。
 
-Seed data 通过数据库 seed、导入脚本或测试 fixture 提供。standalone 与 Mac desktop 允许把完整约 900 张目录放在独立 deferred chunk，仅在搜索或 Study 的 deferred bootstrap 时加载（DEC-059）。hosted cloud / PWA 不得打入该 chunk。
+Seed data 通过数据库 seed、导入脚本或测试 fixture 提供。standalone 与 Mac desktop 允许把合并后的本地目录（Research 60 + Medical 731，DEC-060）放在独立 deferred chunk，仅在搜索或 Study 的 deferred bootstrap 时加载（DEC-059）。hosted cloud / PWA 不得打入该 chunk。
 
 ---
 

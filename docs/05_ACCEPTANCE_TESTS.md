@@ -61,20 +61,28 @@ bundle size check
 3 bioinformatics
 ```
 
-### TEST-004 · Medical 7 + 3
+### TEST-004 · Medical 每日 10
 
-同一用户、同一日期的 Medical assignment 必须是：
+hosted cloud 与 Demo：同一用户、同一日期的 Medical assignment 必须是：
 
 ```text
 7 morphology
 3 病历 / 课堂用语（非 morphology）
 ```
 
-合计仍是 10 个新卡。任一池不足时整组 shortage。
+本地 Mac desktop 与 standalone（DEC-060）：
 
-### TEST-044 · 必备医学英语 10
+```text
+1 morphology
+1 病历用语（非 morphology 且非 core）
+8 core
+```
 
-同一用户、同一日期的 必备医学英语 assignment 必须是 10 张 `core` 新卡。不足时整组 shortage。不得改动 Research 5+2+3 或 Medical 7+3。
+合计仍是 10 个新卡。任一池不足时整组 shortage，不得跨池补足。
+
+### TEST-044 · 必备医学英语 10（云端）
+
+hosted cloud 上，同一用户、同一日期的 `essential_medical` assignment 必须是 10 张 `core` 新卡。不足时整组 shortage。不得改动 Research 5+2+3 或云端 Medical 7+3。本地产品不把该模块当作顶层入口；这些卡进入 Medical 的 `core` 池（DEC-060）。
 
 ### TEST-005 · New / Review
 
@@ -82,7 +90,7 @@ New 与 Review 分开，Again 重复步骤不重复增加完成卡片数。
 
 ### TEST-006 · 模块隔离
 
-初始：
+云端 / Demo 初始：
 
 ```text
 Research 6 / 10
@@ -90,7 +98,7 @@ Medical 3 / 10
 必备医学英语 0 / 10
 ```
 
-继续 Research 后，Medical 与 必备医学英语 保持不变。
+继续 Research 后，其他模块保持不变。本地 Mac / standalone 不显示必备医学英语；继续 Research 后 Medical 进度不变。
 
 ---
 
@@ -365,7 +373,7 @@ Medical = current canonical Medical catalog, including deactivated specialty car
 Total Research+Medical = current canonical catalog
 ```
 
-两批已发布卡身份保持不变；Medical 另含停用专科卡、病历用语替换和词根构词卡。每日分配仍是 Research 5 + 2 + 3、Medical 7 词根构词 + 3 病历用语、必备医学英语 10 个 `core` 新词。
+两批已发布卡身份保持不变；Medical 另含停用专科卡、病历用语替换和词根构词卡。源文件仍分开保存。本地目录按 DEC-060 做 lemma 并集。每日分配：Research 5 + 2 + 3；本地 Medical 1 词根构词 + 1 病历用语 + 8 `core`；云端 Medical 7+3，云端必备医学英语 10 个 `core` 新词。
 
 ### TEST-035 · 来源
 
@@ -435,7 +443,7 @@ Cloudflare Pages 上的 Preview 或正式 standalone PWA 发布前后必须保�
 必须分别记录自动证据与真实运行证据：
 
 1. `dist-desktop` 不包含 Service Worker、Manifest、Workbox、Cloudflare `_headers`、Supabase origin、publishable key 或 privileged secret；
-2. 完整词库不得进入首屏或 Home 可达 JavaScript；允许一个独立 deferred catalog chunk，供本地 desktop runtime 在首次搜索或 Study 时把 Research / Medical / 必备医学英语写入 `wordeasy:desktop:v1:local-user`（DEC-059）。hosted cloud / PWA 构建不得包含该 chunk。不显示 Sync status / Sync now，不以 OTP 作为主路径；
+2. 完整词库不得进入首屏或 Home 可达 JavaScript；允许一个独立 deferred catalog chunk，供本地 desktop runtime 在首次搜索或 Study 时把合并后的 Research / Medical 目录写入 `wordeasy:desktop:v1:local-user`（DEC-059 / DEC-060）。hosted cloud / PWA 构建不得包含该 chunk。不显示 Sync status / Sync now，不以 OTP 作为主路径；
 3. `cargo fmt --check`、Clippy `-D warnings`、Cargo tests（本地 WebView origin 放行，Supabase 与其他远程拒绝）通过；
 4. `.app` 与 `.dmg` 均实际生成，主二进制为 `arm64`，identifier 为 `com.nextcenturyhappiness.wordeasy`；
 5. ad-hoc `codesign --verify --deep --strict` 与 `hdiutil verify` 通过；
@@ -469,7 +477,7 @@ Offline review survives refresh
 Outbox retry is idempotent
 Daily assignments are stable
 Research 5+2+3 is correct
-Medical 7 词根构词 + 3 病历用语 is correct
+Medical quota is correct: local 1+1+8, cloud/demo 7+3
 Modules are isolated
 Accounts are isolated
 Context-first is implemented
